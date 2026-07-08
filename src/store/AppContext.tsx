@@ -236,8 +236,9 @@ export function AppProvider({ children, serverUserId }: { children: ReactNode, s
       setIsLoaded(true)
 
       // 4. Setup Realtime Subscriptions (only if still mounted)
-      const realtimeChannel = supabase.channel(`realtime-updates-${session.user.id}`)
+      const salesSub = supabase.channel(`sales-changes-${session.user.id}`)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'sales' }, (payload) => {
+          console.log("Realtime Sales Event:", payload.eventType, payload.new?.id || payload.old?.id);
           if (payload.eventType === 'INSERT') {
             setSales(prev => {
               // Prevent duplicates from optimistic updates
@@ -250,6 +251,9 @@ export function AppProvider({ children, serverUserId }: { children: ReactNode, s
             setSales(prev => prev.filter(s => s.id !== payload.old.id))
           }
         })
+        .subscribe()
+
+      const notifSub = supabase.channel(`notif-changes-${session.user.id}`)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications', filter: `user_id=eq.${session.user.id}` }, (payload) => {
           if (payload.eventType === 'INSERT') {
             setNotifications(prev => [mapDbNotifToNotif(payload.new), ...prev])
@@ -260,6 +264,9 @@ export function AppProvider({ children, serverUserId }: { children: ReactNode, s
             setNotifications(prev => prev.map(n => n.id === payload.new.id ? mapDbNotifToNotif(payload.new) : n))
           }
         })
+        .subscribe()
+
+      const ticketSub = supabase.channel(`ticket-changes-${session.user.id}`)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'support_tickets' }, (payload) => {
           if (payload.eventType === 'INSERT') {
             setTickets(prev => [payload.new as SupportTicket, ...prev])
@@ -270,9 +277,7 @@ export function AppProvider({ children, serverUserId }: { children: ReactNode, s
             setTickets(prev => prev.map(t => t.id === payload.new.id ? payload.new as SupportTicket : t))
           }
         })
-        .subscribe((status) => {
-          console.log("Realtime connection status:", status);
-        });
+        .subscribe()
     }
 
     loadData()
