@@ -56,7 +56,7 @@ export function TeamEditModal({ isOpen, onClose, team }: TeamEditModalProps) {
         const previouslySelected = users.filter(u => u.team_id === team.id || u.team === team.name)
         for (const user of previouslySelected) {
           if (!selectedUserIds.includes(user.id)) {
-            await updateUser(user.id, { team: null, team_id: null })
+            await updateUser(user.id, { team: "", team_id: null })
           }
         }
         
@@ -89,7 +89,7 @@ export function TeamEditModal({ isOpen, onClose, team }: TeamEditModalProps) {
         // Unassign all users first
         const teamUsers = users.filter(u => u.team_id === team.id || u.team === team.name)
         for (const user of teamUsers) {
-          await updateUser(user.id, { team: null, team_id: null })
+          await updateUser(user.id, { team: "", team_id: null })
         }
         await deleteTeam(team.id)
         onClose()
@@ -125,7 +125,7 @@ export function TeamEditModal({ isOpen, onClose, team }: TeamEditModalProps) {
           {currentUser?.role === 'SuperAdmin' && (
             <div className="grid gap-2">
               <Label>Call Centre (Tenant)</Label>
-              <Select value={organizationId} onValueChange={setOrganizationId}>
+              <Select value={organizationId} onValueChange={(val) => setOrganizationId(val || "")}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select a Call Centre" />
                 </SelectTrigger>

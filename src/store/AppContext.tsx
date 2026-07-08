@@ -50,6 +50,7 @@ export interface Sale {
   processor_notes?: string
   agent_name?: string
   team_name?: string
+  team_id?: string | null
   processor_name?: string
   history_logs?: any[]
   created_at: string
@@ -165,6 +166,7 @@ const mapDbSaleToSale = (dbSale: any): Sale => ({
   tenantId: dbSale.organization_id,
   agent: dbSale.agent_name || 'Unknown',
   team: dbSale.team_name || '',
+  team_id: dbSale.team_id || null,
   historyLogs: dbSale.history_logs || [],
   timeInQueue: "00m 00s", // we can calculate this dynamically in UI
   timestamp: new Date(dbSale.created_at).getTime(),
