@@ -11,7 +11,7 @@ const figtree = Figtree({
 });
 
 export const metadata: Metadata = {
-  title: "Call Center Management System",
+  title: "Call Suite",
   description: "Live sales processing CRM",
 };
 

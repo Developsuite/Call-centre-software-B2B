@@ -30,9 +30,14 @@ export async function updateSession(request: NextRequest) {
   // IMPORTANT: Avoid writing any logic between createServerClient and
   // supabase.auth.getUser(). A simple mistake could make it very hard to debug
   // issues with users being randomly logged out.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  let user = null;
+  try {
+    const { data } = await supabase.auth.getUser()
+    user = data.user;
+  } catch (error) {
+    console.error("Middleware Supabase connection error:", error);
+    // If Supabase is unreachable (timeout/DNS issue), assume unauthenticated
+  }
 
   const isAuthRoute = request.nextUrl.pathname.startsWith('/login')
   
@@ -58,7 +63,14 @@ export async function updateSession(request: NextRequest) {
 
   // Role-Based Route Protection
   if (user && !isAuthRoute) {
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+    let profile = null;
+    try {
+      const { data } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+      profile = data;
+    } catch (error) {
+      console.error("Middleware profile fetch error:", error);
+    }
+    
     const pathname = request.nextUrl.pathname;
     let shouldRedirect = false;
 

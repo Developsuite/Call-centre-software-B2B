@@ -176,6 +176,7 @@ export function AppProvider({ children, serverUserId }: { children: ReactNode, s
 
   useEffect(() => {
     let mounted = true;
+    setIsLoaded(false);
     
     async function loadData() {
       // 1. Get Session
@@ -236,7 +237,11 @@ export function AppProvider({ children, serverUserId }: { children: ReactNode, s
       const salesSub = supabase.channel(`sales-changes-${session.user.id}`)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'sales' }, (payload) => {
           if (payload.eventType === 'INSERT') {
-            setSales(prev => [mapDbSaleToSale(payload.new), ...prev])
+            setSales(prev => {
+              // Prevent duplicates from optimistic updates
+              if (prev.some(s => s.id === payload.new.id)) return prev;
+              return [mapDbSaleToSale(payload.new), ...prev];
+            });
           } else if (payload.eventType === 'UPDATE') {
             setSales(prev => prev.map(s => s.id === payload.new.id ? mapDbSaleToSale(payload.new) : s))
           } else if (payload.eventType === 'DELETE') {
@@ -324,23 +329,31 @@ export function AppProvider({ children, serverUserId }: { children: ReactNode, s
     if (error) {
       console.error("Failed to add sale:", error);
       toast.error("Failed to add sale: " + error.message);
-    } else if (insertedSale && insertedSale.processor_id) {
-      let notifTitle = 'New Sale Assigned';
-      let notifMessage = `${currentUser.name} assigned a new sale to you for ${insertedSale.customer}`;
+    } else if (insertedSale) {
       
-      if (insertedSale.processor_id === currentUser.id) {
-        notifTitle = 'Self-Assigned Sale';
-        notifMessage = `You assigned a new sale to yourself for ${insertedSale.customer}`;
-      }
+      // Optimistic state update so agent doesn't need to refresh
+      setSales(prev => {
+        if (prev.some(s => s.id === insertedSale.id)) return prev;
+        return [mapDbSaleToSale(insertedSale), ...prev];
+      });
 
-      await supabase.from('notifications').insert({
-        user_id: insertedSale.processor_id,
-        title: notifTitle,
-        message: notifMessage,
-        sale_id: insertedSale.id
-      })
+      if (insertedSale.processor_id) {
+        let notifTitle = 'New Sale Assigned';
+        let notifMessage = `${currentUser.name} assigned a new sale to you for ${insertedSale.customer}`;
+        
+        if (insertedSale.processor_id === currentUser.id) {
+          notifTitle = 'Self-Assigned Sale';
+          notifMessage = `You assigned a new sale to yourself for ${insertedSale.customer}`;
+        }
+
+        await supabase.from('notifications').insert({
+          user_id: insertedSale.processor_id,
+          title: notifTitle,
+          message: notifMessage,
+          sale_id: insertedSale.id
+        })
+      }
     }
-    // Realtime will update the state
   }
 
   const updateSaleStatus = async (id: string, newStatus: SaleStatus) => {
