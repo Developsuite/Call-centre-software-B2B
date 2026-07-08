@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AppProvider } from "@/store/AppContext";
 import { Toaster } from "sonner";
+import { NavigationLoader } from "@/components/NavigationLoader";
 
 const figtree = Figtree({
   subsets: ["latin"],
@@ -35,6 +36,7 @@ export default async function RootLayout({
         <AppProvider serverUserId={serverUserId}>
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
             {children}
+            <NavigationLoader />
             <Toaster richColors position="top-right" />
           </ThemeProvider>
         </AppProvider>
