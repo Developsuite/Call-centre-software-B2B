@@ -208,3 +208,6 @@ CREATE TABLE IF NOT EXISTS public.support_tickets (
 ALTER TABLE public.support_tickets ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "SuperAdmins can do everything on support_tickets" ON public.support_tickets FOR ALL USING (public.get_user_role() = 'SuperAdmin');
 CREATE POLICY "Users can manage their own support_tickets" ON public.support_tickets FOR ALL USING (user_id = auth.uid());
+
+-- Enable Realtime for support tickets
+alter publication supabase_realtime add table public.support_tickets;
