@@ -30,8 +30,8 @@ export default function TeamsListPage() {
   // The backend/AppContext already filters teams based on role, so `teams` is safe to use.
   
   const filteredTeams = teams.filter(t => 
-    t.name.toLowerCase().includes(searchQuery.toLowerCase())
-  ).sort((a, b) => a.name.localeCompare(b.name))
+    (t.name || "").toLowerCase().includes(searchQuery.toLowerCase())
+  ).sort((a, b) => (a.name || "").localeCompare(b.name || ""))
 
   const handleEditClick = (e: React.MouseEvent, team: Team) => {
     e.preventDefault()
@@ -92,7 +92,7 @@ export default function TeamsListPage() {
             const convRate = total > 0 ? Math.round((connected / total) * 100) : 0
 
             return (
-              <Link key={team.id} href={`/admin/teams/${encodeURIComponent(team.name)}`}>
+              <Link key={team.id} href={`/admin/teams/${encodeURIComponent(team.name || "unknown")}`}>
                 <Card className="rounded-[1.5rem] p-5 bg-white dark:bg-card border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow cursor-pointer group flex flex-col h-full relative">
                   {(currentUser.role === 'SuperAdmin' || currentUser.role === 'Admin') && (
                     <button 
