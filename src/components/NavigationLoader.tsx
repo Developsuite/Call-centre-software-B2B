@@ -78,9 +78,8 @@ export function NavigationLoader() {
 
   return (
     <div className="fixed inset-0 z-[10000] bg-slate-900/40 backdrop-blur-[2px] flex flex-col items-center justify-center transition-all">
-      <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl shadow-2xl flex items-center gap-4 animate-in fade-in zoom-in-95 duration-200">
+      <div className="bg-white dark:bg-slate-900 p-4 rounded-full shadow-2xl flex items-center justify-center animate-in fade-in zoom-in-95 duration-200">
         <Loader2 className="w-6 h-6 animate-spin text-[#ff5a36]" />
-        <span className="text-sm font-bold text-slate-700 dark:text-slate-200">Connecting...</span>
       </div>
     </div>
   )
