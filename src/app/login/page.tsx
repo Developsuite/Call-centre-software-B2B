@@ -1,5 +1,6 @@
 import { login } from './actions'
 import Image from 'next/image'
+import { SubmitButton } from './SubmitButton'
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const resolvedSearchParams = await searchParams;
@@ -87,12 +88,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             </div>
 
             {/* Submit */}
-            <button
-              type="submit"
-              className="w-full h-12 mt-1 bg-[#ff5a36] hover:bg-[#e8502f] active:scale-[0.98] text-white text-[14px] font-semibold rounded-full shadow-md shadow-[#ff5a36]/20 transition-all"
-            >
-              Login
-            </button>
+            <SubmitButton />
           </form>
 
           {/* Footer */}
