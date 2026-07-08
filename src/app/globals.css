@@ -112,55 +112,7 @@
   --sidebar-ring: #94a3b8;
 }
 
-/* Premium Dark Mode Accent Color Overrides (Replaces orange entirely with premium electric indigo) */
-.dark .text-\[\#ff5a36\] {
-  color: #818cf8 !important;
-}
-.dark .bg-\[\#ff5a36\] {
-  background-color: #6366f1 !important;
-}
-.dark .border-\[\#ff5a36\] {
-  border-color: #6366f1 !important;
-}
-.dark .hover\:text-\[\#ff5a36\]:hover {
-  color: #a5b4fc !important;
-}
-.dark .hover\:bg-\[\#ff5a36\]:hover {
-  background-color: #4f46e5 !important;
-}
-.dark .hover\:border-\[\#ff5a36\]:hover {
-  border-color: #4f46e5 !important;
-}
-.dark .focus\:ring-\[\#ff5a36\]:focus {
-  --tw-ring-color: rgba(99, 102, 241, 0.5) !important;
-}
-.dark .focus\:ring-\[\#ff5a36\]\/50:focus {
-  --tw-ring-color: rgba(99, 102, 241, 0.3) !important;
-}
-.dark .text-\[\#ff5a36\]\/70 {
-  color: rgba(129, 140, 248, 0.7) !important;
-}
-.dark .bg-\[\#ff5a36\]\/10 {
-  background-color: rgba(99, 102, 241, 0.15) !important;
-}
-.dark .bg-\[\#ff5a36\]\/5 {
-  background-color: rgba(99, 102, 241, 0.08) !important;
-}
-.dark .border-\[\#ff5a36\]\/20 {
-  border-color: rgba(99, 102, 241, 0.25) !important;
-}
-.dark .border-\[\#ff5a36\]\/30 {
-  border-color: rgba(99, 102, 241, 0.35) !important;
-}
-.dark .border-\[\#ff5a36\]\/10 {
-  border-color: rgba(99, 102, 241, 0.15) !important;
-}
-.dark .shadow-orange-500\/20 {
-  --tw-shadow-color: rgba(99, 102, 241, 0.15) !important;
-}
-.dark .shadow-\[\#ff5a36\]\/20 {
-  --tw-shadow-color: rgba(99, 102, 241, 0.15) !important;
-}
+
 
 @layer base {
   * {

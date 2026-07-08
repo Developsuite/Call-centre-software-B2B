@@ -1,7 +1,6 @@
 "use client"
 
 import * as React from "react"
-import { Input } from "@/components/ui/input"
 import { Eye, EyeOff } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -11,7 +10,7 @@ export const PasswordInput = React.forwardRef<HTMLInputElement, React.ComponentP
 
     return (
       <div className="relative w-full">
-        <Input
+        <input
           type={showPassword ? "text" : "password"}
           className={cn("pr-10", className)}
           ref={ref}
