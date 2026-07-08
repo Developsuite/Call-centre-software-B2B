@@ -42,11 +42,15 @@ export function Sidebar() {
   const [ticketDescription, setTicketDescription] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    toast.success("Logged out successfully");
-    router.push("/auth/login");
-    router.refresh();
+  const handleLogout = () => {
+    // Instantly start navigation for immediate feedback
+    router.push("/login");
+    
+    // Perform sign out in the background
+    supabase.auth.signOut().then(() => {
+      toast.success("Logged out successfully");
+      router.refresh();
+    });
   };
 
   const handleTicketSubmit = async () => {

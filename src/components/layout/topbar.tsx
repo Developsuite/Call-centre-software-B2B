@@ -248,8 +248,9 @@ export function TopBar({ title }: { title?: string }) {
                   Change Password
                 </Link>
                 <button
-                  onClick={async () => {
-                    await logout()
+                  onClick={() => {
+                    router.push('/login');
+                    logout();
                   }}
                   className="w-full text-left px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg flex items-center gap-2 transition-colors"
                 >
