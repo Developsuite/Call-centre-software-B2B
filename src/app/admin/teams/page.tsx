@@ -92,42 +92,43 @@ export default function TeamsListPage() {
             const convRate = total > 0 ? Math.round((connected / total) * 100) : 0
 
             return (
-              <Link key={team.id} href={`/admin/teams/${encodeURIComponent(team.name || "unknown")}`}>
-                <Card className="rounded-[1.5rem] p-5 bg-white dark:bg-card border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow cursor-pointer group flex flex-col h-full relative">
-                  {(currentUser.role === 'SuperAdmin' || currentUser.role === 'Admin') && (
-                    <button 
-                      onClick={(e) => handleEditClick(e, team)}
-                      className="absolute top-4 right-4 bg-slate-100 dark:bg-slate-800 p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-slate-200 dark:hover:bg-slate-700 z-10"
-                      title="Edit Team"
-                    >
-                      <Edit className="w-4 h-4 text-slate-500" />
-                    </button>
-                  )}
-                  
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-3 pr-10">
-                      <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
-                        <LayoutGrid className="w-5 h-5 text-slate-400" />
+              <div key={team.id} className="relative group h-full">
+                <Link href={`/admin/teams/${encodeURIComponent(team.name || "unknown")}`} className="block h-full">
+                  <Card className="rounded-[1.5rem] p-5 bg-white dark:bg-card border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow cursor-pointer flex flex-col h-full">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center gap-3 pr-10">
+                        <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
+                          <LayoutGrid className="w-5 h-5 text-slate-400" />
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-slate-800 dark:text-white group-hover:text-[#ff5a36] transition-colors line-clamp-1">{team.name}</h3>
+                          <p className="text-xs text-slate-500 font-medium">{teamMembers.length} Members</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 mt-auto pt-4 border-t border-slate-100 dark:border-slate-800/50">
+                      <div>
+                        <p className="text-[10px] uppercase font-bold text-slate-400">Total Sales</p>
+                        <p className="font-bold text-lg text-slate-700 dark:text-slate-300">{total}</p>
                       </div>
                       <div>
-                        <h3 className="font-bold text-slate-800 dark:text-white group-hover:text-[#ff5a36] transition-colors line-clamp-1">{team.name}</h3>
-                        <p className="text-xs text-slate-500 font-medium">{teamMembers.length} Members</p>
+                        <p className="text-[10px] uppercase font-bold text-slate-400">Conv. Rate</p>
+                        <p className="font-bold text-lg text-[#ff5a36]">{convRate}%</p>
                       </div>
                     </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2 mt-auto pt-4 border-t border-slate-100 dark:border-slate-800/50">
-                    <div>
-                      <p className="text-[10px] uppercase font-bold text-slate-400">Total Sales</p>
-                      <p className="font-bold text-lg text-slate-700 dark:text-slate-300">{total}</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] uppercase font-bold text-slate-400">Conv. Rate</p>
-                      <p className="font-bold text-lg text-[#ff5a36]">{convRate}%</p>
-                    </div>
-                  </div>
-                </Card>
-              </Link>
+                  </Card>
+                </Link>
+                {(currentUser.role === 'SuperAdmin' || currentUser.role === 'Admin') && (
+                  <button 
+                    onClick={(e) => handleEditClick(e, team)}
+                    className="absolute top-4 right-4 bg-slate-100 dark:bg-slate-800 p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-slate-200 dark:hover:bg-slate-700 z-10"
+                    title="Edit Team"
+                  >
+                    <Edit className="w-4 h-4 text-slate-500" />
+                  </button>
+                )}
+              </div>
             )
           })}
           {filteredTeams.length === 0 && (
