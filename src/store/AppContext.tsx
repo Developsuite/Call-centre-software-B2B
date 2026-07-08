@@ -238,7 +238,7 @@ export function AppProvider({ children, serverUserId }: { children: ReactNode, s
       // 4. Setup Realtime Subscriptions (only if still mounted)
       const salesSub = supabase.channel(`sales-changes-${session.user.id}`)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'sales' }, (payload) => {
-          console.log("Realtime Sales Event:", payload.eventType, payload.new?.id || payload.old?.id);
+          console.log("Realtime Sales Event:", payload.eventType, (payload as any).new?.id || (payload as any).old?.id);
           if (payload.eventType === 'INSERT') {
             setSales(prev => {
               // Prevent duplicates from optimistic updates
