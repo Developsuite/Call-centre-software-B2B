@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Button } from "@/components/ui/button";
 import { Key, Lock, ArrowRight, ShieldCheck, CheckCircle2 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
@@ -78,9 +78,8 @@ export default function ChangePasswordPage() {
               <div className="space-y-1.5 relative">
                 <label className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">New Password</label>
                 <div className="relative">
-                  <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <Input 
-                    type="password"
+                  <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 z-10" />
+                  <PasswordInput 
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     placeholder="Enter new password"
@@ -93,9 +92,8 @@ export default function ChangePasswordPage() {
               <div className="space-y-1.5 relative">
                 <label className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Confirm New Password</label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <Input 
-                    type="password"
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 z-10" />
+                  <PasswordInput 
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Confirm new password"

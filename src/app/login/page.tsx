@@ -1,6 +1,7 @@
 import { login } from './actions'
 import Image from 'next/image'
 import { SubmitButton } from './SubmitButton'
+import { PasswordInput } from '@/components/ui/password-input'
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const resolvedSearchParams = await searchParams;
@@ -66,10 +67,9 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             {/* Password */}
             <div>
               <label htmlFor="password" className="text-[12px] text-slate-600 font-medium mb-1.5 block ml-1">Password</label>
-              <input
+              <PasswordInput
                 id="password"
                 name="password"
-                type="password"
                 placeholder="Enter your Password"
                 required
                 className="w-full h-12 px-5 bg-white border border-slate-200 rounded-full text-[13px] text-slate-900 font-medium placeholder:text-slate-400 outline-none focus:border-[#ff5a36] focus:ring-1 focus:ring-[#ff5a36] transition-all"

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { PasswordInput } from "@/components/ui/password-input"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -267,8 +268,7 @@ export default function EditSalePage({ params }: { params: Promise<{ id: string 
                     </div>
                     <div className="space-y-1.5">
                       <label className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">SSN</label>
-                      <Input 
-                        type="password" 
+                      <PasswordInput 
                         placeholder="XXX-XX-XXXX" 
                         className={inputClass} 
                         value={formData.ssn || ''}
