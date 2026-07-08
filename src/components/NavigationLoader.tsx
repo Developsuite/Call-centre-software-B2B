@@ -8,6 +8,7 @@ export function NavigationLoader() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const [isNavigating, setIsNavigating] = useState(false)
+  const [showConnecting, setShowConnecting] = useState(false)
   const [isSigningOut, setIsSigningOut] = useState(false)
 
   // Listen for sign out event
@@ -20,8 +21,20 @@ export function NavigationLoader() {
   // Turn off loading screen when path or search params change (navigation completes)
   useEffect(() => {
     setIsNavigating(false)
+    setShowConnecting(false)
     setIsSigningOut(false)
   }, [pathname, searchParams])
+
+  // Delay the "Connecting..." overlay by 1 second to avoid flashing on fast navigations
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout
+    if (isNavigating) {
+      timeoutId = setTimeout(() => setShowConnecting(true), 1000)
+    } else {
+      setShowConnecting(false)
+    }
+    return () => clearTimeout(timeoutId)
+  }, [isNavigating])
 
   // Intercept clicks on links
   useEffect(() => {
@@ -61,7 +74,7 @@ export function NavigationLoader() {
     )
   }
 
-  if (!isNavigating) return null
+  if (!showConnecting) return null
 
   return (
     <div className="fixed inset-0 z-[10000] bg-slate-900/40 backdrop-blur-[2px] flex flex-col items-center justify-center transition-all">
