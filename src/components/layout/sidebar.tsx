@@ -43,14 +43,17 @@ export function Sidebar() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleLogout = () => {
-    // Instantly start navigation for immediate feedback
-    router.push("/login");
+    // Show the "See you soon" full-screen overlay instantly
+    window.dispatchEvent(new Event('signout'));
     
-    // Perform sign out in the background
-    supabase.auth.signOut().then(() => {
-      toast.success("Logged out successfully");
-      router.refresh();
-    });
+    // Delay navigation slightly so they can appreciate the minimal UI
+    setTimeout(() => {
+      router.push("/login");
+      supabase.auth.signOut().then(() => {
+        toast.success("Logged out successfully");
+        router.refresh();
+      });
+    }, 1200);
   };
 
   const handleTicketSubmit = async () => {

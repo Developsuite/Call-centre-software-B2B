@@ -8,10 +8,19 @@ export function NavigationLoader() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const [isNavigating, setIsNavigating] = useState(false)
+  const [isSigningOut, setIsSigningOut] = useState(false)
+
+  // Listen for sign out event
+  useEffect(() => {
+    const handleSignout = () => setIsSigningOut(true)
+    window.addEventListener('signout', handleSignout)
+    return () => window.removeEventListener('signout', handleSignout)
+  }, [])
 
   // Turn off loading screen when path or search params change (navigation completes)
   useEffect(() => {
     setIsNavigating(false)
+    // We don't turn off isSigningOut here so it stays until unmount/refresh
   }, [pathname, searchParams])
 
   // Intercept clicks on links
@@ -40,6 +49,17 @@ export function NavigationLoader() {
     document.addEventListener('click', handleClick, true) 
     return () => document.removeEventListener('click', handleClick, true)
   }, [])
+
+  if (isSigningOut) {
+    return (
+      <div className="fixed inset-0 z-[10000] bg-slate-900 flex flex-col items-center justify-center transition-all animate-in fade-in duration-500">
+        <div className="flex flex-col items-center gap-6 animate-in slide-in-from-bottom-4 duration-700">
+          <h1 className="text-3xl font-light text-white tracking-widest">See you soon.</h1>
+          <Loader2 className="w-5 h-5 animate-spin text-[#ff5a36]/80" />
+        </div>
+      </div>
+    )
+  }
 
   if (!isNavigating) return null
 
