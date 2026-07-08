@@ -15,12 +15,20 @@ export interface Tenant {
   created_at?: string
 }
 
+export interface Team {
+  id: string
+  name: string
+  organization_id: string
+  created_at: string
+}
+
 export interface User {
   id: string
   full_name: string
   role: UserRole
   organization_id: string | null
   team?: string
+  team_id?: string | null
   status: "Active" | "Disabled"
   avatar_url?: string
   // Map our old 'name' and 'tenantId' fields so existing components don't break immediately
@@ -107,6 +115,12 @@ interface AppContextType {
   updateUser: (id: string, updates: Partial<User>) => Promise<void>
   updateUserTeamAndLeadStatus: (id: string, team: string, isTeamLead: boolean) => Promise<void>
   
+  // Teams State
+  teams: Team[]
+  addTeam: (name: string, organizationId: string) => Promise<void>
+  updateTeam: (id: string, name: string, organizationId: string) => Promise<void>
+  deleteTeam: (id: string) => Promise<void>
+  
   // Identity State
   currentUser: User | null
   setCurrentUser: (user: User) => void
@@ -131,7 +145,8 @@ const mapProfileToUser = (profile: any): User => ({
   name: profile.full_name,
   tenantId: profile.organization_id,
   avatarUrl: profile.avatar_url,
-  isTeamLead: profile.is_team_lead || false
+  isTeamLead: profile.is_team_lead || false,
+  team_id: profile.team_id
 })
 
 const mapDbTenantToTenant = (tenant: any): Tenant => ({
@@ -169,6 +184,7 @@ export function AppProvider({ children, serverUserId }: { children: ReactNode, s
   const [sales, setSales] = useState<Sale[]>([])
   const [tenants, setTenants] = useState<Tenant[]>([])
   const [users, setUsers] = useState<User[]>([])
+  const [teams, setTeams] = useState<Team[]>([])
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [tickets, setTickets] = useState<SupportTicket[]>([])
   const [currentUser, setCurrentUser] = useState<User | null>(null)
@@ -212,24 +228,28 @@ export function AppProvider({ children, serverUserId }: { children: ReactNode, s
       // 3. Fetch Data based on Role/Org
       let orgsQuery = supabase.from('organizations').select('*');
       let usersQuery = supabase.from('profiles').select('*');
+      let teamsQuery = supabase.from('teams').select('*');
       
       if (profile && profile.role !== 'SuperAdmin' && orgId) {
         orgsQuery = orgsQuery.eq('id', orgId);
         usersQuery = usersQuery.eq('organization_id', orgId);
+        teamsQuery = teamsQuery.eq('organization_id', orgId);
       }
 
-      const [orgsRes, usersRes, salesRes, notifRes, ticketsRes] = await Promise.all([
+      const [orgsRes, usersRes, salesRes, notifRes, ticketsRes, teamsRes] = await Promise.all([
         orgsQuery,
         usersQuery,
         supabase.from('sales').select('*').order('created_at', { ascending: false }).limit(500),
         supabase.from('notifications').select('*').eq('user_id', session.user.id).order('created_at', { ascending: false }).limit(100),
-        supabase.from('support_tickets').select('*').order('created_at', { ascending: false }).limit(100)
+        supabase.from('support_tickets').select('*').order('created_at', { ascending: false }).limit(100),
+        teamsQuery
       ])
 
       if (!mounted) return;
 
       if (orgsRes.data) setTenants(orgsRes.data.map(mapDbTenantToTenant))
       if (usersRes.data) setUsers(usersRes.data.map(mapProfileToUser))
+      if (teamsRes.data) setTeams(teamsRes.data)
       if (salesRes.data) setSales(salesRes.data.map(mapDbSaleToSale))
       if (notifRes.data) setNotifications(notifRes.data.map(mapDbNotifToNotif))
       if (ticketsRes.data) setTickets(ticketsRes.data)
@@ -275,6 +295,18 @@ export function AppProvider({ children, serverUserId }: { children: ReactNode, s
             }
           } else if (payload.eventType === 'UPDATE') {
             setTickets(prev => prev.map(t => t.id === payload.new.id ? payload.new as SupportTicket : t))
+          }
+        })
+        .subscribe()
+
+      const teamSub = supabase.channel(`team-changes-${session.user.id}`)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'teams' }, (payload) => {
+          if (payload.eventType === 'INSERT') {
+            setTeams(prev => [payload.new as Team, ...prev])
+          } else if (payload.eventType === 'UPDATE') {
+            setTeams(prev => prev.map(t => t.id === payload.new.id ? payload.new as Team : t))
+          } else if (payload.eventType === 'DELETE') {
+            setTeams(prev => prev.filter(t => t.id !== payload.old.id))
           }
         })
         .subscribe()
@@ -524,7 +556,9 @@ export function AppProvider({ children, serverUserId }: { children: ReactNode, s
   const updateUser = async (id: string, updates: any) => {
     const dbUpdates: any = {}
     if (updates.name) dbUpdates.full_name = updates.name
-    if (updates.team) dbUpdates.team = updates.team
+    if (updates.team !== undefined) dbUpdates.team = updates.team
+    if (updates.team_id !== undefined) dbUpdates.team_id = updates.team_id
+    if (updates.organization_id !== undefined) dbUpdates.organization_id = updates.organization_id
     if (updates.avatarUrl !== undefined) dbUpdates.avatar_url = updates.avatarUrl
 
     await supabase.from('profiles').update(dbUpdates).eq('id', id)
@@ -535,6 +569,31 @@ export function AppProvider({ children, serverUserId }: { children: ReactNode, s
 
     const { data } = await supabase.from('profiles').select('*')
     if (data) setUsers(data.map(mapProfileToUser))
+  }
+
+  const addTeam = async (name: string, organizationId: string) => {
+    const { data } = await supabase.from('teams').insert({ name, organization_id: organizationId }).select().single()
+    if (data) setTeams(prev => [data, ...prev])
+  }
+
+  const updateTeam = async (id: string, name: string, organizationId: string) => {
+    setTeams(prev => prev.map(t => t.id === id ? { ...t, name, organization_id: organizationId } : t))
+    await supabase.from('teams').update({ name, organization_id: organizationId }).eq('id', id)
+    
+    // Also update existing users and sales that might have the old string name for backward compatibility
+    const oldTeam = teams.find(t => t.id === id)
+    if (oldTeam && oldTeam.name !== name) {
+      await supabase.from('profiles').update({ team: name }).eq('team_id', id)
+      await supabase.from('sales').update({ team_name: name }).eq('team_id', id)
+      
+      const { data } = await supabase.from('profiles').select('*')
+      if (data) setUsers(data.map(mapProfileToUser))
+    }
+  }
+
+  const deleteTeam = async (id: string) => {
+    setTeams(prev => prev.filter(t => t.id !== id))
+    await supabase.from('teams').delete().eq('id', id)
   }
 
   const updateUserTeamAndLeadStatus = async (id: string, team: string, isTeamLead: boolean) => {
@@ -582,6 +641,7 @@ export function AppProvider({ children, serverUserId }: { children: ReactNode, s
       sales, addSale, updateSaleStatus, updateSaleProcessorNotes, editSale, deleteSale,
       tenants, addTenant, updateTenant,
       users, addUser, updateUserStatus, updateUser, updateUserTeamAndLeadStatus,
+      teams, addTeam, updateTeam, deleteTeam,
       currentUser, setCurrentUser, isLoaded,
       notifications, markNotificationRead, markAllNotificationsRead,
       tickets, addTicket, resolveTicket
