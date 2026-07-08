@@ -20,7 +20,7 @@ export function NavigationLoader() {
   // Turn off loading screen when path or search params change (navigation completes)
   useEffect(() => {
     setIsNavigating(false)
-    // We don't turn off isSigningOut here so it stays until unmount/refresh
+    setIsSigningOut(false)
   }, [pathname, searchParams])
 
   // Intercept clicks on links
