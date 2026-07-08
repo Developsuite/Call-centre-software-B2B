@@ -40,10 +40,11 @@ export async function updateSession(request: NextRequest) {
   }
 
   const isAuthRoute = request.nextUrl.pathname.startsWith('/login')
+  const isHealthCheck = request.nextUrl.pathname.startsWith('/api/health')
   
   // If user is NOT logged in and trying to access a protected route
   // Redirect to login
-  if (!user && !isAuthRoute) {
+  if (!user && !isAuthRoute && !isHealthCheck) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
