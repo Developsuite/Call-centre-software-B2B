@@ -201,10 +201,12 @@ export function AppProvider({ children, serverUserId }: { children: ReactNode, s
       }
 
       let orgId = null;
+      let currentUserRole = null;
       if (profile) {
         const user = mapProfileToUser(profile)
         if (mounted) setCurrentUser(user)
         orgId = user.tenantId
+        currentUserRole = user.role
       }
 
       // 3. Fetch Data based on Role/Org
@@ -234,7 +236,7 @@ export function AppProvider({ children, serverUserId }: { children: ReactNode, s
       setIsLoaded(true)
 
       // 4. Setup Realtime Subscriptions (only if still mounted)
-      const salesSub = supabase.channel(`sales-changes-${session.user.id}`)
+      const realtimeChannel = supabase.channel(`realtime-updates-${session.user.id}`)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'sales' }, (payload) => {
           if (payload.eventType === 'INSERT') {
             setSales(prev => {
@@ -248,9 +250,6 @@ export function AppProvider({ children, serverUserId }: { children: ReactNode, s
             setSales(prev => prev.filter(s => s.id !== payload.old.id))
           }
         })
-        .subscribe()
-
-      const notifSub = supabase.channel(`notif-changes-${session.user.id}`)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications', filter: `user_id=eq.${session.user.id}` }, (payload) => {
           if (payload.eventType === 'INSERT') {
             setNotifications(prev => [mapDbNotifToNotif(payload.new), ...prev])
@@ -261,20 +260,19 @@ export function AppProvider({ children, serverUserId }: { children: ReactNode, s
             setNotifications(prev => prev.map(n => n.id === payload.new.id ? mapDbNotifToNotif(payload.new) : n))
           }
         })
-        .subscribe()
-
-      const ticketSub = supabase.channel(`ticket-changes-${session.user.id}`)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'support_tickets' }, (payload) => {
           if (payload.eventType === 'INSERT') {
             setTickets(prev => [payload.new as SupportTicket, ...prev])
-            if (currentUser?.role === "SuperAdmin") {
+            if (currentUserRole === "SuperAdmin") {
               toast.info(`New Support Ticket`, { description: payload.new.subject })
             }
           } else if (payload.eventType === 'UPDATE') {
             setTickets(prev => prev.map(t => t.id === payload.new.id ? payload.new as SupportTicket : t))
           }
         })
-        .subscribe()
+        .subscribe((status) => {
+          console.log("Realtime connection status:", status);
+        });
     }
 
     loadData()
