@@ -150,21 +150,10 @@ export default function LiveSalesPage() {
               {tenantSales.slice(0, 50).map((sale, index) => (
                 <div 
                   key={sale.id} 
-                  className="group flex flex-col md:flex-row gap-4 items-start md:items-center p-4 bg-white dark:bg-[#0f172a] hover:bg-slate-50 dark:hover:bg-[#1e293b] border border-slate-200 dark:border-slate-800 rounded-2xl transition-all duration-300 relative animate-in slide-in-from-right-8 fade-in shadow-sm hover:shadow-lg hover:-translate-y-0.5 cursor-default overflow-hidden"
+                  className="group flex flex-col md:flex-row gap-4 items-start md:items-center p-4 bg-transparent border-2 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 rounded-2xl transition-all duration-300 animate-in slide-in-from-right-8 fade-in shadow-none cursor-default"
                   style={{ animationFillMode: 'both', animationDelay: `${Math.min(index * 50, 500)}ms` }}
                 >
-                  
-                  {/* Glowing Status Accent */}
-                  <div className={cn(
-                    "absolute left-0 top-0 bottom-0 w-1.5 transition-all duration-300",
-                    sale.status === "Connected" ? "bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.8)]" :
-                    sale.status === "Rejected" ? "bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.8)]" :
-                    sale.status === "Need Info" ? "bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.8)]" :
-                    sale.status === "In Process" ? "bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.8)]" :
-                    "bg-slate-300 dark:bg-slate-700"
-                  )} />
-
-                  <div className="w-40 shrink-0 flex flex-col gap-2 pl-3">
+                  <div className="w-40 shrink-0 flex flex-col gap-2 pl-2">
                      <span className="text-xs font-bold text-slate-400 dark:text-slate-500 flex items-center gap-1.5 font-mono">
                         <Clock className="w-3.5 h-3.5" /> {getRelativeTime(sale.timestamp)}
                      </span>
