@@ -134,32 +134,23 @@ export default function LiveSalesPage() {
         </div>
 
         {/* Live Feed Container */}
-        <div className="flex flex-col gap-4 relative">
+        <div className="flex flex-col bg-white dark:bg-card border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
           
-          {/* Subtle connecting line for the timeline */}
-          <div className="absolute left-6 top-4 bottom-4 w-px bg-slate-200 dark:bg-slate-800 hidden md:block z-0" />
-
           {tenantSales.length === 0 ? (
-            <div className="py-20 text-center text-slate-500 flex flex-col items-center z-10 bg-white/50 dark:bg-card/50 rounded-[2rem] border border-slate-200 dark:border-slate-800">
+            <div className="py-20 text-center text-slate-500 flex flex-col items-center">
               <Zap className="w-12 h-12 mb-4 text-slate-300 dark:text-slate-700" />
               <p>Waiting for incoming sales...</p>
             </div>
           ) : (
-            tenantSales.slice(0, 50).map((sale) => ( // Show the latest 50 for performance
-              <div 
-                key={sale.id} 
-                className="relative z-10 flex flex-col md:flex-row gap-4 items-start group animate-in slide-in-from-top-4 fade-in duration-500"
-              >
-                {/* Timeline dot */}
-                <div className="hidden md:flex mt-4 w-12 justify-center shrink-0">
-                  <div className="w-2.5 h-2.5 rounded-full bg-slate-300 dark:bg-slate-700 border-[3px] border-white dark:border-slate-950 group-hover:bg-[#ff5a36] transition-colors shadow-sm z-10" />
-                </div>
-
-                <Card className="flex-1 rounded-xl px-5 py-3 bg-white dark:bg-card border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow flex flex-col md:flex-row gap-3 md:items-center justify-between w-full overflow-hidden relative">
-                  
-                  {/* Status Indicator Bar */}
+            <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
+              {tenantSales.slice(0, 50).map((sale) => (
+                <div 
+                  key={sale.id} 
+                  className="group flex flex-col md:flex-row gap-4 items-start md:items-center p-4 hover:bg-slate-50/80 dark:hover:bg-slate-900/50 transition-colors relative animate-in fade-in duration-500"
+                >
+                  {/* Hover Status Bar (Left Edge) */}
                   <div className={cn(
-                    "absolute left-0 top-0 bottom-0 w-1.5",
+                    "absolute left-0 top-0 bottom-0 w-1 opacity-0 group-hover:opacity-100 transition-opacity",
                     sale.status === "Connected" ? "bg-emerald-500" :
                     sale.status === "Rejected" ? "bg-red-500" :
                     sale.status === "Need Info" ? "bg-amber-500" :
@@ -167,53 +158,40 @@ export default function LiveSalesPage() {
                     "bg-slate-300 dark:bg-slate-700"
                   )} />
 
-                  <div className="flex flex-col gap-1 flex-1 pl-2">
-                    <div className="flex items-center gap-2 mb-1">
-                      <div className={cn("px-2.5 py-1 rounded-md text-[10px] font-bold tracking-wider uppercase flex items-center gap-1.5 w-fit", getStatusBadgeStyle(sale.status))}>
+                  <div className="w-32 shrink-0 flex flex-col gap-1.5 pl-2">
+                     <span className="text-[11px] font-medium text-slate-400 flex items-center gap-1">
+                        <Clock className="w-3 h-3" /> {getRelativeTime(sale.timestamp)}
+                     </span>
+                     <div className={cn("px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase flex items-center gap-1 w-fit", getStatusBadgeStyle(sale.status))}>
                         {getStatusIcon(sale.status)}
                         {sale.status}
                       </div>
-                      <span className="text-[11px] font-medium text-slate-400 flex items-center gap-1">
-                        <Clock className="w-3 h-3" /> {getRelativeTime(sale.timestamp)}
-                      </span>
-                    </div>
-                    
-                    <h3 className="font-bold text-base text-slate-800 dark:text-white leading-tight">
+                  </div>
+
+                  <div className="flex-1 flex flex-col pl-2 md:pl-0">
+                    <h3 className="font-bold text-sm text-slate-800 dark:text-white leading-tight">
                       {sale.customer}
                     </h3>
-                    <p className="text-xs text-slate-500 font-medium">
+                    <p className="text-[11px] text-slate-500 font-medium mt-0.5">
                       Account: {sale.accountType}
                     </p>
                   </div>
 
-                  <div className="flex flex-row md:flex-col gap-3 md:gap-1.5 border-t md:border-t-0 md:border-l border-slate-100 dark:border-slate-800 pt-3 md:pt-0 md:pl-5 w-full md:w-auto shrink-0 justify-between md:justify-center">
-                    
-                    <div className="flex items-center gap-2 text-xs">
-                      <div className="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500">
-                        <User className="w-3 h-3" />
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-[9px] uppercase font-bold text-slate-400">Agent</span>
-                        <span className="font-bold text-slate-700 dark:text-slate-300">{sale.agent}</span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 text-xs">
-                      <div className="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500">
-                        <Briefcase className="w-3 h-3" />
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-[9px] uppercase font-bold text-slate-400">Processor</span>
-                        <span className={cn("font-bold", sale.processorName ? "text-slate-700 dark:text-slate-300" : "text-slate-400 italic")}>
+                  <div className="w-48 shrink-0 flex flex-col gap-1.5 pl-2 md:pl-0 border-t md:border-t-0 border-slate-100 dark:border-slate-800 pt-3 md:pt-0">
+                     <div className="flex items-center gap-2 text-xs">
+                        <User className="w-3.5 h-3.5 text-slate-400" />
+                        <span className="font-medium text-slate-700 dark:text-slate-300">{sale.agent}</span>
+                     </div>
+                     <div className="flex items-center gap-2 text-xs">
+                        <Briefcase className="w-3.5 h-3.5 text-slate-400" />
+                        <span className={cn("font-medium", sale.processorName ? "text-slate-700 dark:text-slate-300" : "text-slate-400 italic")}>
                           {sale.processorName || "Unassigned"}
                         </span>
-                      </div>
-                    </div>
-
+                     </div>
                   </div>
-                </Card>
-              </div>
-            ))
+                </div>
+              ))}
+            </div>
           )}
         </div>
 
