@@ -49,6 +49,7 @@ export function TopBar({ title }: { title?: string }) {
     { name: "Global Users", href: "/master/users", roles: ["SuperAdmin"] },
     { name: "Queries & Issues", href: "/master/support", roles: ["SuperAdmin"] },
     { name: "Admin Hub", href: "/admin", roles: ["Admin"] },
+    { name: "Live Sales", href: "/admin/live-sales", roles: ["Admin"] },
     { name: "My Teams", href: "/admin/teams", roles: ["SuperAdmin", "Admin"] },
     { name: "All Agents", href: "/admin/agents", roles: ["Admin"] },
     { name: "All Processors", href: "/admin/processors", roles: ["Admin"] },

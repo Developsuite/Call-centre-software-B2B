@@ -19,7 +19,8 @@ import {
   ShieldCheck,
   Headset,
   Network,
-  UsersRound
+  UsersRound,
+  Activity
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -75,6 +76,7 @@ export function Sidebar() {
     { name: "Global Users", href: "/master/users", icon: Users, roles: ["SuperAdmin"] },
     { name: "Queries & Issues", href: "/master/support", icon: HelpCircle, roles: ["SuperAdmin"] },
     { name: "Admin Hub", href: "/admin", icon: ShieldCheck, roles: ["Admin"] },
+    { name: "Live Sales", href: "/admin/live-sales", icon: Activity, roles: ["Admin"] },
     { name: "My Teams", href: "/admin/teams", icon: Network, roles: ["SuperAdmin", "Admin"] },
     { name: "All Agents", href: "/admin/agents", icon: Headset, roles: ["Admin"] },
     { name: "All Processors", href: "/admin/processors", icon: Briefcase, roles: ["Admin"] },
