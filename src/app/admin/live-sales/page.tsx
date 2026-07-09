@@ -103,14 +103,14 @@ export default function LiveSalesPage() {
       <div className="flex flex-col gap-6 font-sans max-w-[1000px] mx-auto w-full pb-10">
         
         {/* Header section with live indicator */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 bg-white/50 dark:bg-card/50 p-6 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm backdrop-blur-md">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white/50 dark:bg-card/50 px-6 py-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm backdrop-blur-md">
           <div>
             <div className="flex items-center gap-3 mb-1">
-              <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-red-500/10 text-red-500">
-                <span className="absolute w-3 h-3 bg-red-500 rounded-full animate-ping opacity-75"></span>
-                <span className="relative w-3 h-3 bg-red-500 rounded-full"></span>
+              <div className="relative flex items-center justify-center w-8 h-8 rounded-lg bg-red-500/10 text-red-500">
+                <span className="absolute w-2 h-2 bg-red-500 rounded-full animate-ping opacity-75"></span>
+                <span className="relative w-2 h-2 bg-red-500 rounded-full"></span>
               </div>
-              <h1 className="text-3xl font-bold text-slate-800 dark:text-white tracking-tight flex items-center gap-2">
+              <h1 className="text-xl font-bold text-slate-800 dark:text-white tracking-tight flex items-center gap-2">
                 Live Sales Feed
               </h1>
             </div>
@@ -151,11 +151,11 @@ export default function LiveSalesPage() {
                 className="relative z-10 flex flex-col md:flex-row gap-4 items-start group animate-in slide-in-from-top-4 fade-in duration-500"
               >
                 {/* Timeline dot */}
-                <div className="hidden md:flex mt-6 w-12 justify-center shrink-0">
-                  <div className="w-3 h-3 rounded-full bg-slate-300 dark:bg-slate-700 border-4 border-white dark:border-slate-950 group-hover:bg-[#ff5a36] transition-colors shadow-sm z-10" />
+                <div className="hidden md:flex mt-4 w-12 justify-center shrink-0">
+                  <div className="w-2.5 h-2.5 rounded-full bg-slate-300 dark:bg-slate-700 border-[3px] border-white dark:border-slate-950 group-hover:bg-[#ff5a36] transition-colors shadow-sm z-10" />
                 </div>
 
-                <Card className="flex-1 rounded-[1.5rem] p-5 bg-white dark:bg-card border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow flex flex-col md:flex-row gap-4 md:items-center justify-between w-full overflow-hidden relative">
+                <Card className="flex-1 rounded-xl px-5 py-3 bg-white dark:bg-card border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow flex flex-col md:flex-row gap-3 md:items-center justify-between w-full overflow-hidden relative">
                   
                   {/* Status Indicator Bar */}
                   <div className={cn(
@@ -178,7 +178,7 @@ export default function LiveSalesPage() {
                       </span>
                     </div>
                     
-                    <h3 className="font-bold text-lg text-slate-800 dark:text-white leading-tight">
+                    <h3 className="font-bold text-base text-slate-800 dark:text-white leading-tight">
                       {sale.customer}
                     </h3>
                     <p className="text-xs text-slate-500 font-medium">
@@ -186,7 +186,7 @@ export default function LiveSalesPage() {
                     </p>
                   </div>
 
-                  <div className="flex flex-row md:flex-col gap-4 md:gap-2 border-t md:border-t-0 md:border-l border-slate-100 dark:border-slate-800 pt-4 md:pt-0 md:pl-6 w-full md:w-auto shrink-0 justify-between md:justify-center">
+                  <div className="flex flex-row md:flex-col gap-3 md:gap-1.5 border-t md:border-t-0 md:border-l border-slate-100 dark:border-slate-800 pt-3 md:pt-0 md:pl-5 w-full md:w-auto shrink-0 justify-between md:justify-center">
                     
                     <div className="flex items-center gap-2 text-xs">
                       <div className="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500">
