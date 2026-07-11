@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { logout } from "@/app/login/actions";
+import { createClient } from "@/utils/supabase/client";
 
 export function TopBar({ title }: { title?: string }) {
   const { users, tenants, currentUser, setCurrentUser, notifications, markNotificationRead, markAllNotificationsRead } = useAppContext();
@@ -249,12 +249,16 @@ export function TopBar({ title }: { title?: string }) {
                   Change Password
                 </Link>
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     setDropdownOpen(false);
                     window.dispatchEvent(new Event('signout'));
+                    
+                    const supabase = createClient();
+                    await supabase.auth.signOut();
+                    
                     setTimeout(() => {
                       router.push('/login');
-                      logout();
+                      router.refresh();
                     }, 1200);
                   }}
                   className="w-full text-left px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg flex items-center gap-2 transition-colors"
