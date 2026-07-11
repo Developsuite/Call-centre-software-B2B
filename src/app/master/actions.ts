@@ -8,14 +8,26 @@ import { sanitizeInput } from '@/utils/sanitize'
 const DEFAULT_PASSWORD = '123456'
 
 // Verify if the caller is a SuperAdmin
-async function verifySuperAdmin() {
+async function verifySuperAdmin(): Promise<{ authorized: boolean, error?: string }> {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return false
+  const { data: { user }, error: userError } = await supabase.auth.getUser()
+  
+  if (!user) {
+    return { authorized: false, error: `No user found. ${userError?.message || 'Unknown user error'}` };
+  }
   
   const admin = getAdminClient()
-  const { data: profile } = await admin.from('profiles').select('role').eq('id', user.id).single()
-  return profile?.role === 'SuperAdmin'
+  const { data: profile, error: profileError } = await admin.from('profiles').select('role').eq('id', user.id).single()
+  
+  if (profileError || !profile) {
+    return { authorized: false, error: `Profile not found. ${profileError?.message || 'Unknown profile error'}` };
+  }
+
+  if (profile.role !== 'SuperAdmin') {
+    return { authorized: false, error: `User has role '${profile.role}', expected 'SuperAdmin'` };
+  }
+
+  return { authorized: true };
 }
 
 // ==========================================
@@ -23,7 +35,8 @@ async function verifySuperAdmin() {
 // ==========================================
 
 export async function createTenant(rawName: string, avatarUrl?: string) {
-  if (!(await verifySuperAdmin())) return { error: 'Unauthorized: SuperAdmin required' }
+  const auth = await verifySuperAdmin();
+  if (!auth.authorized) return { error: `Unauthorized: ${auth.error}` }
   const name = sanitizeInput(rawName, 100)
   const admin = getAdminClient()
   const { data, error } = await admin.from('organizations').insert({ name, avatar_url: avatarUrl }).select().single()
@@ -33,7 +46,8 @@ export async function createTenant(rawName: string, avatarUrl?: string) {
 }
 
 export async function updateTenant(id: string, rawName: string) {
-  if (!(await verifySuperAdmin())) return { error: 'Unauthorized: SuperAdmin required' }
+  const auth = await verifySuperAdmin();
+  if (!auth.authorized) return { error: `Unauthorized: ${auth.error}` }
   const name = sanitizeInput(rawName, 100)
   const admin = getAdminClient()
   const { error } = await admin.from('organizations').update({ name }).eq('id', id)
@@ -43,7 +57,8 @@ export async function updateTenant(id: string, rawName: string) {
 }
 
 export async function deleteTenant(id: string) {
-  if (!(await verifySuperAdmin())) return { error: 'Unauthorized: SuperAdmin required' }
+  const auth = await verifySuperAdmin();
+  if (!auth.authorized) return { error: `Unauthorized: ${auth.error}` }
   const admin = getAdminClient()
   // Because of ON DELETE CASCADE, this will also delete profiles, sales, etc.
   const { error } = await admin.from('organizations').delete().eq('id', id)
@@ -57,7 +72,8 @@ export async function deleteTenant(id: string) {
 // ==========================================
 
 export async function createUser(email: string, rawName: string, role: string, tenantId: string, rawTeam?: string) {
-  if (!(await verifySuperAdmin())) return { error: 'Unauthorized: SuperAdmin required' }
+  const auth = await verifySuperAdmin();
+  if (!auth.authorized) return { error: `Unauthorized: ${auth.error}` }
   const name = sanitizeInput(rawName, 100)
   const team = sanitizeInput(rawTeam, 100)
   const admin = getAdminClient()
@@ -90,7 +106,8 @@ export async function createUser(email: string, rawName: string, role: string, t
 }
 
 export async function updateUser(id: string, updates: { full_name?: string, role?: string, organization_id?: string, team?: string, status?: string }) {
-  if (!(await verifySuperAdmin())) return { error: 'Unauthorized: SuperAdmin required' }
+  const auth = await verifySuperAdmin();
+  if (!auth.authorized) return { error: `Unauthorized: ${auth.error}` }
   
   const sanitizedUpdates: any = { ...updates }
   if (updates.full_name) sanitizedUpdates.full_name = sanitizeInput(updates.full_name, 100)
@@ -104,7 +121,8 @@ export async function updateUser(id: string, updates: { full_name?: string, role
 }
 
 export async function resetUserPassword(id: string) {
-  if (!(await verifySuperAdmin())) return { error: 'Unauthorized: SuperAdmin required' }
+  const auth = await verifySuperAdmin();
+  if (!auth.authorized) return { error: `Unauthorized: ${auth.error}` }
   const admin = getAdminClient()
   const { error } = await admin.auth.admin.updateUserById(id, { password: DEFAULT_PASSWORD })
   if (error) return { error: error.message }
@@ -112,7 +130,8 @@ export async function resetUserPassword(id: string) {
 }
 
 export async function disableUser(id: string) {
-  if (!(await verifySuperAdmin())) return { error: 'Unauthorized: SuperAdmin required' }
+  const auth = await verifySuperAdmin();
+  if (!auth.authorized) return { error: `Unauthorized: ${auth.error}` }
   const admin = getAdminClient()
   const { error } = await admin.from('profiles').update({ status: 'Disabled' }).eq('id', id)
   if (error) return { error: error.message }
@@ -121,7 +140,8 @@ export async function disableUser(id: string) {
 }
 
 export async function deleteUser(id: string) {
-  if (!(await verifySuperAdmin())) return { error: 'Unauthorized: SuperAdmin required' }
+  const auth = await verifySuperAdmin();
+  if (!auth.authorized) return { error: `Unauthorized: ${auth.error}` }
   const admin = getAdminClient()
   const { error } = await admin.auth.admin.deleteUser(id)
   if (error) return { error: error.message }
@@ -130,7 +150,8 @@ export async function deleteUser(id: string) {
 }
 
 export async function fetchUserEmails() {
-  if (!(await verifySuperAdmin())) return []
+  const auth = await verifySuperAdmin();
+  if (!auth.authorized) return []
   const admin = getAdminClient()
   const { data, error } = await admin.auth.admin.listUsers()
   if (error || !data?.users) return []
@@ -142,7 +163,8 @@ export async function fetchUserEmails() {
 // ==========================================
 
 export async function clearAllSalesData(): Promise<{ success?: boolean, error?: string }> {
-  if (!(await verifySuperAdmin())) return { error: 'Unauthorized: SuperAdmin required' }
+  const auth = await verifySuperAdmin();
+  if (!auth.authorized) return { error: `Unauthorized: ${auth.error}` }
   const admin = getAdminClient()
   try {
     await admin.from('sales').delete().neq('id', '00000000-0000-0000-0000-000000000000') 
@@ -155,7 +177,8 @@ export async function clearAllSalesData(): Promise<{ success?: boolean, error?: 
 }
 
 export async function resetTenant(tenantId: string): Promise<{ success?: boolean, error?: string }> {
-  if (!(await verifySuperAdmin())) return { error: 'Unauthorized: SuperAdmin required' }
+  const auth = await verifySuperAdmin();
+  if (!auth.authorized) return { error: `Unauthorized: ${auth.error}` }
   const admin = getAdminClient()
   try {
     // Check if the caller is a SuperAdmin (in a real app, verify auth here)
@@ -183,7 +206,8 @@ export async function resetTenant(tenantId: string): Promise<{ success?: boolean
 }
 
 export async function generateTestData() {
-  if (!(await verifySuperAdmin())) return { error: 'Unauthorized: SuperAdmin required' }
+  const auth = await verifySuperAdmin();
+  if (!auth.authorized) return { error: `Unauthorized: ${auth.error}` }
   const admin = getAdminClient()
   
   // Fetch agents

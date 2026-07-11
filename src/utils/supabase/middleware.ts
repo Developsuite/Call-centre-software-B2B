@@ -50,20 +50,8 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // If user IS logged in and trying to access login page
-  // Redirect to dashboard
-  if (user && isAuthRoute) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/'
-    const redirectResponse = NextResponse.redirect(url)
-    supabaseResponse.cookies.getAll().forEach(cookie => {
-      redirectResponse.cookies.set(cookie.name, cookie.value)
-    })
-    return redirectResponse
-  }
-
-  // Role-Based Route Protection
-  if (user && !isAuthRoute) {
+  // If user is logged in
+  if (user) {
     let profile = null;
     try {
       const { data } = await supabase.from('profiles').select('role').eq('id', user.id).single();
@@ -71,21 +59,44 @@ export async function updateSession(request: NextRequest) {
     } catch (error) {
       console.error("Middleware profile fetch error:", error);
     }
-    
-    const pathname = request.nextUrl.pathname;
-    let shouldRedirect = false;
 
-    if (pathname.startsWith('/master') && profile?.role !== 'SuperAdmin') {
-      shouldRedirect = true;
-    } else if (pathname.startsWith('/admin') && !['SuperAdmin', 'Admin'].includes(profile?.role)) {
-      shouldRedirect = true;
-    } else if (pathname.startsWith('/processor') && !['SuperAdmin', 'Admin', 'Processor'].includes(profile?.role)) {
-      shouldRedirect = true;
+    const pathname = request.nextUrl.pathname;
+    let targetPath = null;
+
+    // Helper to get correct dashboard based on role
+    const getDashboardPath = (role: string | undefined) => {
+      if (role === 'SuperAdmin') return '/master/dashboard';
+      if (role === 'Admin') return '/admin';
+      if (role === 'Processor') return '/processor/queue';
+      return '/'; // Default to Agent dashboard
+    };
+
+    if (isAuthRoute) {
+      // If logged in user tries to access login page, redirect to their respective dashboard
+      targetPath = getDashboardPath(profile?.role);
+    } else {
+      // Role-Based Route Protection
+      let shouldRedirect = false;
+
+      if (pathname.startsWith('/master') && profile?.role !== 'SuperAdmin') {
+        shouldRedirect = true;
+      } else if (pathname.startsWith('/admin') && !['SuperAdmin', 'Admin'].includes(profile?.role)) {
+        shouldRedirect = true;
+      } else if (pathname.startsWith('/processor') && !['SuperAdmin', 'Admin', 'Processor'].includes(profile?.role)) {
+        shouldRedirect = true;
+      } else if (profile?.role !== 'Agent' && (pathname === '/' || pathname === '/sales')) {
+        // Prevent non-agents from seeing the agent dashboard or agent sales page
+        shouldRedirect = true;
+      }
+
+      if (shouldRedirect) {
+        targetPath = getDashboardPath(profile?.role);
+      }
     }
 
-    if (shouldRedirect) {
+    if (targetPath && targetPath !== pathname) {
       const url = request.nextUrl.clone()
-      url.pathname = '/'
+      url.pathname = targetPath
       const redirectResponse = NextResponse.redirect(url)
       supabaseResponse.cookies.getAll().forEach(cookie => {
         redirectResponse.cookies.set(cookie.name, cookie.value)
