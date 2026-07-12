@@ -71,11 +71,21 @@ export async function deleteTenant(id: string) {
 // USER OPERATIONS
 // ==========================================
 
+// Helper to automatically link or create teams
+async function resolveTeamId(admin: any, tenantId: string, teamName: string): Promise<string | null> {
+  if (!teamName || teamName.trim() === "") return null;
+  const name = teamName.trim();
+  const { data: existingTeam } = await admin.from('teams').select('id').eq('organization_id', tenantId).ilike('name', name).single();
+  if (existingTeam) return existingTeam.id;
+  const { data: newTeam } = await admin.from('teams').insert({ name, organization_id: tenantId }).select('id').single();
+  return newTeam ? newTeam.id : null;
+}
+
 export async function createUser(email: string, rawName: string, role: string, tenantId: string, rawTeam?: string) {
   const auth = await verifySuperAdmin();
   if (!auth.authorized) return { error: `Unauthorized: ${auth.error}` }
   const name = sanitizeInput(rawName, 100)
-  const team = sanitizeInput(rawTeam, 100)
+  let team = sanitizeInput(rawTeam, 100)
   const admin = getAdminClient()
   
   // 1. Create Auth User
@@ -89,13 +99,21 @@ export async function createUser(email: string, rawName: string, role: string, t
 
   const uid = authData.user.id
 
+  let teamId = null;
+  if (team) {
+    teamId = await resolveTeamId(admin, tenantId, team);
+  } else {
+    team = null as any;
+  }
+
   // 2. Create Profile
   const { error: profileError } = await admin.from('profiles').upsert({
     id: uid,
     full_name: name,
     role: role,
     organization_id: tenantId,
-    team: team || null,
+    team: team,
+    team_id: teamId,
     status: 'Active'
   })
 
@@ -111,9 +129,27 @@ export async function updateUser(id: string, updates: { full_name?: string, role
   
   const sanitizedUpdates: any = { ...updates }
   if (updates.full_name) sanitizedUpdates.full_name = sanitizeInput(updates.full_name, 100)
-  if (updates.team) sanitizedUpdates.team = sanitizeInput(updates.team, 100)
   
   const admin = getAdminClient()
+
+  if (updates.team !== undefined) {
+    const safeTeam = sanitizeInput(updates.team, 100);
+    if (!safeTeam || safeTeam.trim() === "") {
+      sanitizedUpdates.team = null;
+      sanitizedUpdates.team_id = null;
+    } else {
+      sanitizedUpdates.team = safeTeam.trim();
+      let orgId = sanitizedUpdates.organization_id;
+      if (!orgId) {
+        const { data: existingProfile } = await admin.from('profiles').select('organization_id').eq('id', id).single();
+        orgId = existingProfile?.organization_id;
+      }
+      if (orgId) {
+        sanitizedUpdates.team_id = await resolveTeamId(admin, orgId, sanitizedUpdates.team);
+      }
+    }
+  }
+
   const { error } = await admin.from('profiles').update(sanitizedUpdates).eq('id', id)
   if (error) return { error: error.message }
   revalidatePath('/master/dashboard')
