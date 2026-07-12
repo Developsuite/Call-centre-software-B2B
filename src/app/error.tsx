@@ -1,7 +1,7 @@
 'use client' // Error components must be Client Components
 
-import { useEffect } from 'react'
-import { AlertCircle } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { AlertCircle, RefreshCw } from 'lucide-react'
 
 export default function Error({
   error,
@@ -10,10 +10,51 @@ export default function Error({
   error: Error & { digest?: string }
   reset: () => void
 }) {
+  const [isUpdating, setIsUpdating] = useState(false);
+
   useEffect(() => {
     // Log the error to an error reporting service
     console.error("Dashboard caught an error:", error)
+
+    // Detect if this is a deployment version mismatch (Next.js Server Action hash changed)
+    const isVersionMismatch = 
+      error.message?.includes('UnrecognizedActionError') || 
+      error.message?.includes('not found on the server') ||
+      error.message?.includes('Failed to fetch');
+
+    if (isVersionMismatch) {
+      const reloadCount = parseInt(sessionStorage.getItem('deploy_reload_count') || '0');
+      
+      // Prevent infinite reload loop (max 2 auto-reloads)
+      if (reloadCount < 2) {
+        setIsUpdating(true);
+        sessionStorage.setItem('deploy_reload_count', (reloadCount + 1).toString());
+        
+        // Auto-refresh after a short delay to fetch the new JavaScript bundle
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+        return;
+      }
+    }
+
+    // Reset reload count if we rendered a normal error
+    sessionStorage.removeItem('deploy_reload_count');
   }, [error])
+
+  if (isUpdating) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-[#0B0F19] flex flex-col items-center justify-center p-4">
+        <div className="flex flex-col items-center text-center animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <RefreshCw className="w-12 h-12 text-[#ff5a36] animate-spin mb-6" />
+          <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-2">Updating Application...</h2>
+          <p className="text-slate-500 dark:text-slate-400 text-sm max-w-[300px]">
+            We just rolled out a new update! Seamlessly refreshing your session to load the latest features.
+          </p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#0B0F19] flex items-center justify-center p-4">
