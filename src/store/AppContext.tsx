@@ -574,8 +574,21 @@ export function AppProvider({ children, serverUserId }: { children: ReactNode, s
   }
 
   const addTeam = async (name: string, organizationId: string) => {
-    const { data } = await supabase.from('teams').insert({ name, organization_id: organizationId }).select().single()
-    if (data) setTeams(prev => [data, ...prev])
+    const existingTeam = teams.find(t => t.name.toLowerCase() === name.toLowerCase() && t.organization_id === organizationId);
+    if (existingTeam) {
+      toast.error(`A team named "${name}" already exists in this Call Centre.`);
+      throw new Error("Duplicate team");
+    }
+    
+    const { data, error } = await supabase.from('teams').insert({ name, organization_id: organizationId }).select().single()
+    if (error) {
+      toast.error(error.message);
+      throw error;
+    }
+    if (data) {
+      setTeams(prev => [data, ...prev])
+      toast.success(`Team "${name}" created successfully!`)
+    }
   }
 
   const updateTeam = async (id: string, name: string, organizationId: string) => {

@@ -127,7 +127,9 @@ export function TeamEditModal({ isOpen, onClose, team }: TeamEditModalProps) {
               <Label>Call Centre (Tenant)</Label>
               <Select value={organizationId} onValueChange={(val) => setOrganizationId(val || "")}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select a Call Centre" />
+                  <SelectValue placeholder="Select a Call Centre">
+                    {organizationId ? tenants.find(t => t.id === organizationId)?.name : "Select a Call Centre"}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {tenants.map(tenant => (
