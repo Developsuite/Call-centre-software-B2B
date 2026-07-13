@@ -141,7 +141,7 @@ export function Sidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: { isMobileMen
         </div>
 
         {/* Middle Pill: Navigation Icons */}
-        <div className="flex flex-col items-stretch md:items-center gap-2 bg-white dark:bg-card p-2 rounded-[1.5rem] md:rounded-[2.5rem] shadow-sm w-full my-auto overflow-y-auto custom-scrollbar">
+        <div className="flex flex-col items-stretch md:items-center gap-2 bg-white dark:bg-card p-2 rounded-[1.5rem] md:rounded-[2.5rem] shadow-sm w-full my-auto overflow-y-auto md:overflow-visible custom-scrollbar">
           {menuItems.map((item) => {
             const isActive = pathname === item.href;
             return (
