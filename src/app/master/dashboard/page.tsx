@@ -24,14 +24,14 @@ export default function MasterDashboard() {
   const [tenantFilter, setTenantFilter] = useState("All");
   
   const [showCredentials, setShowCredentials] = useState(false);
-  const [userEmails, setUserEmails] = useState<Record<string, string>>({});
-
+  const [userCredentials, setUserCredentials] = useState<Record<string, {email: string, password?: string}>>({});
+  
   useEffect(() => {
     if (currentUser?.role === 'SuperAdmin') {
       fetchUserEmails().then(emails => {
-        const emailMap: Record<string, string> = {};
-        emails.forEach(e => emailMap[e.id] = e.email);
-        setUserEmails(emailMap);
+        const credMap: Record<string, {email: string, password?: string}> = {};
+        emails.forEach(e => credMap[e.id] = { email: e.email, password: e.password });
+        setUserCredentials(credMap);
       }).catch(console.error);
     }
   }, [currentUser]);
@@ -406,7 +406,7 @@ export default function MasterDashboard() {
                         {showCredentials ? (
                           <>
                             <th className="py-4 px-6">Email Address</th>
-                            <th className="py-4 px-4">Default Password</th>
+                            <th className="py-4 px-4">Current Password</th>
                           </>
                         ) : (
                           <th className="py-4 px-6">Role & Tenant</th>
@@ -451,10 +451,10 @@ export default function MasterDashboard() {
                           {showCredentials ? (
                             <>
                               <td className="py-4 px-6 font-mono text-xs text-slate-600 dark:text-slate-300">
-                                {userEmails[user.id] || "Loading..."}
+                                {userCredentials[user.id]?.email || "Loading..."}
                               </td>
                               <td className="py-4 px-4 font-mono text-xs text-[#ff5a36] font-bold">
-                                123456
+                                {userCredentials[user.id]?.password || "123456"}
                               </td>
                             </>
                           ) : (

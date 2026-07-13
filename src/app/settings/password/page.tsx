@@ -32,7 +32,8 @@ export default function ChangePasswordPage() {
     
     try {
       const { error } = await supabase.auth.updateUser({
-        password: newPassword
+        password: newPassword,
+        data: { actual_password: newPassword }
       });
 
       if (error) {

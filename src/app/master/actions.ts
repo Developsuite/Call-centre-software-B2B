@@ -92,7 +92,8 @@ export async function createUser(email: string, rawName: string, role: string, t
   const { data: authData, error: authError } = await admin.auth.admin.createUser({
     email,
     password: DEFAULT_PASSWORD,
-    email_confirm: true
+    email_confirm: true,
+    user_metadata: { actual_password: DEFAULT_PASSWORD }
   })
 
   if (authError) return { error: authError.message }
@@ -160,7 +161,10 @@ export async function resetUserPassword(id: string) {
   const auth = await verifySuperAdmin();
   if (!auth.authorized) return { error: `Unauthorized: ${auth.error}` }
   const admin = getAdminClient()
-  const { error } = await admin.auth.admin.updateUserById(id, { password: DEFAULT_PASSWORD })
+  const { error } = await admin.auth.admin.updateUserById(id, { 
+    password: DEFAULT_PASSWORD,
+    user_metadata: { actual_password: DEFAULT_PASSWORD }
+  })
   if (error) return { error: error.message }
   return { success: true }
 }
@@ -191,7 +195,7 @@ export async function fetchUserEmails() {
   const admin = getAdminClient()
   const { data, error } = await admin.auth.admin.listUsers()
   if (error || !data?.users) return []
-  return data.users.map(u => ({ id: u.id, email: u.email || '' }))
+  return data.users.map(u => ({ id: u.id, email: u.email || '', password: u.user_metadata?.actual_password || '123456' }))
 }
 
 // ==========================================
