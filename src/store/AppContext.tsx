@@ -390,6 +390,18 @@ export function AppProvider({ children, serverUserId }: { children: ReactNode, s
           sale_id: insertedSale.id
         })
       }
+
+      // Notify Admins of the same call center
+      const tenantAdmins = users.filter(u => u.role === 'Admin' && u.tenantId === currentUser.tenantId);
+      if (tenantAdmins.length > 0) {
+        const adminNotifs = tenantAdmins.map(admin => ({
+          user_id: admin.id,
+          title: 'New Live Sale Added',
+          message: `${currentUser.name} logged a new sale for ${insertedSale.customer}.`,
+          sale_id: insertedSale.id
+        }));
+        await supabase.from('notifications').insert(adminNotifs);
+      }
     }
   }
 
@@ -657,6 +669,18 @@ export function AppProvider({ children, serverUserId }: { children: ReactNode, s
       description: sanitizeInput(description, 5000),
       status: 'Open'
     });
+
+    // Notify SuperAdmins about the new ticket
+    const superAdmins = users.filter(u => u.role === 'SuperAdmin');
+    if (superAdmins.length > 0) {
+      const ticketNotifs = superAdmins.map(admin => ({
+        user_id: admin.id,
+        title: 'New Support Ticket',
+        message: `${currentUser.name} (${org ? org.name : 'Global'}) submitted a new support ticket: ${subject}`
+      }));
+      await supabase.from('notifications').insert(ticketNotifs);
+    }
+
     toast.success("Support ticket submitted successfully.");
   }
 
