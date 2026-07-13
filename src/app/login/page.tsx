@@ -2,6 +2,7 @@ import { login } from './actions'
 import Image from 'next/image'
 import { SubmitButton } from './SubmitButton'
 import { PasswordInput } from '@/components/ui/password-input'
+import { LoginForm } from './LoginForm'
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const resolvedSearchParams = await searchParams;
@@ -41,55 +42,8 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             <p className="text-[13px] text-slate-500 mt-1.5">Welcome back! Enter your details to log in to your account</p>
           </div>
 
-          {/* Error Message */}
-          {error && (
-            <div className="mb-5 px-4 py-2.5 bg-red-50 border border-red-100 text-red-500 text-[13px] font-medium rounded-xl text-center">
-              {error}
-            </div>
-          )}
-
-          {/* Login Form */}
-          <form action={login} className="flex flex-col gap-4">
-            
-            {/* Email */}
-            <div>
-              <label htmlFor="email" className="text-[12px] text-slate-600 font-medium mb-1.5 block ml-1">Email</label>
-              <input
-                id="email"
-                name="email"
-                type="text"
-                placeholder="Enter your email"
-                required
-                className="w-full h-12 px-5 bg-white border border-slate-200 rounded-full text-[13px] text-slate-900 font-medium placeholder:text-slate-400 outline-none focus:border-[#ff5a36] focus:ring-1 focus:ring-[#ff5a36] transition-all"
-              />
-            </div>
-
-            {/* Password */}
-            <div>
-              <label htmlFor="password" className="text-[12px] text-slate-600 font-medium mb-1.5 block ml-1">Password</label>
-              <PasswordInput
-                id="password"
-                name="password"
-                placeholder="Enter your Password"
-                required
-                className="w-full h-12 px-5 bg-white border border-slate-200 rounded-full text-[13px] text-slate-900 font-medium placeholder:text-slate-400 outline-none focus:border-[#ff5a36] focus:ring-1 focus:ring-[#ff5a36] transition-all"
-              />
-            </div>
-
-            {/* Remember & Forgot Password */}
-            <div className="flex items-center justify-between mt-1 mb-2 px-1">
-              <label className="flex items-center gap-2 cursor-pointer group">
-                <div className="w-[14px] h-[14px] rounded-[3px] border border-slate-300 bg-white group-hover:border-[#ff5a36] transition-colors flex items-center justify-center">
-                  <input type="checkbox" className="sr-only peer" />
-                </div>
-                <span className="text-[12px] text-slate-500 font-medium group-hover:text-slate-700 transition-colors">Remember login</span>
-              </label>
-              <a href="#" className="text-[12px] font-semibold text-[#635BFF] hover:text-[#ff5a36] underline decoration-[#635BFF]/30 underline-offset-2 transition-colors">Forget Password?</a>
-            </div>
-
-            {/* Submit */}
-            <SubmitButton />
-          </form>
+          {/* Login Form (Client Component) */}
+          <LoginForm error={error} />
 
           {/* Footer */}
           <div className="mt-8 text-center">

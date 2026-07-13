@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, Search, Info, ChevronDown, Check, CheckCircle2, LogOut, Key } from "lucide-react";
+import { Bell, Search, Info, ChevronDown, Check, CheckCircle2, LogOut, Key, Menu } from "lucide-react";
 import { useAppContext } from "@/store/AppContext";
 import { useState, useRef, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -9,7 +9,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/utils/supabase/client";
 
-export function TopBar({ title }: { title?: string }) {
+export function TopBar({ title, onMenuToggle }: { title?: string, onMenuToggle?: () => void }) {
   const { users, tenants, currentUser, setCurrentUser, notifications, markNotificationRead, markAllNotificationsRead } = useAppContext();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
@@ -75,9 +75,15 @@ export function TopBar({ title }: { title?: string }) {
   const unreadCount = userNotifications.filter(n => !n.read).length;
 
   return (
-    <div className="flex items-center justify-between w-full mt-2 mb-6 z-40 relative">
-      <div className="flex items-center gap-2 font-bold text-xl px-2">
-        <span className="text-[#ff5a36]">Call</span>Center
+    <div className="flex items-center justify-between w-full mt-1 md:mt-2 mb-4 md:mb-6 z-40 relative">
+      <div className="flex items-center gap-1 md:gap-2 font-bold text-lg md:text-xl px-1 md:px-2">
+        <button 
+          onClick={onMenuToggle}
+          className="md:hidden p-1.5 mr-1 text-slate-500 hover:text-[#ff5a36] hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+        <span className="text-[#ff5a36]">Call</span><span className="hidden sm:inline">Suite</span><span className="sm:hidden">S</span>
       </div>
 
       <div className="hidden lg:flex items-center bg-white dark:bg-card rounded-full p-1.5 shadow-sm">
