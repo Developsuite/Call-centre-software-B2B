@@ -433,13 +433,28 @@ export function AppProvider({ children, serverUserId }: { children: ReactNode, s
     const notes = sanitizeInput(rawNotes, 2000);
 
     const currentSale = sales.find(s => s.id === id);
+    if (!currentSale) return;
+
+    // If the note hasn't changed, do nothing (prevents blank/duplicate notifications)
+    if ((currentSale.processorNotes || "") === notes) return;
+
+    let actionLabel = "Note Added";
+    let notifTitle = "New Processor Note";
+    let notifMsg = `${currentUser.name} added a note: "${notes}"`;
+
+    if (notes === "") {
+      actionLabel = "Note Cleared";
+      notifTitle = "Processor Note Cleared";
+      notifMsg = `${currentUser.name} cleared the processor note.`;
+    }
+
     const newLog = {
-      action: "Note Added",
+      action: actionLabel,
       details: notes,
       by: currentUser.name,
       timestamp: Date.now()
     };
-    const updatedHistory = [...(currentSale?.historyLogs || []), newLog];
+    const updatedHistory = [...(currentSale.historyLogs || []), newLog];
 
     setSales(prev => prev.map(s => s.id === id ? { ...s, processorNotes: notes, processorName: currentUser.name, historyLogs: updatedHistory } : s))
 
@@ -453,8 +468,8 @@ export function AppProvider({ children, serverUserId }: { children: ReactNode, s
     if (updatedSale) {
       await supabase.from('notifications').insert({
         user_id: updatedSale.agent_id,
-        title: 'New Processor Note',
-        message: `${currentUser.name} added a note: "${notes}"`,
+        title: notifTitle,
+        message: notifMsg,
         sale_id: id
       })
     }
