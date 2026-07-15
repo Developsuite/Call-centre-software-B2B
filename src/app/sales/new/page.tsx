@@ -91,13 +91,13 @@ export default function NewSalePage() {
 
   return (
     <DashboardLayout title="New Sale Application">
-      <div className="max-w-[98%] mx-auto w-full flex flex-col gap-5 relative pb-6 h-[calc(100vh-8rem)]">
+      <div className="max-w-[98%] mx-auto w-full flex flex-col gap-5 relative pb-6 lg:h-[calc(100vh-8rem)] min-h-[calc(100vh-8rem)]">
         
         {/* Background glow */}
         <div className="absolute top-[30%] left-[50%] -translate-x-1/2 w-[60%] h-[40%] bg-[#ff5a36]/5 dark:bg-[#ff5a36]/10 blur-[120px] rounded-full pointer-events-none" />
 
         {/* 3-Column Grid Container - No Scrolling Required */}
-        <fieldset disabled={isSubmitting} className={cn("grid grid-cols-1 lg:grid-cols-3 gap-6 relative z-10 h-full", isSubmitting && "opacity-70 pointer-events-none")}>
+        <fieldset disabled={isSubmitting} className={cn("grid grid-cols-1 lg:grid-cols-3 gap-6 relative z-10 lg:h-full", isSubmitting && "opacity-70 pointer-events-none")}>
           
           {/* COLUMN 1: Basic Info */}
           <Card className="rounded-[1.5rem] border border-[#ff5a36]/10 shadow-[0_4px_20px_rgba(255,90,54,0.03)] bg-white dark:bg-card p-6 flex flex-col h-full">

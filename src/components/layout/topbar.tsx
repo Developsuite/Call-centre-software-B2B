@@ -83,7 +83,7 @@ export function TopBar({ title, onMenuToggle }: { title?: string, onMenuToggle?:
         >
           <Menu className="w-5 h-5" />
         </button>
-        <span className="text-[#ff5a36]">Call</span><span className="hidden sm:inline">Suite</span><span className="sm:hidden">S</span>
+        <span className="text-[#ff5a36]">Voice</span><span className="hidden sm:inline">Link</span><span className="sm:hidden">L</span>
       </div>
 
       <div className="hidden lg:flex items-center bg-white dark:bg-card rounded-full p-1.5 shadow-sm">
