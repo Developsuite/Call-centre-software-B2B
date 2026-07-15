@@ -49,7 +49,8 @@ export default function NewSalePage() {
     zipCode: "",
     status: "Pending",
     assignedTo: "Unassigned",
-    notes: ""
+    notes: "",
+    offered: ""
   })
 
   const usCities = [
@@ -374,6 +375,16 @@ export default function NewSalePage() {
             </div>
             
             <div className="flex flex-col flex-1 mt-2">
+              <div className="space-y-1.5 flex flex-col mb-4">
+                <label className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Offered</label>
+                <textarea 
+                  value={formData.offered}
+                  onChange={(e) => setFormData({ ...formData, offered: e.target.value })}
+                  placeholder="What was offered?" 
+                  className="w-full min-h-[60px] p-3 text-sm bg-slate-50/50 dark:bg-background border border-[#ff5a36]/30 hover:border-[#ff5a36]/60 rounded-xl text-slate-800 dark:text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#ff5a36] focus-visible:border-[#ff5a36] transition-all resize-none" 
+                />
+              </div>
+
               <div className="space-y-1.5 flex flex-col mb-4">
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Assign Processor</label>
                   <select
