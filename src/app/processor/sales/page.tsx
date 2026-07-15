@@ -56,7 +56,7 @@ export default function ProcessorSalesPage() {
 
   const [searchQuery, setSearchQuery] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState("All");
-  const [dateFilter, setDateFilter] = React.useState("Today");
+  const [dateFilter, setDateFilter] = React.useState("All Time");
   const [customDate, setCustomDate] = React.useState("");
 
   if (!isLoaded) {
