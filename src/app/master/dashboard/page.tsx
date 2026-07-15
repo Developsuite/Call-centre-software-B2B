@@ -3,7 +3,7 @@
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { useAppContext } from "@/store/AppContext";
 import { Card } from "@/components/ui/card";
-import { Server, Building2, Users, PlusCircle, Shield, Briefcase, UserCircle, Download, MoreHorizontal, Pencil, Trash2, Power, RotateCcw, AlertTriangle, Eye, Printer } from "lucide-react";
+import { Server, Building2, Users, PlusCircle, Shield, Briefcase, UserCircle, Download, MoreHorizontal, Pencil, Trash2, Power, RotateCcw, AlertTriangle, Eye, Printer, Database } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { exportToCSV } from "@/lib/export";
