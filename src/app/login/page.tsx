@@ -16,7 +16,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         <div className="relative w-full h-full overflow-hidden rounded-3xl">
           <Image
             src="/image.jpg"
-            alt="Call Suite background"
+            alt="VoiceLink background"
             fill
             className="object-cover"
             priority
@@ -33,7 +33,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             <div className="w-8 h-8 rounded-[8px] bg-[#ff5a36] flex items-center justify-center shadow-md shadow-[#ff5a36]/20">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z"/></svg>
             </div>
-            <span className="text-[18px] font-bold text-slate-800 tracking-tight">Call Suite</span>
+            <span className="text-[18px] font-bold text-slate-800 tracking-tight">VoiceLink</span>
           </div>
 
           {/* Heading */}
@@ -48,7 +48,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           {/* Footer */}
           <div className="mt-8 text-center">
             <p className="text-center text-[10px] font-medium text-slate-400">
-              Call Suite Developed by Developsuite
+              VoiceLink Developed by Developsuite
             </p>
           </div>
 

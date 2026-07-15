@@ -143,9 +143,14 @@ export default function LiveSalesPage() {
         <div className="flex flex-col gap-3 relative mt-2">
           
           {recentSales.length === 0 ? (
-            <div className="py-24 text-center text-slate-500 flex flex-col items-center bg-slate-950 rounded-[2rem] border border-white/5 shadow-2xl">
-              <Zap className="w-16 h-16 mb-6 text-slate-800 animate-pulse" />
-              <p className="text-lg font-medium tracking-wide">Awaiting Data Packets...</p>
+            <div className="flex items-center justify-center py-12">
+              <div className="flex items-center gap-3 px-5 py-3 rounded-full border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm">
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#ff5a36] opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#ff5a36]"></span>
+                </span>
+                <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Awaiting live packets...</p>
+              </div>
             </div>
           ) : (
             <div className="flex flex-col gap-3">
