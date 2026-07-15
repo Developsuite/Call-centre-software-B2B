@@ -60,6 +60,8 @@ export default function LiveSalesPage() {
   // Top metrics
   const now = new Date()
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+  const twentyFourHoursAgo = Date.now() - 24 * 60 * 60 * 1000
+  const recentSales = tenantSales.filter(s => s.timestamp >= twentyFourHoursAgo)
   const todaysSales = tenantSales.filter(s => s.timestamp >= startOfToday)
   const connectedToday = todaysSales.filter(s => s.status === "Connected").length
   const pendingOverall = tenantSales.filter(s => s.status === "Pending" || s.status === "In Process").length
@@ -140,14 +142,14 @@ export default function LiveSalesPage() {
         {/* Premium Data Stream Container */}
         <div className="flex flex-col gap-3 relative mt-2">
           
-          {tenantSales.length === 0 ? (
+          {recentSales.length === 0 ? (
             <div className="py-24 text-center text-slate-500 flex flex-col items-center bg-slate-950 rounded-[2rem] border border-white/5 shadow-2xl">
               <Zap className="w-16 h-16 mb-6 text-slate-800 animate-pulse" />
               <p className="text-lg font-medium tracking-wide">Awaiting Data Packets...</p>
             </div>
           ) : (
             <div className="flex flex-col gap-3">
-              {tenantSales.slice(0, 50).map((sale, index) => (
+              {recentSales.slice(0, 50).map((sale, index) => (
                 <div 
                   key={sale.id} 
                   className="group flex flex-col md:flex-row gap-4 items-start md:items-center p-4 bg-transparent border-2 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 rounded-2xl transition-all duration-300 animate-in slide-in-from-right-8 fade-in shadow-none cursor-default"
