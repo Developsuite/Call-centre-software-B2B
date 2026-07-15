@@ -553,7 +553,13 @@ export function AppProvider({ children, serverUserId }: { children: ReactNode, s
   }
 
   const deleteSale = async (id: string) => {
-    await supabase.from('sales').delete().eq('id', id)
+    const { error } = await supabase.from('sales').delete().eq('id', id);
+    if (error) {
+      toast.error("Failed to delete sale: " + error.message);
+    } else {
+      setSales(prev => prev.filter(s => s.id !== id));
+      toast.success("Sale deleted");
+    }
   }
 
   const addTenant = async (name: string, avatarUrl?: string) => {

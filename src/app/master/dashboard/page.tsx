@@ -10,7 +10,7 @@ import { exportToCSV } from "@/lib/export";
 import { 
   createTenant, updateTenant, deleteTenant, 
   createUser, updateUser, deleteUser, resetUserPassword, disableUser, 
-  clearAllSalesData, generateTestData, fetchUserEmails
+  clearAllSalesData, generateTestData, fetchUserEmails, wipeUserSales
 } from "../actions";
 
 export default function MasterDashboard() {
@@ -172,6 +172,18 @@ export default function MasterDashboard() {
     if (res.error) showToast(res.error, 'error');
     else {
       showToast("User Deleted", 'success');
+      window.location.reload();
+    }
+    setLoading(false);
+  }
+
+  const handleWipeUserSales = async (id: string, name: string) => {
+    if(!confirm(`WARNING: This will permanently delete ALL sales for agent ${name}. Proceed?`)) return;
+    setLoading(true);
+    const res = await wipeUserSales(id);
+    if (res.error) showToast(res.error, 'error');
+    else {
+      showToast("Agent's Sales Wiped", 'success');
       window.location.reload();
     }
     setLoading(false);
@@ -486,6 +498,9 @@ export default function MasterDashboard() {
                                 <button title="Edit User" onClick={() => handleEditClick(user)} className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg"><Pencil className="w-4 h-4" /></button>
                                 <button title="Reset Password" onClick={() => handleResetPassword(user.id, user.name)} className="p-2 text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg"><RotateCcw className="w-4 h-4" /></button>
                                 <button title="Disable Login" onClick={() => handleDisableUser(user.id, user.name)} className="p-2 text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-lg"><Power className="w-4 h-4" /></button>
+                                {user.role === 'Agent' && (
+                                  <button title="Wipe Sales Data" onClick={() => handleWipeUserSales(user.id, user.name)} className="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg"><Database className="w-4 h-4" /></button>
+                                )}
                                 <button title="Permanently Delete User" onClick={() => handleDeleteUser(user.id, user.name)} className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"><Trash2 className="w-4 h-4" /></button>
                               </td>
                             </>

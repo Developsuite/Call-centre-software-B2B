@@ -245,6 +245,20 @@ export async function resetTenant(tenantId: string): Promise<{ success?: boolean
   }
 }
 
+export async function wipeUserSales(userId: string): Promise<{ success?: boolean, error?: string }> {
+  const auth = await verifySuperAdmin();
+  if (!auth.authorized) return { error: `Unauthorized: ${auth.error}` }
+  const admin = getAdminClient()
+  try {
+    const { error } = await admin.from('sales').delete().eq('agent_id', userId);
+    if (error) throw error;
+    revalidatePath('/master/dashboard')
+    return { success: true }
+  } catch(e: any) {
+    return { error: e.message }
+  }
+}
+
 export async function generateTestData() {
   const auth = await verifySuperAdmin();
   if (!auth.authorized) return { error: `Unauthorized: ${auth.error}` }
