@@ -88,15 +88,16 @@ export default function AdminDashboardPage() {
   const convRate = totalVolume > 0 ? Math.round((connectedCount / totalVolume) * 100) : 0
 
   // 3. AGENT LEADERBOARD (Regardless of filter, but scoped if needed. Usually scoped to the filtered sales)
-  const agentStatsMap = new Map<string, { total: number, connected: number, rejected: number, pending: number, needInfo: number }>()
+  const agentStatsMap = new Map<string, { total: number, connected: number, rejected: number, pending: number, needInfo: number, processed: number }>()
   
   filteredSales.forEach(sale => {
-    const current = agentStatsMap.get(sale.agent) || { total: 0, connected: 0, rejected: 0, pending: 0, needInfo: 0 }
+    const current = agentStatsMap.get(sale.agent) || { total: 0, connected: 0, rejected: 0, pending: 0, needInfo: 0, processed: 0 }
     current.total += 1
     if (sale.status === "Connected") current.connected += 1
     if (sale.status === "Rejected") current.rejected += 1
     if (sale.status === "Pending" || sale.status === "In Process") current.pending += 1
     if (sale.status === "Need Info") current.needInfo += 1
+    if (sale.status === "Processed") current.processed += 1
     agentStatsMap.set(sale.agent, current)
   })
 
@@ -109,8 +110,8 @@ export default function AdminDashboardPage() {
     .sort((a, b) => b.connected - a.connected || b.total - a.total) // Sort by most connected, then most volume
 
   // 4. PROCESSOR STATS
-  const processorStatsMap = new Map<string, { totalHandled: number, connected: number, rejected: number, needInfo: number }>()
-  const selfProcessedStatsMap = new Map<string, { totalHandled: number, connected: number, rejected: number, needInfo: number }>()
+  const processorStatsMap = new Map<string, { totalHandled: number, connected: number, rejected: number, needInfo: number, processed: number }>()
+  const selfProcessedStatsMap = new Map<string, { totalHandled: number, connected: number, rejected: number, needInfo: number, processed: number }>()
   
   filteredSales.forEach(sale => {
     // Only track if a processor actually interacted with it (has a processorName)
@@ -119,11 +120,12 @@ export default function AdminDashboardPage() {
       const targetMap = isSelfProcessed ? selfProcessedStatsMap : processorStatsMap;
       const keyName = isSelfProcessed ? `${sale.processorName} (Myself)` : sale.processorName;
       
-      const current = targetMap.get(keyName) || { totalHandled: 0, connected: 0, rejected: 0, needInfo: 0 }
+      const current = targetMap.get(keyName) || { totalHandled: 0, connected: 0, rejected: 0, needInfo: 0, processed: 0 }
       current.totalHandled += 1
       if (sale.status === "Connected") current.connected += 1
       if (sale.status === "Rejected") current.rejected += 1
       if (sale.status === "Need Info") current.needInfo += 1
+      if (sale.status === "Processed") current.processed += 1
       targetMap.set(keyName, current)
     }
   })
@@ -412,6 +414,7 @@ export default function AdminDashboardPage() {
                     <th className="py-3 px-4">Rank</th>
                     <th className="py-3 px-4">Agent Name</th>
                     <th className="py-3 px-4 text-center">Volume</th>
+                    <th className="py-3 px-4 text-center text-teal-500">Processed</th>
                     <th className="py-3 px-4 text-center text-emerald-500">Conn.</th>
                     <th className="py-3 px-4 text-center text-red-500">Rej.</th>
                     <th className="py-3 px-4 text-right">Conv. Rate</th>
@@ -428,6 +431,7 @@ export default function AdminDashboardPage() {
                       </td>
                       <td className="py-3 px-4 font-bold text-slate-800 dark:text-white">{agent.agent}</td>
                       <td className="py-3 px-4 text-center font-medium text-slate-600 dark:text-slate-400">{agent.total}</td>
+                      <td className="py-3 px-4 text-center font-medium text-teal-600 dark:text-teal-400">{agent.processed}</td>
                       <td className="py-3 px-4 text-center font-bold text-emerald-600 dark:text-emerald-400">{agent.connected}</td>
                       <td className="py-3 px-4 text-center font-medium text-red-400">{agent.rejected}</td>
                       <td className="py-3 px-4 text-right">
@@ -438,7 +442,7 @@ export default function AdminDashboardPage() {
                     </tr>
                   )) : (
                     <tr>
-                      <td colSpan={6} className="py-8 text-center text-slate-400 text-sm italic">No agent data matches this filter.</td>
+                      <td colSpan={7} className="py-8 text-center text-slate-400 text-sm italic">No agent data matches this filter.</td>
                     </tr>
                   )}
                 </tbody>
@@ -465,6 +469,7 @@ export default function AdminDashboardPage() {
                   <tr className="text-slate-400 font-bold border-b border-slate-100 dark:border-slate-800 uppercase tracking-wider text-[10px]">
                     <th className="py-3 px-4">Processor Name</th>
                     <th className="py-3 px-4 text-center">Handled</th>
+                    <th className="py-3 px-4 text-center text-teal-500">Processed</th>
                     <th className="py-3 px-4 text-center text-emerald-500">Approved</th>
                     <th className="py-3 px-4 text-center text-amber-500">Need Info</th>
                     <th className="py-3 px-4 text-center text-red-500">Declined</th>
@@ -478,13 +483,14 @@ export default function AdminDashboardPage() {
                         {proc.name}
                       </td>
                       <td className="py-3 px-4 text-center font-bold text-slate-800 dark:text-white">{proc.totalHandled}</td>
+                      <td className="py-3 px-4 text-center font-medium text-teal-600">{proc.processed}</td>
                       <td className="py-3 px-4 text-center font-medium text-emerald-600">{proc.connected}</td>
                       <td className="py-3 px-4 text-center font-medium text-amber-600">{proc.needInfo}</td>
                       <td className="py-3 px-4 text-center font-medium text-red-400">{proc.rejected}</td>
                     </tr>
                   )) : (
                     <tr>
-                      <td colSpan={5} className="py-8 text-center text-slate-400 text-sm italic">No processor data matches this filter.</td>
+                      <td colSpan={6} className="py-8 text-center text-slate-400 text-sm italic">No processor data matches this filter.</td>
                     </tr>
                   )}
                 </tbody>
@@ -514,6 +520,7 @@ export default function AdminDashboardPage() {
                   <tr className="text-slate-400 font-bold border-b border-slate-100 dark:border-slate-800 uppercase tracking-wider text-[10px]">
                     <th className="py-3 px-4">Agent Name</th>
                     <th className="py-3 px-4 text-center">Handled</th>
+                    <th className="py-3 px-4 text-center text-teal-500">Processed</th>
                     <th className="py-3 px-4 text-center text-emerald-500">Approved</th>
                     <th className="py-3 px-4 text-center text-amber-500">Need Info</th>
                     <th className="py-3 px-4 text-center text-red-500">Declined</th>
@@ -527,6 +534,7 @@ export default function AdminDashboardPage() {
                         {proc.name}
                       </td>
                       <td className="py-3 px-4 text-center font-bold text-slate-800 dark:text-white">{proc.totalHandled}</td>
+                      <td className="py-3 px-4 text-center font-medium text-teal-600">{proc.processed}</td>
                       <td className="py-3 px-4 text-center font-medium text-emerald-600">{proc.connected}</td>
                       <td className="py-3 px-4 text-center font-medium text-amber-600">{proc.needInfo}</td>
                       <td className="py-3 px-4 text-center font-medium text-red-400">{proc.rejected}</td>

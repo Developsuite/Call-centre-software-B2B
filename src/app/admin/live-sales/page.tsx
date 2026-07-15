@@ -161,9 +161,14 @@ export default function LiveSalesPage() {
                   style={{ animationFillMode: 'both', animationDelay: `${Math.min(index * 50, 500)}ms` }}
                 >
                   <div className="w-40 shrink-0 flex flex-col gap-2 pl-2">
-                     <span className="text-xs font-bold text-slate-400 dark:text-slate-500 flex items-center gap-1.5 font-mono">
-                        <Clock className="w-3.5 h-3.5" /> {getRelativeTime(sale.timestamp)}
-                     </span>
+                     <div className="flex flex-col gap-0.5">
+                       <span className="text-xs font-bold text-slate-400 dark:text-slate-500 flex items-center gap-1.5 font-mono">
+                          <Clock className="w-3.5 h-3.5" /> {getRelativeTime(sale.timestamp)}
+                       </span>
+                       <span className="text-[10px] text-slate-400 dark:text-slate-600 font-mono pl-5">
+                         {new Date(sale.timestamp).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                       </span>
+                     </div>
                      <div className={cn("px-3 py-1 rounded-lg text-[10px] font-black tracking-widest uppercase flex items-center gap-2 w-fit shadow-sm", getStatusBadgeStyle(sale.status))}>
                         {getStatusIcon(sale.status)}
                         {sale.status}
