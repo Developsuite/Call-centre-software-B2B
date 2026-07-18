@@ -30,7 +30,7 @@ export default async function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-
+        <meta name="google-site-verification" content="6afGxWEhli5ghGunqq9_ZT573-1g7a2PXQOP7wuBm0Y" />
       </head>
       <body className={`${figtree.variable} font-sans antialiased min-h-screen bg-[#fafafa] dark:bg-black`}>
         <AppProvider serverUserId={serverUserId}>
