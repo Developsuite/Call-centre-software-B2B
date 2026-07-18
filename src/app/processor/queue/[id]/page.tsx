@@ -57,10 +57,10 @@ export default function SaleDetailPage({ params }: { params: Promise<{ id: strin
 
   return (
     <DashboardLayout title={`Processing Sale: ${saleId.split('-')[0].toUpperCase()}`}>
-      <div className="max-w-[98%] mx-auto w-full flex flex-col gap-5 relative pb-6 h-[calc(100vh-8rem)]">
+      <div className="max-w-[98%] mx-auto w-full flex flex-col gap-5 relative pb-6 lg:h-[calc(100vh-8rem)] min-h-[calc(100vh-8rem)]">
         
         {/* Top Header Row */}
-        <div className="flex items-center justify-between z-20">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 z-20">
           <Link href="/processor/queue">
             <Button variant="ghost" className="h-10 rounded-xl font-bold text-slate-500 hover:text-slate-800 dark:hover:text-white px-4 cursor-pointer">
               <ArrowLeft className="w-4 h-4 mr-2" />
@@ -85,8 +85,8 @@ export default function SaleDetailPage({ params }: { params: Promise<{ id: strin
         {/* Background glow */}
         <div className="absolute top-[30%] left-[50%] -translate-x-1/2 w-[60%] h-[40%] bg-[#ff5a36]/5 dark:bg-[#ff5a36]/10 blur-[120px] rounded-full pointer-events-none" />
 
-        {/* 3-Column Grid Container - No Scrolling Required */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 relative z-10 h-[calc(100%-4rem)]">
+        {/* 3-Column Grid Container */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 relative z-10 flex-1 lg:h-[calc(100%-4rem)]">
           
           {/* COLUMN 1: Basic Info (READ-ONLY) */}
           <Card className="rounded-[1.5rem] border border-slate-100 dark:border-border shadow-[0_4px_20px_rgba(0,0,0,0.03)] bg-white dark:bg-card p-6 flex flex-col h-full">
