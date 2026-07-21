@@ -53,11 +53,14 @@ export function TopBar({ title, onMenuToggle }: { title?: string, onMenuToggle?:
     { name: "My Teams", href: "/admin/teams", roles: ["SuperAdmin", "Admin"] },
     { name: "All Agents", href: "/admin/agents", roles: ["Admin"] },
     { name: "All Processors", href: "/admin/processors", roles: ["Admin"] },
+    { name: "HR Dashboard", href: "/hr", roles: ["HR", "Admin", "SuperAdmin"] },
+    { name: "Employees", href: "/hr/employees", roles: ["HR", "Admin", "SuperAdmin"] },
+    { name: "Payroll", href: "/hr/payroll", roles: ["HR", "Admin", "SuperAdmin"] },
     { name: "Agent Dashboard", href: "/", roles: ["Agent"] },
     { name: "My Sales", href: "/sales", roles: ["Agent"] },
     { name: "Processor Dashboard", href: "/processor/queue", roles: ["Processor"] },
     { name: "All Sales", href: "/processor/sales", roles: ["Processor"] },
-    { name: "Settings", href: "/settings", roles: ["SuperAdmin", "Admin", "Processor", "Agent"] },
+    { name: "Settings", href: "/settings", roles: ["SuperAdmin", "Admin", "HR", "Processor", "Agent"] },
   ];
 
   const topNav = allMenuItems.filter(item => {

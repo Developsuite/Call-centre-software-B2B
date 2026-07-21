@@ -37,7 +37,7 @@ export default function UsersPage() {
   const [newUserName, setNewUserName] = useState("");
   const [newUserEmail, setNewUserEmail] = useState("");
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
-  const [newUserRole, setNewUserRole] = useState<"Admin" | "Processor" | "Agent">("Agent");
+  const [newUserRole, setNewUserRole] = useState<"Admin" | "Processor" | "Agent" | "HR">("Agent");
   const [newUserTenant, setNewUserTenant] = useState("");
   const [newUserTeam, setNewUserTeam] = useState("");
   const [isNewTeam, setIsNewTeam] = useState(false);
@@ -233,6 +233,7 @@ export default function UsersPage() {
                     <option value="Agent">Agent</option>
                     <option value="Processor">Processor</option>
                     <option value="Admin">Admin</option>
+                    <option value="HR">HR</option>
                     <option value="SuperAdmin">SuperAdmin</option>
                   </select>
                   
@@ -420,6 +421,7 @@ export default function UsersPage() {
                       <option value="Agent">Agent</option>
                       <option value="Processor">Processor</option>
                       <option value="Admin">Admin</option>
+                      <option value="HR">HR</option>
                     </select>
                   </div>
                   {newUserRole === "Agent" && (

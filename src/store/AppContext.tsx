@@ -6,7 +6,7 @@ import { toast } from "sonner"
 import { sanitizeInput, sanitizeFormData } from "@/utils/sanitize"
 
 export type SaleStatus = "Pending" | "In Process" | "Need Info" | "Processed" | "Rejected" | "Connected"
-export type UserRole = "SuperAdmin" | "Admin" | "Processor" | "Agent"
+export type UserRole = "SuperAdmin" | "Admin" | "HR" | "Processor" | "Agent"
 
 export interface Tenant {
   id: string
@@ -111,7 +111,8 @@ interface AppContextType {
   updateTenant: (id: string, updates: Partial<Tenant>) => Promise<void>
   
   users: User[]
-  addUser: (user: any) => Promise<void> // Not used directly in new setup (we'll use API route for secure auth creation)
+  addUser: (userData: any) => Promise<void>
+  deleteUser: (id: string) => Promise<void>
   updateUserStatus: (id: string, status: "Active" | "Disabled") => Promise<void>
   updateUser: (id: string, updates: Partial<User>) => Promise<void>
   updateUserTeamAndLeadStatus: (id: string, team: string, isTeamLead: boolean) => Promise<void>
@@ -576,10 +577,49 @@ export function AppProvider({ children, serverUserId }: { children: ReactNode, s
     await supabase.from('organizations').update(dbUpdates).eq('id', id)
   }
 
-  const addUser = async (user: any) => {
-    // This requires an API route or server action to safely use the service_role key.
-    // For now, it's just a placeholder since we haven't built the create-employee form yet.
-    console.log("Use API route to create user")
+  const addUser = async (userData: any) => {
+    try {
+      const response = await fetch('/api/hr/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(userData),
+      });
+      
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to create user');
+      }
+
+      // Refresh the users list after successful creation
+      const { data } = await supabase.from('profiles').select('*');
+      if (data) setUsers(data.map(mapProfileToUser));
+      
+      toast.success("User created successfully!");
+    } catch (error: any) {
+      toast.error(error.message);
+      throw error;
+    }
+  }
+
+  const deleteUser = async (id: string) => {
+    try {
+      const response = await fetch(`/api/hr/users?id=${id}`, {
+        method: 'DELETE',
+      });
+      
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to delete user');
+      }
+
+      setUsers(prev => prev.filter(u => u.id !== id));
+      toast.success("User deleted successfully!");
+    } catch (error: any) {
+      toast.error(error.message);
+      throw error;
+    }
   }
 
   const updateUserStatus = async (id: string, status: "Active" | "Disabled") => {
@@ -700,7 +740,7 @@ export function AppProvider({ children, serverUserId }: { children: ReactNode, s
     <AppContext.Provider value={{ 
       sales, addSale, updateSaleStatus, updateSaleProcessorNotes, editSale, deleteSale,
       tenants, addTenant, updateTenant,
-      users, addUser, updateUserStatus, updateUser, updateUserTeamAndLeadStatus,
+      users, addUser, deleteUser, updateUserStatus, updateUser, updateUserTeamAndLeadStatus,
       teams, addTeam, updateTeam, deleteTeam,
       currentUser, setCurrentUser, isLoaded,
       notifications, markNotificationRead, markAllNotificationsRead,

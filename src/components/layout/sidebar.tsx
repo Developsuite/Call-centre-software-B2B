@@ -20,7 +20,8 @@ import {
   Headset,
   Network,
   UsersRound,
-  Activity
+  Activity,
+  Banknote
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -81,11 +82,14 @@ export function Sidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: { isMobileMen
     { name: "My Teams", href: "/admin/teams", icon: Network, roles: ["SuperAdmin", "Admin"] },
     { name: "All Agents", href: "/admin/agents", icon: Headset, roles: ["Admin"] },
     { name: "All Processors", href: "/admin/processors", icon: Briefcase, roles: ["Admin"] },
+    { name: "HR Dashboard", href: "/hr", icon: LayoutDashboard, roles: ["HR", "Admin", "SuperAdmin"] },
+    { name: "Employees", href: "/hr/employees", icon: UsersRound, roles: ["HR", "Admin", "SuperAdmin"] },
+    { name: "Payroll", href: "/hr/payroll", icon: Banknote, roles: ["HR", "Admin", "SuperAdmin"] },
     { name: "Agent Dashboard", href: "/", icon: LayoutDashboard, roles: ["Agent"] },
     { name: "My Sales", href: "/sales", icon: ListChecks, roles: ["Agent"] },
     { name: "Processor Dashboard", href: "/processor/queue", icon: Briefcase, roles: ["Processor"] },
     { name: "All Sales", href: "/processor/sales", icon: ListChecks, roles: ["Processor"] },
-    { name: "Settings", href: "/settings", icon: Settings, roles: ["SuperAdmin", "Admin", "Processor", "Agent"] },
+    { name: "Settings", href: "/settings", icon: Settings, roles: ["SuperAdmin", "Admin", "HR", "Processor", "Agent"] },
   ];
 
   const menuItems = allMenuItems.filter(item => {
