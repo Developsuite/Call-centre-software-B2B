@@ -58,9 +58,9 @@ export function EmployeeModal({ isOpen, onClose, employee }: EmployeeModalProps)
         // Edit mode
         await updateUser(employee.id, {
           name,
-          team: selectedTeam ? selectedTeam.name : null,
-          team_id: teamId || null,
-          is_team_lead: isTeamLead
+          team: selectedTeam ? selectedTeam.name : undefined,
+          team_id: teamId || undefined,
+          isTeamLead: isTeamLead
           // Role isn't easily editable once set due to RLS, but if needed we add it here.
         });
       } else {
@@ -71,8 +71,8 @@ export function EmployeeModal({ isOpen, onClose, employee }: EmployeeModalProps)
           full_name: name,
           role,
           organization_id: currentUser?.tenantId,
-          team: selectedTeam ? selectedTeam.name : null,
-          team_id: teamId || null,
+          team: selectedTeam ? selectedTeam.name : undefined,
+          team_id: teamId || undefined,
           is_team_lead: isTeamLead
         });
       }
