@@ -44,6 +44,7 @@ export default function SalesAgentDashboard() {
       if (currentUser.role === "SuperAdmin") router.push("/master/dashboard");
       else if (currentUser.role === "Admin") router.push("/admin");
       else if (currentUser.role === "Processor") router.push("/processor/queue");
+      else if (currentUser.role === "HR") router.push("/hr");
     }
   }, [isLoaded, currentUser, router]);
 
@@ -82,6 +83,16 @@ export default function SalesAgentDashboard() {
           <div className="text-4xl">⚠️</div>
           <h2 className="text-xl font-bold text-slate-800 dark:text-white">Profile Not Found</h2>
           <p className="text-slate-500 max-w-md text-sm">Your account does not have a profile linked to it. Please contact your SuperAdmin to provision your profile.</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (currentUser.role !== "Agent") {
+    return (
+      <DashboardLayout title="Redirecting...">
+        <div className="flex items-center justify-center h-[50vh]">
+          <div className="w-6 h-6 border-2 border-[#ff5a36] border-t-transparent rounded-full animate-spin"></div>
         </div>
       </DashboardLayout>
     );
