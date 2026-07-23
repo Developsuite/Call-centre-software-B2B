@@ -21,9 +21,12 @@ import {
   Calendar as CalendarIcon,
   Upload,
   Image as ImageIcon,
-  ArrowLeft
+  ArrowLeft,
+  Loader2
 } from "lucide-react"
 import Link from "next/link"
+import { createClient } from "@/utils/supabase/client"
+import { toast } from "sonner"
 
 export default function NewHREmployeePage() {
   const router = useRouter()
@@ -50,6 +53,43 @@ export default function NewHREmployeePage() {
   })
 
   const tenantTeams = teams.filter(t => t.organization_id === currentUser?.tenantId);
+  const supabase = createClient();
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [isUploadingDoc, setIsUploadingDoc] = useState(false);
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, field: 'avatar_url' | 'document_url') => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (field === 'avatar_url') setIsUploadingPhoto(true);
+    else setIsUploadingDoc(true);
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
+      const filePath = `${currentUser?.tenantId}/${fileName}`;
+
+      const { error: uploadError, data } = await supabase.storage
+        .from('hr-documents')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('hr-documents')
+        .getPublicUrl(filePath);
+
+      setFormData(prev => ({ ...prev, [field]: publicUrl }));
+      toast.success("File uploaded successfully");
+    } catch (error: any) {
+      toast.error(`Upload failed: ${error.message}`);
+    } finally {
+      if (field === 'avatar_url') setIsUploadingPhoto(false);
+      else setIsUploadingDoc(false);
+    }
+  };
 
   const handleSubmit = async () => {
     if (isSubmitting) return;
@@ -110,9 +150,16 @@ export default function NewHREmployeePage() {
                     ) : (
                         <ImageIcon className="w-6 h-6" />
                     )}
-                    <div className="absolute inset-0 bg-black/50 hidden group-hover:flex items-center justify-center cursor-pointer">
-                        <Upload className="w-4 h-4 text-white" />
-                    </div>
+                    <label className="absolute inset-0 bg-black/50 hidden group-hover:flex items-center justify-center cursor-pointer">
+                        {isUploadingPhoto ? <Loader2 className="w-4 h-4 text-white animate-spin" /> : <Upload className="w-4 h-4 text-white" />}
+                        <input 
+                            type="file" 
+                            accept="image/*" 
+                            className="hidden" 
+                            onChange={(e) => handleFileUpload(e, 'avatar_url')}
+                            disabled={isUploadingPhoto}
+                        />
+                    </label>
                  </div>
                  <div className="flex-1 space-y-1.5">
                     <label className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Photo URL</label>
@@ -196,16 +243,29 @@ export default function NewHREmployeePage() {
               </div>
 
               <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">CNIC / Document Upload URL</label>
+                  <label className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">CNIC / Document Upload</label>
                   <div className="relative flex items-center">
-                    <Upload className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center">
+                        {isUploadingDoc ? <Loader2 className="w-4 h-4 text-slate-400 animate-spin" /> : <Upload className="w-4 h-4 text-slate-400" />}
+                    </div>
                     <Input 
-                      placeholder="Link to document..." 
-                      className={cn(inputClass, "pl-9")} 
-                      value={formData.document_url}
-                      onChange={(e) => setFormData({ ...formData, document_url: e.target.value })}
+                      placeholder="Upload document..." 
+                      className={cn(inputClass, "pl-9 cursor-pointer")} 
+                      value={formData.document_url ? "Document Uploaded ✓" : ""}
+                      readOnly
+                    />
+                    <input 
+                        type="file" 
+                        className="absolute inset-0 opacity-0 cursor-pointer" 
+                        onChange={(e) => handleFileUpload(e, 'document_url')}
+                        disabled={isUploadingDoc}
                     />
                   </div>
+                  {formData.document_url && (
+                    <a href={formData.document_url} target="_blank" rel="noreferrer" className="text-[10px] text-blue-500 hover:underline">
+                        View Uploaded Document
+                    </a>
+                  )}
               </div>
 
             </div>
