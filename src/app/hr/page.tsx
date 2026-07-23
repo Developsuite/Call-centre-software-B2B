@@ -109,7 +109,7 @@ export default function HRDashboardPage() {
               <Banknote className="w-4 h-4 text-white" />
             </div>
             <div className="mt-3">
-              <h3 className="text-2xl font-bold text-white">${totalMonthlyPayroll.toLocaleString()}</h3>
+              <h3 className="text-2xl font-bold text-white">PKR {totalMonthlyPayroll.toLocaleString()}</h3>
             </div>
           </Card>
         </div>
@@ -177,7 +177,7 @@ export default function HRDashboardPage() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-bold text-emerald-600">${user.totalCompensation.toLocaleString()}</p>
+                      <p className="text-sm font-bold text-emerald-600">PKR {user.totalCompensation.toLocaleString()}</p>
                     </div>
                   </div>
                 ))}
