@@ -98,10 +98,8 @@ export default function SalesAgentDashboard() {
     );
   }
 
-  const tenantSales = currentUser?.role === "SuperAdmin" 
-    ? sales 
-    : sales.filter(s => s.tenantId === currentUser?.tenantId && (s.agent_id === currentUser?.id || s.agent === currentUser?.name));
-  
+  const tenantSales = sales.filter(s => s.tenantId === currentUser?.tenantId && (s.agent_id === currentUser?.id || s.agent === currentUser?.name));
+
   // Logical Shift Date (Night shift 7pm to 5am -> offset by 5 hours)
   const getLogicalShiftDate = (timestamp: number) => {
     const d = new Date(timestamp - 5 * 60 * 60 * 1000);
