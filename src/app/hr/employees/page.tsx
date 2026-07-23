@@ -208,9 +208,6 @@ export default function HREmployeesPage() {
                   key={user.id} 
                   className="group relative rounded-2xl bg-white/80 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200/60 dark:border-slate-700/40 overflow-hidden transition-all duration-300 hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 hover:border-slate-300/80 dark:hover:border-slate-600/60"
                 >
-                  {/* Gradient accent bar */}
-                  <div className={`absolute top-0 left-0 right-0 h-[3px] ${isActive ? 'bg-gradient-to-r from-emerald-400 via-emerald-500 to-teal-500' : 'bg-gradient-to-r from-slate-300 to-slate-400 dark:from-slate-600 dark:to-slate-700'}`} />
-                  
                   <div className="p-5">
                     {/* Top row: Avatar + Info + Status */}
                     <div className="flex items-start gap-3.5">
