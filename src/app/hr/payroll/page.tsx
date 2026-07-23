@@ -90,7 +90,7 @@ export default function HRPayrollPage() {
             </div>
             <div className="text-right">
               <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">Total Estimated Run</p>
-              <h2 className="text-2xl font-bold text-emerald-600">${totalPayroll.toLocaleString()}</h2>
+              <h2 className="text-2xl font-bold text-emerald-600">Rs. {totalPayroll.toLocaleString()}</h2>
             </div>
           </div>
           <div className="overflow-x-auto">
@@ -120,13 +120,13 @@ export default function HRPayrollPage() {
                         </span>
                       </td>
                       <td className="py-4 px-6 text-right font-medium text-slate-600 dark:text-slate-400">
-                        ${item.baseSalary.toLocaleString()}
+                        Rs. {item.baseSalary.toLocaleString()}
                       </td>
                       <td className="py-4 px-6 text-right">
                         {item.commissionRate > 0 ? (
                           <span className="inline-flex items-center gap-1 font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-1 rounded-md text-xs">
                             <ArrowUpRight className="w-3 h-3" />
-                            ${item.commissionRate.toLocaleString()}/sale
+                            Rs. {item.commissionRate.toLocaleString()}/sale
                           </span>
                         ) : (
                           <span className="text-slate-400">-</span>
@@ -134,7 +134,7 @@ export default function HRPayrollPage() {
                       </td>
                       <td className="py-4 px-6 text-right">
                         <span className="font-bold text-slate-800 dark:text-white text-base">
-                          ${item.totalCompensation.toLocaleString()}
+                          Rs. {item.totalCompensation.toLocaleString()}
                         </span>
                       </td>
                     </tr>

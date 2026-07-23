@@ -288,41 +288,17 @@ export default function NewHREmployeePage() {
             <div className="flex-1 mt-2 flex flex-col gap-5">
                 <div className="space-y-1.5">
                     <label className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Job Title</label>
-                    <Input 
-                        placeholder="e.g. Senior Sales Rep, Trainer" 
-                        className={inputClass}
+                    <select 
+                        className={cn(inputClass, "w-full px-3")}
                         value={formData.job_title}
                         onChange={(e) => setFormData({ ...formData, job_title: e.target.value })}
-                    />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                        <label className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">System Role</label>
-                        <select 
-                            className={cn(inputClass, "w-full px-3")}
-                            value={formData.role}
-                            onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                        >
-                            <option value="Agent">Agent</option>
-                            <option value="Processor">Processor</option>
-                            <option value="HR">HR</option>
-                            <option value="Admin">Admin</option>
-                        </select>
-                    </div>
-                    <div className="space-y-1.5">
-                        <label className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Team Placement</label>
-                        <select 
-                            className={cn(inputClass, "w-full px-3")}
-                            value={formData.team}
-                            onChange={(e) => setFormData({ ...formData, team: e.target.value })}
-                        >
-                            <option value="">No Team</option>
-                            {tenantTeams.map(t => (
-                                <option key={t.id} value={t.name}>{t.name}</option>
-                            ))}
-                        </select>
-                    </div>
+                    >
+                        <option value="" disabled>Select Job Title</option>
+                        <option value="Trainer">Trainer</option>
+                        <option value="Senior Sales Rep">Senior Sales Rep</option>
+                        <option value="Sales Agent">Sales Agent</option>
+                        <option value="Office Boy">Office Boy</option>
+                    </select>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -393,10 +369,10 @@ export default function NewHREmployeePage() {
             <div className="flex flex-col flex-1 mt-2 gap-5">
               
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Basic Salary ($)</label>
+                <label className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Basic Salary (Rs)</label>
                 <Input 
                     type="number"
-                    placeholder="3000" 
+                    placeholder="30000" 
                     className={inputClass} 
                     value={formData.base_salary}
                     onChange={(e) => setFormData({ ...formData, base_salary: Number(e.target.value) })}
@@ -404,7 +380,7 @@ export default function NewHREmployeePage() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Commission Per Connected Sale ($)</label>
+                <label className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Commission Per Connected Sale (Rs)</label>
                 <Input 
                     type="number"
                     placeholder="50" 
