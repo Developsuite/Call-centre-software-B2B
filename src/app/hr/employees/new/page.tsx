@@ -369,7 +369,7 @@ export default function NewHREmployeePage() {
             <div className="flex flex-col flex-1 mt-2 gap-5">
               
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Basic Salary (Rs)</label>
+                <label className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Basic Salary (PKR)</label>
                 <Input 
                     type="number"
                     placeholder="30000" 
@@ -380,7 +380,7 @@ export default function NewHREmployeePage() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Commission Per Connected Sale (Rs)</label>
+                <label className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Commission Per Connected Sale (PKR)</label>
                 <Input 
                     type="number"
                     placeholder="50" 
