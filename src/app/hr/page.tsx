@@ -114,38 +114,7 @@ export default function HRDashboardPage() {
           </Card>
         </div>
 
-        {/* Roles Breakdown */}
-        <div className="grid grid-cols-3 gap-3 mt-1">
-          <Card className="rounded-[1.25rem] border-none shadow-sm bg-white dark:bg-card p-3 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center shrink-0">
-              <Activity className="w-5 h-5 text-indigo-500" />
-            </div>
-            <div>
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Agents</p>
-              <h3 className="text-xl font-bold text-slate-800 dark:text-white">{agentsCount}</h3>
-            </div>
-          </Card>
 
-          <Card className="rounded-[1.25rem] border-none shadow-sm bg-white dark:bg-card p-3 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-teal-500/10 flex items-center justify-center shrink-0">
-              <Briefcase className="w-5 h-5 text-teal-500" />
-            </div>
-            <div>
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Processors</p>
-              <h3 className="text-xl font-bold text-slate-800 dark:text-white">{processorsCount}</h3>
-            </div>
-          </Card>
-
-          <Card className="rounded-[1.25rem] border-none shadow-sm bg-white dark:bg-card p-3 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#ff5a36]/10 flex items-center justify-center shrink-0">
-              <ShieldCheck className="w-5 h-5 text-[#ff5a36]" />
-            </div>
-            <div>
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Management</p>
-              <h3 className="text-xl font-bold text-slate-800 dark:text-white">{hrCount + tenantUsers.filter(u => u.role === "Admin").length}</h3>
-            </div>
-          </Card>
-        </div>
 
         {/* Quick Overviews Row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-2">
