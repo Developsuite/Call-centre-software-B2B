@@ -97,8 +97,11 @@ export default function NewHREmployeePage() {
     setIsSubmitting(true);
     
     try {
+      const avatarUrlToUse = formData.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.full_name || 'Employee')}&background=random&color=fff&size=150`
+
       await addHREmployee({
         ...formData,
+        avatar_url: avatarUrlToUse,
         probation_end_date: formData.probation_end_date || null as any,
         organization_id: currentUser?.tenantId || ""
       })
