@@ -130,8 +130,9 @@ export default function EditHREmployeePage() {
     setIsSubmitting(true);
     
     try {
-      await updateHREmployee(employeeId, {
-        ...formData
+      await updateHREmployee(params.id as string, {
+        ...formData,
+        probation_end_date: formData.probation_end_date || null as any,
       })
       router.push('/hr/employees')
     } catch (err) {

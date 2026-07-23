@@ -63,7 +63,7 @@ export default function HREmployeesPage() {
       try {
         await updateHREmployee(employee.id, { 
           employment_type: "Full-Time",
-          probation_end_date: "",
+          probation_end_date: null as any,
           joining_date: new Date().toISOString().split('T')[0]
         })
         toast.success(`${employee.full_name} is now Permanent!`)

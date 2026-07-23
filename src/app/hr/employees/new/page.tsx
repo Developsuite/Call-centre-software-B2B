@@ -99,6 +99,7 @@ export default function NewHREmployeePage() {
     try {
       await addHREmployee({
         ...formData,
+        probation_end_date: formData.probation_end_date || null as any,
         organization_id: currentUser?.tenantId || ""
       })
       router.push('/hr/employees')
