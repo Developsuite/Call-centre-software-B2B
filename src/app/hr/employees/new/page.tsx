@@ -47,7 +47,8 @@ export default function NewHREmployeePage() {
     team: "",
     joining_date: "",
     employment_type: "Full-Time",
-    base_salary: 3000,
+    probation_end_date: "",
+    base_salary: 30000,
     commission_per_sale: 50,
     status: "Active" as "Active" | "Disabled"
   })
@@ -343,14 +344,29 @@ export default function NewHREmployeePage() {
                             value={formData.employment_type}
                             onChange={(e) => setFormData({ ...formData, employment_type: e.target.value })}
                         >
-                            <option value="Full-Time">Full-Time</option>
+                            <option value="Full-Time">Full-Time (Permanent)</option>
                             <option value="Part-Time">Part-Time</option>
+                            <option value="Training">Training</option>
+                            <option value="Probation">Probation</option>
                             <option value="Contract">Contract</option>
-                            <option value="Internship">Internship</option>
                         </select>
                     </div>
                 </div>
 
+                {(formData.employment_type === "Training" || formData.employment_type === "Probation") && (
+                    <div className="space-y-1.5">
+                        <label className="text-[10px] font-bold text-[#ff5a36] uppercase tracking-wider">{formData.employment_type} End Date</label>
+                        <div className="relative">
+                            <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#ff5a36]" />
+                            <Input 
+                            type="date" 
+                            className={cn(inputClass, "pl-9 border-[#ff5a36]/30 focus-visible:ring-[#ff5a36]/50")}
+                            value={formData.probation_end_date}
+                            onChange={(e) => setFormData({ ...formData, probation_end_date: e.target.value })}
+                            />
+                        </div>
+                    </div>
+                )}
             </div>
           </Card>
 

@@ -117,6 +117,7 @@ export interface HREmployee {
   employment_type?: string
   commission_per_sale?: number
   document_url?: string
+  probation_end_date?: string
 }
 
 interface AppContextType {

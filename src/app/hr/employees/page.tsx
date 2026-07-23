@@ -58,6 +58,21 @@ export default function HREmployeesPage() {
     }
   }
 
+  const handleMakePermanent = async (employee: HREmployee) => {
+    if (confirm(`Are you sure you want to make ${employee.full_name} a Permanent employee? This will set their joining date to today.`)) {
+      try {
+        await updateHREmployee(employee.id, { 
+          employment_type: "Full-Time",
+          probation_end_date: "",
+          joining_date: new Date().toISOString().split('T')[0]
+        })
+        toast.success(`${employee.full_name} is now Permanent!`)
+      } catch (error: any) {
+        toast.error(error.message)
+      }
+    }
+  }
+
   return (
     <DashboardLayout title="Employee Management">
       <div className="flex flex-col gap-6 font-sans max-w-[1200px] mx-auto w-full pb-10">
@@ -147,7 +162,11 @@ export default function HREmployeesPage() {
                         </td>
                         <td className="py-3 px-6">
                           {user.employment_type && (
-                              <span className="bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400 px-2.5 py-1 rounded-md text-[10px] font-bold">
+                              <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold ${
+                                user.employment_type === "Training" || user.employment_type === "Probation" 
+                                  ? "bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400"
+                                  : "bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400"
+                              }`}>
                                   {user.employment_type}
                               </span>
                           )}
@@ -167,6 +186,15 @@ export default function HREmployeesPage() {
                         </td>
                         <td className="py-3 px-6 text-right">
                           <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            {(user.employment_type === "Training" || user.employment_type === "Probation") && (
+                              <button 
+                                onClick={() => handleMakePermanent(user)}
+                                className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-amber-600 hover:text-white bg-amber-50 hover:bg-amber-500 dark:bg-amber-500/10 dark:text-amber-400 dark:hover:bg-amber-500 dark:hover:text-white rounded-lg transition-colors shadow-sm dark:shadow-none"
+                                title="Make Permanent"
+                              >
+                                Make Permanent
+                              </button>
+                            )}
                             <Link href={`/hr/employees/${user.id}/edit`}>
                                 <button 
                                   className="p-1.5 text-slate-400 hover:text-blue-500 bg-white dark:bg-transparent hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors shadow-sm dark:shadow-none"
@@ -243,12 +271,16 @@ export default function HREmployeesPage() {
                     {/* Tags row */}
                     <div className="flex items-center gap-2 mt-3.5 flex-wrap">
                       {user.employment_type && (
-                        <span className="bg-slate-100/80 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 px-2.5 py-1 rounded-lg text-[10px] font-semibold tracking-wide">
+                        <span className={`px-2.5 py-1 rounded-lg text-[10px] font-semibold tracking-wide ${
+                          user.employment_type === "Training" || user.employment_type === "Probation"
+                            ? "bg-amber-50/80 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400"
+                            : "bg-slate-100/80 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400"
+                        }`}>
                           {user.employment_type}
                         </span>
                       )}
                       {Number(user.base_salary) > 0 && (
-                        <span className="bg-amber-50/80 dark:bg-amber-500/5 text-amber-700 dark:text-amber-400 px-2.5 py-1 rounded-lg text-[10px] font-semibold tracking-wide">
+                        <span className="bg-emerald-50/80 dark:bg-emerald-500/5 text-emerald-700 dark:text-emerald-400 px-2.5 py-1 rounded-lg text-[10px] font-semibold tracking-wide">
                           PKR {Number(user.base_salary).toLocaleString()}
                         </span>
                       )}
@@ -256,12 +288,26 @@ export default function HREmployeesPage() {
 
                     {/* Actions row */}
                     <div className="flex items-center justify-between mt-4 pt-3.5 border-t border-slate-100/80 dark:border-slate-800/60">
-                      <button 
-                        onClick={() => handleToggleStatus(user)}
-                        className={`text-[10px] font-bold uppercase tracking-widest transition-colors ${isActive ? 'text-slate-400 hover:text-red-500' : 'text-emerald-500 hover:text-emerald-600'}`}
-                      >
-                        {isActive ? 'Disable' : 'Enable'}
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button 
+                          onClick={() => handleToggleStatus(user)}
+                          className={`text-[10px] font-bold uppercase tracking-widest transition-colors ${isActive ? 'text-slate-400 hover:text-red-500' : 'text-emerald-500 hover:text-emerald-600'}`}
+                        >
+                          {isActive ? 'Disable' : 'Enable'}
+                        </button>
+                        
+                        {(user.employment_type === "Training" || user.employment_type === "Probation") && (
+                          <>
+                            <span className="text-slate-300 dark:text-slate-700">•</span>
+                            <button 
+                              onClick={() => handleMakePermanent(user)}
+                              className="text-[10px] font-bold uppercase tracking-widest text-amber-600 hover:text-amber-700 transition-colors"
+                            >
+                              Make Permanent
+                            </button>
+                          </>
+                        )}
+                      </div>
 
                       <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                         <Link href={`/hr/employees/${user.id}/edit`}>

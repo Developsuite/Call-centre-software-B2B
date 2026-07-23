@@ -51,7 +51,8 @@ export default function EditHREmployeePage() {
     team: "",
     joining_date: "",
     employment_type: "Full-Time",
-    base_salary: 3000,
+    probation_end_date: "",
+    base_salary: 30000,
     commission_per_sale: 50,
     status: "Active" as "Active" | "Disabled"
   })
@@ -112,6 +113,7 @@ export default function EditHREmployeePage() {
                 team: emp.team || "",
                 joining_date: emp.joining_date || "",
                 employment_type: emp.employment_type || "Full-Time",
+                probation_end_date: emp.probation_end_date || "",
                 base_salary: Number(emp.base_salary) || 0,
                 commission_per_sale: Number(emp.commission_per_sale) || 0,
                 status: emp.status || "Active"
@@ -384,14 +386,28 @@ export default function EditHREmployeePage() {
                             value={formData.employment_type}
                             onChange={(e) => setFormData({ ...formData, employment_type: e.target.value })}
                         >
-                            <option value="Full-Time">Full-Time</option>
+                            <option value="Full-Time">Full-Time (Permanent)</option>
                             <option value="Part-Time">Part-Time</option>
+                            <option value="Training">Training</option>
+                            <option value="Probation">Probation</option>
                             <option value="Contract">Contract</option>
-                            <option value="Internship">Internship</option>
                         </select>
                     </div>
                 </div>
 
+                {(formData.employment_type === "Training" || formData.employment_type === "Probation") && (
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-[#ff5a36] uppercase tracking-wider">{formData.employment_type} End Date</label>
+                    <div className="relative">
+                      <Input 
+                        type="date" 
+                        className={cn(inputClass, "border-[#ff5a36]/30 focus-visible:ring-[#ff5a36]/50")}
+                        value={formData.probation_end_date}
+                        onChange={(e) => setFormData({ ...formData, probation_end_date: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                )}
             </div>
           </Card>
 
