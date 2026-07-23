@@ -199,55 +199,89 @@ export default function HREmployeesPage() {
             </div>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {filteredUsers.map((user) => {
               const isActive = user.status === "Active"
+              const initials = user.full_name.split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase()
               return (
-                <Card key={user.id} className="rounded-[1.5rem] bg-white dark:bg-card border-none shadow-sm overflow-hidden flex flex-col group relative">
-                  <div className="p-6 flex flex-col items-center text-center flex-1">
-                    <div className="relative mb-4">
+                <div 
+                  key={user.id} 
+                  className="group relative rounded-2xl bg-white/80 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200/60 dark:border-slate-700/40 overflow-hidden transition-all duration-300 hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 hover:border-slate-300/80 dark:hover:border-slate-600/60"
+                >
+                  {/* Gradient accent bar */}
+                  <div className={`absolute top-0 left-0 right-0 h-[3px] ${isActive ? 'bg-gradient-to-r from-emerald-400 via-emerald-500 to-teal-500' : 'bg-gradient-to-r from-slate-300 to-slate-400 dark:from-slate-600 dark:to-slate-700'}`} />
+                  
+                  <div className="p-5">
+                    {/* Top row: Avatar + Info + Status */}
+                    <div className="flex items-start gap-3.5">
+                      <div className="relative flex-shrink-0">
                         {user.avatar_url ? (
-                            <img src={user.avatar_url} alt="Avatar" className="w-20 h-20 rounded-full object-cover border-4 border-white dark:border-slate-800 shadow-sm" />
+                          <img src={user.avatar_url} alt="Avatar" className="w-12 h-12 rounded-xl object-cover ring-2 ring-white dark:ring-slate-800 shadow-sm" />
                         ) : (
-                            <UserCircle className="w-20 h-20 text-slate-300" />
+                          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-800 flex items-center justify-center ring-2 ring-white dark:ring-slate-800 shadow-sm">
+                            <span className="text-sm font-bold text-slate-500 dark:text-slate-400">{initials}</span>
+                          </div>
                         )}
-                        <div className={`absolute bottom-0 right-0 w-4 h-4 rounded-full border-2 border-white dark:border-slate-800 ${isActive ? 'bg-emerald-500' : 'bg-slate-400'}`} />
-                    </div>
-                    
-                    <h3 className="font-bold text-slate-800 dark:text-white text-lg">{user.full_name}</h3>
-                    <p className="text-sm text-[#ff5a36] font-medium mb-1">{user.job_title || "Unassigned"}</p>
-                    <p className="text-[11px] text-slate-500 mb-4">{user.email || user.id.substring(0,8) + "..."}</p>
+                        <div className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-white dark:border-slate-900 ${isActive ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+                      </div>
 
-                    {user.employment_type && (
-                        <span className="bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400 px-3 py-1 rounded-full text-xs font-bold mb-4">
-                            {user.employment_type}
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-slate-800 dark:text-white text-[15px] leading-tight truncate">{user.full_name}</h3>
+                        <p className="text-xs text-[#ff5a36] font-medium mt-0.5 truncate">{user.job_title || "Unassigned"}</p>
+                        <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 truncate">{user.email || user.id.substring(0,8) + "..."}</p>
+                      </div>
+
+                      <div className="flex-shrink-0">
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wide ${
+                          isActive 
+                            ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400' 
+                            : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
+                        }`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+                          {isActive ? 'Active' : 'Inactive'}
                         </span>
-                    )}
+                      </div>
+                    </div>
 
-                    <div className="w-full flex items-center justify-between mt-auto pt-4 border-t border-slate-100 dark:border-slate-800">
+                    {/* Tags row */}
+                    <div className="flex items-center gap-2 mt-3.5 flex-wrap">
+                      {user.employment_type && (
+                        <span className="bg-slate-100/80 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 px-2.5 py-1 rounded-lg text-[10px] font-semibold tracking-wide">
+                          {user.employment_type}
+                        </span>
+                      )}
+                      {Number(user.base_salary) > 0 && (
+                        <span className="bg-amber-50/80 dark:bg-amber-500/5 text-amber-700 dark:text-amber-400 px-2.5 py-1 rounded-lg text-[10px] font-semibold tracking-wide">
+                          PKR {Number(user.base_salary).toLocaleString()}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Actions row */}
+                    <div className="flex items-center justify-between mt-4 pt-3.5 border-t border-slate-100/80 dark:border-slate-800/60">
+                      <button 
+                        onClick={() => handleToggleStatus(user)}
+                        className={`text-[10px] font-bold uppercase tracking-widest transition-colors ${isActive ? 'text-slate-400 hover:text-red-500' : 'text-emerald-500 hover:text-emerald-600'}`}
+                      >
+                        {isActive ? 'Disable' : 'Enable'}
+                      </button>
+
+                      <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                        <Link href={`/hr/employees/${user.id}/edit`}>
+                          <button className="p-1.5 text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-all duration-200">
+                            <Edit className="w-3.5 h-3.5" />
+                          </button>
+                        </Link>
                         <button 
-                          onClick={() => handleToggleStatus(user)}
-                          className={`text-[10px] font-bold uppercase tracking-wider hover:underline ${isActive ? 'text-slate-500' : 'text-emerald-500'}`}
+                          onClick={() => handleDelete(user)}
+                          className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-all duration-200"
                         >
-                            {isActive ? 'Disable' : 'Enable'}
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
-
-                        <div className="flex gap-2">
-                            <Link href={`/hr/employees/${user.id}/edit`}>
-                                <button className="p-2 text-slate-400 hover:text-blue-500 bg-slate-50 hover:bg-blue-50 dark:bg-slate-800 dark:hover:bg-blue-500/10 rounded-full transition-colors">
-                                  <Edit className="w-4 h-4" />
-                                </button>
-                            </Link>
-                            <button 
-                              onClick={() => handleDelete(user)}
-                              className="p-2 text-slate-400 hover:text-red-500 bg-slate-50 hover:bg-red-50 dark:bg-slate-800 dark:hover:bg-red-500/10 rounded-full transition-colors"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                        </div>
+                      </div>
                     </div>
                   </div>
-                </Card>
+                </div>
               )
             })}
             {filteredUsers.length === 0 && (
