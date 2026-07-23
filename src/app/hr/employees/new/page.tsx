@@ -58,7 +58,7 @@ export default function NewHREmployeePage() {
     try {
       await addHREmployee({
         ...formData,
-        organization_id: currentUser?.tenantId
+        organization_id: currentUser?.tenantId || ""
       })
       router.push('/hr/employees')
     } catch (err) {
