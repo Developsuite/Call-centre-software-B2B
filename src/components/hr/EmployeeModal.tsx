@@ -1,43 +1,43 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { User, useAppContext, UserRole } from "@/store/AppContext";
-import { X, User as UserIcon, Mail, Briefcase, Network, ShieldCheck, CheckCircle2, Lock } from "lucide-react";
+import { HREmployee, useAppContext, UserRole } from "@/store/AppContext";
+import { X, User as UserIcon, Mail, Briefcase, ShieldCheck, CheckCircle2, Banknote, Network } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 
 interface EmployeeModalProps {
   isOpen: boolean;
   onClose: () => void;
-  employee: User | null; // If null, creating new. If provided, editing existing.
+  employee: HREmployee | null; // If null, creating new. If provided, editing existing.
 }
 
 export function EmployeeModal({ isOpen, onClose, employee }: EmployeeModalProps) {
-  const { addUser, updateUser, teams, currentUser } = useAppContext();
+  const { addHREmployee, updateHREmployee } = useAppContext();
   
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [role, setRole] = useState<UserRole>("Agent");
-  const [teamId, setTeamId] = useState("");
-  const [isTeamLead, setIsTeamLead] = useState(false);
+  const [role, setRole] = useState<string>("Agent");
+  const [team, setTeam] = useState("");
+  const [baseSalary, setBaseSalary] = useState(0);
+  const [bonus, setBonus] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (employee) {
-      setName(employee.name || "");
-      setEmail(""); // Email isn't usually editable directly via profile
-      setPassword("");
-      setRole(employee.role as UserRole);
-      setTeamId(employee.team_id || "");
-      setIsTeamLead(employee.isTeamLead || false);
+      setName(employee.full_name || "");
+      setEmail(employee.email || ""); 
+      setRole(employee.role || "Agent");
+      setTeam(employee.team || "");
+      setBaseSalary(employee.base_salary || 0);
+      setBonus(employee.bonus || 0);
     } else {
       setName("");
       setEmail("");
-      setPassword("");
       setRole("Agent");
-      setTeamId("");
-      setIsTeamLead(false);
+      setTeam("");
+      setBaseSalary(0);
+      setBonus(0);
     }
   }, [employee, isOpen]);
 
@@ -45,35 +45,33 @@ export function EmployeeModal({ isOpen, onClose, employee }: EmployeeModalProps)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || (!employee && (!email || !password))) {
-      toast.error("Please fill in all required fields.");
+    if (!name) {
+      toast.error("Please provide a name.");
       return;
     }
 
     setIsSubmitting(true);
     try {
-      const selectedTeam = teams.find(t => t.id === teamId);
-      
       if (employee) {
         // Edit mode
-        await updateUser(employee.id, {
-          name,
-          team: selectedTeam ? selectedTeam.name : undefined,
-          team_id: teamId || undefined,
-          isTeamLead: isTeamLead
-          // Role isn't easily editable once set due to RLS, but if needed we add it here.
+        await updateHREmployee(employee.id, {
+          full_name: name,
+          email,
+          role,
+          team,
+          base_salary: Number(baseSalary),
+          bonus: Number(bonus)
         });
       } else {
         // Create mode
-        await addUser({
-          email,
-          password,
+        await addHREmployee({
           full_name: name,
+          email,
           role,
-          organization_id: currentUser?.tenantId,
-          team: selectedTeam ? selectedTeam.name : undefined,
-          team_id: teamId || undefined,
-          is_team_lead: isTeamLead
+          team,
+          base_salary: Number(baseSalary),
+          bonus: Number(bonus),
+          status: "Active"
         });
       }
       onClose();
@@ -96,10 +94,10 @@ export function EmployeeModal({ isOpen, onClose, employee }: EmployeeModalProps)
             </div>
             <div>
               <h2 className="text-lg font-bold text-slate-800 dark:text-white leading-tight">
-                {employee ? "Edit Employee" : "Add Employee"}
+                {employee ? "Edit HR Record" : "Add HR Record"}
               </h2>
               <p className="text-[11px] text-slate-500 font-medium">
-                {employee ? "Update employee details" : "Create a new employee account"}
+                {employee ? "Update employee data" : "Create a new employee directory record"}
               </p>
             </div>
           </div>
@@ -125,86 +123,84 @@ export function EmployeeModal({ isOpen, onClose, employee }: EmployeeModalProps)
               </div>
             </div>
 
-            {!employee && (
-              <>
-                <div>
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Email Address</label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <Input 
-                      type="email" 
-                      value={email}
-                      onChange={e => setEmail(e.target.value)}
-                      placeholder="e.g. jane@company.com"
-                      className="pl-9 h-11 bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 rounded-xl"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Temporary Password</label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <Input 
-                      type="password" 
-                      value={password}
-                      onChange={e => setPassword(e.target.value)}
-                      placeholder="Min 6 characters"
-                      className="pl-9 h-11 bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 rounded-xl"
-                      required
-                      minLength={6}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Role</label>
-                  <div className="relative">
-                    <ShieldCheck className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 z-10" />
-                    <select 
-                      value={role}
-                      onChange={e => setRole(e.target.value as UserRole)}
-                      className="w-full pl-9 h-11 bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 rounded-xl text-sm font-medium focus:ring-1 focus:ring-[#ff5a36] outline-none appearance-none cursor-pointer"
-                    >
-                      <option value="Agent">Agent</option>
-                      <option value="Processor">Processor</option>
-                      {currentUser?.role === 'SuperAdmin' && <option value="Admin">Admin</option>}
-                      <option value="HR">HR</option>
-                    </select>
-                  </div>
-                </div>
-              </>
-            )}
-
             <div>
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Assign Team (Optional)</label>
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Email Address (Optional)</label>
               <div className="relative">
-                <Network className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 z-10" />
-                <select 
-                  value={teamId}
-                  onChange={e => setTeamId(e.target.value)}
-                  className="w-full pl-9 h-11 bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 rounded-xl text-sm font-medium focus:ring-1 focus:ring-[#ff5a36] outline-none appearance-none cursor-pointer"
-                >
-                  <option value="">No Team</option>
-                  {teams.map(t => (
-                    <option key={t.id} value={t.id}>{t.name}</option>
-                  ))}
-                </select>
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Input 
+                  type="email" 
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  placeholder="e.g. jane@company.com"
+                  className="pl-9 h-11 bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 rounded-xl"
+                />
               </div>
             </div>
 
-            {teamId && (
-              <label className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-xl cursor-pointer hover:border-[#ff5a36]/50 transition-colors">
-                <input 
-                  type="checkbox" 
-                  checked={isTeamLead}
-                  onChange={e => setIsTeamLead(e.target.checked)}
-                  className="w-4 h-4 text-[#ff5a36] border-slate-300 rounded focus:ring-[#ff5a36] focus:ring-2 cursor-pointer"
-                />
-                <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Set as Team Lead</span>
-              </label>
-            )}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Role</label>
+                <div className="relative">
+                  <ShieldCheck className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 z-10" />
+                  <select 
+                    value={role}
+                    onChange={e => setRole(e.target.value)}
+                    className="w-full pl-9 h-11 bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 rounded-xl text-sm font-medium focus:ring-1 focus:ring-[#ff5a36] outline-none appearance-none cursor-pointer"
+                  >
+                    <option value="Agent">Agent</option>
+                    <option value="Processor">Processor</option>
+                    <option value="Admin">Admin</option>
+                    <option value="HR">HR</option>
+                    <option value="Manager">Manager</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Team</label>
+                <div className="relative">
+                  <Network className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 z-10" />
+                  <Input 
+                    type="text" 
+                    value={team}
+                    onChange={e => setTeam(e.target.value)}
+                    placeholder="e.g. Alpha"
+                    className="pl-9 h-11 bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 rounded-xl"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Base Salary ($)</label>
+                <div className="relative">
+                  <Banknote className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <Input 
+                    type="number" 
+                    value={baseSalary}
+                    onChange={e => setBaseSalary(Number(e.target.value))}
+                    min={0}
+                    className="pl-9 h-11 bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 rounded-xl"
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Bonus ($)</label>
+                <div className="relative">
+                  <Banknote className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <Input 
+                    type="number" 
+                    value={bonus}
+                    onChange={e => setBonus(Number(e.target.value))}
+                    min={0}
+                    className="pl-9 h-11 bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 rounded-xl"
+                  />
+                </div>
+              </div>
+            </div>
+            
           </form>
         </div>
 
@@ -227,7 +223,7 @@ export function EmployeeModal({ isOpen, onClose, employee }: EmployeeModalProps)
             ) : (
               <CheckCircle2 className="w-4 h-4" />
             )}
-            {employee ? "Save Changes" : "Create Employee"}
+            {employee ? "Save Record" : "Add Record"}
           </button>
         </div>
       </div>

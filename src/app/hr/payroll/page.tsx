@@ -7,17 +7,8 @@ import { Input } from "@/components/ui/input"
 import { useAppContext, UserRole } from "@/store/AppContext"
 import { Search, Banknote, Download, ArrowUpRight } from "lucide-react"
 
-// Mock base salaries
-const BASE_SALARIES: Record<UserRole, number> = {
-  SuperAdmin: 0,
-  Admin: 5000,
-  HR: 4000,
-  Processor: 3500,
-  Agent: 3000
-}
-
 export default function HRPayrollPage() {
-  const { users, sales, currentUser, isLoaded } = useAppContext()
+  const { hrEmployees, currentUser, isLoaded } = useAppContext()
   const [searchQuery, setSearchQuery] = useState("")
 
   if (!isLoaded || !currentUser) {
@@ -32,26 +23,16 @@ export default function HRPayrollPage() {
 
   // Isolate to current org
   const tenantUsers = currentUser.role === "SuperAdmin" 
-    ? users 
-    : users.filter(u => u.tenantId === currentUser.tenantId)
+    ? hrEmployees 
+    : hrEmployees.filter(u => u.organization_id === currentUser.tenantId)
 
   // Filter out disabled or SuperAdmins from payroll
   const activeStaff = tenantUsers.filter(u => u.status === "Active" && u.role !== "SuperAdmin")
 
   const payrollData = useMemo(() => {
     return activeStaff.map(user => {
-      const baseSalary = BASE_SALARIES[user.role as UserRole] || 3000;
-      let bonus = 0;
-
-      // Simple mocked bonus calculation: $50 per connected sale
-      if (user.role === "Agent") {
-        const agentSales = sales.filter(s => s.agent_id === user.id && s.status === "Connected");
-        bonus = agentSales.length * 50;
-      } else if (user.role === "Processor") {
-        const processorSales = sales.filter(s => s.processor_id === user.id && s.status === "Connected");
-        bonus = processorSales.length * 20; // $20 per processed connection
-      }
-
+      const baseSalary = Number(user.base_salary) || 0;
+      const bonus = Number(user.bonus) || 0;
       const totalCompensation = baseSalary + bonus;
 
       return {
@@ -61,10 +42,10 @@ export default function HRPayrollPage() {
         totalCompensation
       };
     }).filter(u => 
-      u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      u.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       u.role.toLowerCase().includes(searchQuery.toLowerCase())
     ).sort((a, b) => b.totalCompensation - a.totalCompensation);
-  }, [activeStaff, sales, searchQuery])
+  }, [activeStaff, searchQuery])
 
   const totalPayroll = payrollData.reduce((sum, item) => sum + item.totalCompensation, 0);
 
@@ -130,7 +111,7 @@ export default function HRPayrollPage() {
                   return (
                     <tr key={item.id} className={`hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors ${!isLast ? 'border-b border-slate-50 dark:border-slate-800/50' : ''}`}>
                       <td className="py-4 px-6">
-                        <span className="font-bold text-slate-800 dark:text-white block">{item.name}</span>
+                        <span className="font-bold text-slate-800 dark:text-white block">{item.full_name}</span>
                         {item.team && <span className="text-[10px] text-slate-400">{item.team}</span>}
                       </td>
                       <td className="py-4 px-6">

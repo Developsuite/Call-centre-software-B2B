@@ -96,6 +96,19 @@ export interface SupportTicket {
   created_at: string
 }
 
+export interface HREmployee {
+  id: string
+  organization_id: string
+  full_name: string
+  email: string
+  role: string
+  team: string
+  base_salary: number
+  bonus: number
+  status: "Active" | "Disabled"
+  created_at: string
+}
+
 interface AppContextType {
   // Sales State
   sales: Sale[]
@@ -137,6 +150,12 @@ interface AppContextType {
   tickets: SupportTicket[]
   addTicket: (subject: string, description: string) => Promise<void>
   resolveTicket: (id: string) => Promise<void>
+
+  // HR Employees (Separate System)
+  hrEmployees: HREmployee[]
+  addHREmployee: (data: Partial<HREmployee>) => Promise<void>
+  updateHREmployee: (id: string, updates: Partial<HREmployee>) => Promise<void>
+  deleteHREmployee: (id: string) => Promise<void>
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined)
@@ -190,6 +209,7 @@ export function AppProvider({ children, serverUserId }: { children: ReactNode, s
   const [teams, setTeams] = useState<Team[]>([])
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [tickets, setTickets] = useState<SupportTicket[]>([])
+  const [hrEmployees, setHrEmployees] = useState<HREmployee[]>([])
   const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [isLoaded, setIsLoaded] = useState(false)
 
@@ -233,19 +253,23 @@ export function AppProvider({ children, serverUserId }: { children: ReactNode, s
       let usersQuery = supabase.from('profiles').select('*');
       let teamsQuery = supabase.from('teams').select('*');
       
+      let hrQuery = supabase.from('hr_employees').select('*');
+      
       if (profile && profile.role !== 'SuperAdmin' && orgId) {
         orgsQuery = orgsQuery.eq('id', orgId);
         usersQuery = usersQuery.eq('organization_id', orgId);
         teamsQuery = teamsQuery.eq('organization_id', orgId);
+        hrQuery = hrQuery.eq('organization_id', orgId);
       }
 
-      const [orgsRes, usersRes, salesRes, notifRes, ticketsRes, teamsRes] = await Promise.all([
+      const [orgsRes, usersRes, salesRes, notifRes, ticketsRes, teamsRes, hrRes] = await Promise.all([
         orgsQuery,
         usersQuery,
         supabase.from('sales').select('*').order('created_at', { ascending: false }).limit(500),
         supabase.from('notifications').select('*').eq('user_id', session.user.id).order('created_at', { ascending: false }).limit(100),
         supabase.from('support_tickets').select('*').order('created_at', { ascending: false }).limit(100),
-        teamsQuery
+        teamsQuery,
+        hrQuery
       ])
 
       if (!mounted) return;
@@ -253,6 +277,7 @@ export function AppProvider({ children, serverUserId }: { children: ReactNode, s
       if (orgsRes.data) setTenants(orgsRes.data.map(mapDbTenantToTenant))
       if (usersRes.data) setUsers(usersRes.data.map(mapProfileToUser))
       if (teamsRes.data) setTeams(teamsRes.data)
+      if (hrRes.data) setHrEmployees(hrRes.data)
       if (salesRes.data) setSales(salesRes.data.map(mapDbSaleToSale))
       if (notifRes.data) setNotifications(notifRes.data.map(mapDbNotifToNotif))
       if (ticketsRes.data) setTickets(ticketsRes.data)
@@ -736,6 +761,47 @@ export function AppProvider({ children, serverUserId }: { children: ReactNode, s
     toast.success("Ticket marked as resolved.");
   }
 
+  const addHREmployee = async (data: Partial<HREmployee>) => {
+    if (!currentUser?.tenantId && currentUser?.role !== 'SuperAdmin') return;
+    const orgId = data.organization_id || currentUser?.tenantId;
+    
+    const { data: inserted, error } = await supabase.from('hr_employees').insert({
+      ...data,
+      organization_id: orgId
+    }).select().single()
+    
+    if (error) {
+      toast.error(error.message);
+      throw error;
+    }
+    if (inserted) {
+      setHrEmployees(prev => [inserted, ...prev])
+      toast.success("Employee added successfully!");
+    }
+  }
+
+  const updateHREmployee = async (id: string, updates: Partial<HREmployee>) => {
+    const { data: updated, error } = await supabase.from('hr_employees').update(updates).eq('id', id).select().single()
+    if (error) {
+      toast.error(error.message);
+      throw error;
+    }
+    if (updated) {
+      setHrEmployees(prev => prev.map(e => e.id === id ? updated : e))
+      toast.success("Employee updated successfully!");
+    }
+  }
+
+  const deleteHREmployee = async (id: string) => {
+    const { error } = await supabase.from('hr_employees').delete().eq('id', id)
+    if (error) {
+      toast.error(error.message);
+      throw error;
+    }
+    setHrEmployees(prev => prev.filter(e => e.id !== id))
+    toast.success("Employee deleted successfully!");
+  }
+
   return (
     <AppContext.Provider value={{ 
       sales, addSale, updateSaleStatus, updateSaleProcessorNotes, editSale, deleteSale,
@@ -744,7 +810,8 @@ export function AppProvider({ children, serverUserId }: { children: ReactNode, s
       teams, addTeam, updateTeam, deleteTeam,
       currentUser, setCurrentUser, isLoaded,
       notifications, markNotificationRead, markAllNotificationsRead,
-      tickets, addTicket, resolveTicket
+      tickets, addTicket, resolveTicket,
+      hrEmployees, addHREmployee, updateHREmployee, deleteHREmployee
     }}>
       {children}
     </AppContext.Provider>

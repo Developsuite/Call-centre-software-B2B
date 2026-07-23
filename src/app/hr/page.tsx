@@ -16,7 +16,7 @@ const BASE_SALARIES: Record<UserRole, number> = {
 }
 
 export default function HRDashboardPage() {
-  const { users, currentUser, isLoaded, sales } = useAppContext()
+  const { hrEmployees, currentUser, isLoaded } = useAppContext()
 
   if (!isLoaded || !currentUser) {
     return (
@@ -28,10 +28,9 @@ export default function HRDashboardPage() {
     )
   }
 
-  // Filter to current organization, except for SuperAdmin
   const tenantUsers = currentUser.role === "SuperAdmin" 
-    ? users 
-    : users.filter(u => u.tenantId === currentUser.tenantId)
+    ? hrEmployees 
+    : hrEmployees.filter(u => u.organization_id === currentUser.tenantId)
 
   const totalEmployees = tenantUsers.length
   const activeEmployees = tenantUsers.filter(u => u.status === "Active").length
@@ -41,33 +40,17 @@ export default function HRDashboardPage() {
   const processorsCount = tenantUsers.filter(u => u.role === "Processor").length
   const hrCount = tenantUsers.filter(u => u.role === "HR").length
 
-  // Simple payroll mock calculation
-  const totalMonthlyPayroll = 
-    (agentsCount * 3000) + 
-    (processorsCount * 3500) + 
-    (hrCount * 4000);
-
-  const activeStaff = tenantUsers.filter(u => u.status === "Active" && u.role !== "SuperAdmin")
+  const activeStaff = tenantUsers.filter(u => u.status === "Active" && u.role !== "SuperAdmin");
+  const totalMonthlyPayroll = activeStaff.reduce((sum, user) => sum + Number(user.base_salary || 0) + Number(user.bonus || 0), 0);
 
   const payrollData = useMemo(() => {
     return activeStaff.map(user => {
-      const baseSalary = BASE_SALARIES[user.role as UserRole] || 3000;
-      let bonus = 0;
-
-      if (user.role === "Agent") {
-        const agentSales = sales.filter(s => s.agent_id === user.id && s.status === "Connected");
-        bonus = agentSales.length * 50;
-      } else if (user.role === "Processor") {
-        const processorSales = sales.filter(s => s.processor_id === user.id && s.status === "Connected");
-        bonus = processorSales.length * 20;
-      }
-
       return {
         ...user,
-        totalCompensation: baseSalary + bonus
+        totalCompensation: Number(user.base_salary || 0) + Number(user.bonus || 0)
       };
     }).sort((a, b) => b.totalCompensation - a.totalCompensation).slice(0, 4); // Top 4 earners
-  }, [activeStaff, sales])
+  }, [activeStaff])
 
   return (
     <DashboardLayout title="HR Command Center">
@@ -183,13 +166,9 @@ export default function HRDashboardPage() {
                 {tenantUsers.slice(0, 4).map((user, i) => (
                   <div key={user.id} className="flex items-center justify-between p-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-xl transition-colors">
                     <div className="flex items-center gap-3">
-                      {user.avatarUrl ? (
-                        <img src={user.avatarUrl} alt={user.name} className="w-8 h-8 rounded-full object-cover" />
-                      ) : (
-                        <UserCircle className="w-8 h-8 text-slate-300" />
-                      )}
+                      <UserCircle className="w-8 h-8 text-slate-300" />
                       <div>
-                        <p className="text-sm font-bold text-slate-800 dark:text-white leading-tight">{user.name}</p>
+                        <p className="text-sm font-bold text-slate-800 dark:text-white leading-tight">{user.full_name}</p>
                         <p className="text-[10px] text-slate-500">{user.role} {user.team && `• ${user.team}`}</p>
                       </div>
                     </div>
@@ -224,7 +203,7 @@ export default function HRDashboardPage() {
                         #{i + 1}
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-slate-800 dark:text-white leading-tight">{user.name}</p>
+                        <p className="text-sm font-bold text-slate-800 dark:text-white leading-tight">{user.full_name}</p>
                         <p className="text-[10px] text-slate-500">{user.role}</p>
                       </div>
                     </div>

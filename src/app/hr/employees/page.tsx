@@ -5,16 +5,16 @@ import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { useAppContext, User } from "@/store/AppContext"
+import { useAppContext, HREmployee } from "@/store/AppContext"
 import { Search, Users, Plus, Edit, UserMinus, UserCheck, Trash2, UserCircle } from "lucide-react"
 import { EmployeeModal } from "@/components/hr/EmployeeModal"
 import { toast } from "sonner"
 
 export default function HREmployeesPage() {
-  const { users, currentUser, isLoaded, updateUserStatus, deleteUser } = useAppContext()
+  const { hrEmployees, currentUser, isLoaded, updateHREmployee, deleteHREmployee } = useAppContext()
   const [searchQuery, setSearchQuery] = useState("")
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [selectedEmployee, setSelectedEmployee] = useState<User | null>(null)
+  const [selectedEmployee, setSelectedEmployee] = useState<HREmployee | null>(null)
 
   if (!isLoaded || !currentUser) {
     return (
@@ -28,16 +28,16 @@ export default function HREmployeesPage() {
 
   // Isolate to current org
   const tenantUsers = currentUser.role === "SuperAdmin" 
-    ? users 
-    : users.filter(u => u.tenantId === currentUser.tenantId)
+    ? hrEmployees 
+    : hrEmployees.filter(u => u.organization_id === currentUser.tenantId)
 
   const filteredUsers = tenantUsers.filter(u => 
-    u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    u.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     u.role.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (u.team && u.team.toLowerCase().includes(searchQuery.toLowerCase()))
-  ).sort((a, b) => a.name.localeCompare(b.name))
+  ).sort((a, b) => a.full_name.localeCompare(b.full_name))
 
-  const handleEditClick = (employee: User) => {
+  const handleEditClick = (employee: HREmployee) => {
     setSelectedEmployee(employee)
     setIsModalOpen(true)
   }
@@ -47,20 +47,20 @@ export default function HREmployeesPage() {
     setIsModalOpen(true)
   }
 
-  const handleToggleStatus = async (employee: User) => {
+  const handleToggleStatus = async (employee: HREmployee) => {
     const newStatus = employee.status === "Active" ? "Disabled" : "Active"
     try {
-      await updateUserStatus(employee.id, newStatus)
-      toast.success(`${employee.name} is now ${newStatus}`)
+      await updateHREmployee(employee.id, { status: newStatus })
+      toast.success(`${employee.full_name} is now ${newStatus}`)
     } catch (error: any) {
       toast.error(error.message)
     }
   }
 
-  const handleDelete = async (employee: User) => {
-    if (confirm(`Are you sure you want to completely delete ${employee.name}? This action cannot be undone.`)) {
+  const handleDelete = async (employee: HREmployee) => {
+    if (confirm(`Are you sure you want to completely delete ${employee.full_name}? This action cannot be undone.`)) {
       try {
-        await deleteUser(employee.id)
+        await deleteHREmployee(employee.id)
       } catch (error) {
         // Error handled in context
       }
@@ -125,20 +125,12 @@ export default function HREmployeesPage() {
                     <tr key={user.id} className={`group hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors ${!isLast ? 'border-b border-slate-50 dark:border-slate-800/50' : ''}`}>
                       <td className="py-3 px-6">
                         <div className="flex items-center gap-3">
-                          {user.avatarUrl ? (
-                            <img src={user.avatarUrl} alt={user.name} className="w-8 h-8 rounded-full object-cover" />
-                          ) : (
-                            <UserCircle className="w-8 h-8 text-slate-300" />
-                          )}
+                          <UserCircle className="w-8 h-8 text-slate-300" />
                           <div className="flex flex-col">
                             <span className="font-bold text-slate-800 dark:text-white flex items-center gap-2">
-                              {user.name}
-                              {user.isTeamLead && (
-                                <span className="bg-amber-100 text-amber-700 text-[9px] px-1.5 py-0.5 rounded-sm font-bold tracking-wider uppercase">Lead</span>
-                              )}
+                              {user.full_name}
                             </span>
-                            {/* Assuming email isn't in profile natively for now, we'll just show id or omit */}
-                            <span className="text-[10px] text-slate-400 font-mono" title={user.id}>{user.id.substring(0,8)}...</span>
+                            <span className="text-[10px] text-slate-400 font-mono" title={user.id}>{user.email || user.id.substring(0,8) + "..."}</span>
                           </div>
                         </div>
                       </td>
