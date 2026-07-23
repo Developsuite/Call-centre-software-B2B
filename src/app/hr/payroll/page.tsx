@@ -32,13 +32,13 @@ export default function HRPayrollPage() {
   const payrollData = useMemo(() => {
     return activeStaff.map(user => {
       const baseSalary = Number(user.base_salary) || 0;
-      const bonus = Number(user.bonus) || 0;
-      const totalCompensation = baseSalary + bonus;
+      const commissionRate = Number(user.commission_per_sale) || 0;
+      const totalCompensation = baseSalary; // Manual payroll, not auto-calculated yet
 
       return {
         ...user,
         baseSalary,
-        bonus,
+        commissionRate,
         totalCompensation
       };
     }).filter(u => 
@@ -100,8 +100,8 @@ export default function HRPayrollPage() {
                   <th className="py-4 px-6 font-bold">Staff Member</th>
                   <th className="py-4 px-6 font-bold">Role</th>
                   <th className="py-4 px-6 font-bold text-right">Base Salary</th>
-                  <th className="py-4 px-6 font-bold text-right text-emerald-500">Est. Bonus</th>
-                  <th className="py-4 px-6 font-bold text-right">Total Comp.</th>
+                  <th className="py-4 px-6 font-bold text-right text-emerald-500">Comm. Rate</th>
+                  <th className="py-4 px-6 font-bold text-right">Total Base</th>
                 </tr>
               </thead>
               <tbody>
@@ -123,10 +123,10 @@ export default function HRPayrollPage() {
                         ${item.baseSalary.toLocaleString()}
                       </td>
                       <td className="py-4 px-6 text-right">
-                        {item.bonus > 0 ? (
+                        {item.commissionRate > 0 ? (
                           <span className="inline-flex items-center gap-1 font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-1 rounded-md text-xs">
                             <ArrowUpRight className="w-3 h-3" />
-                            ${item.bonus.toLocaleString()}
+                            ${item.commissionRate.toLocaleString()}/sale
                           </span>
                         ) : (
                           <span className="text-slate-400">-</span>

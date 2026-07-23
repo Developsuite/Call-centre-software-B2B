@@ -7,14 +7,12 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useAppContext, HREmployee } from "@/store/AppContext"
 import { Search, Users, Plus, Edit, UserMinus, UserCheck, Trash2, UserCircle } from "lucide-react"
-import { EmployeeModal } from "@/components/hr/EmployeeModal"
+import Link from "next/link"
 import { toast } from "sonner"
 
 export default function HREmployeesPage() {
   const { hrEmployees, currentUser, isLoaded, updateHREmployee, deleteHREmployee } = useAppContext()
   const [searchQuery, setSearchQuery] = useState("")
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [selectedEmployee, setSelectedEmployee] = useState<HREmployee | null>(null)
 
   if (!isLoaded || !currentUser) {
     return (
@@ -37,15 +35,7 @@ export default function HREmployeesPage() {
     (u.team && u.team.toLowerCase().includes(searchQuery.toLowerCase()))
   ).sort((a, b) => a.full_name.localeCompare(b.full_name))
 
-  const handleEditClick = (employee: HREmployee) => {
-    setSelectedEmployee(employee)
-    setIsModalOpen(true)
-  }
 
-  const handleCreateClick = () => {
-    setSelectedEmployee(null)
-    setIsModalOpen(true)
-  }
 
   const handleToggleStatus = async (employee: HREmployee) => {
     const newStatus = employee.status === "Active" ? "Disabled" : "Active"
@@ -94,13 +84,14 @@ export default function HREmployeesPage() {
               />
             </div>
             
-            <Button 
-              onClick={handleCreateClick}
-              className="bg-[#ff5a36] hover:bg-[#e04a29] text-white rounded-full h-9 px-4 shadow-[0_4px_10px_rgba(255,90,54,0.3)] w-full sm:w-auto transition-all"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add Employee
-            </Button>
+            <Link href="/hr/employees/new" className="w-full sm:w-auto">
+              <Button 
+                className="bg-[#ff5a36] hover:bg-[#e04a29] text-white rounded-full h-9 px-4 shadow-[0_4px_10px_rgba(255,90,54,0.3)] w-full transition-all"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Employee
+              </Button>
+            </Link>
           </div>
         </div>
 
@@ -125,12 +116,16 @@ export default function HREmployeesPage() {
                     <tr key={user.id} className={`group hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors ${!isLast ? 'border-b border-slate-50 dark:border-slate-800/50' : ''}`}>
                       <td className="py-3 px-6">
                         <div className="flex items-center gap-3">
-                          <UserCircle className="w-8 h-8 text-slate-300" />
+                          {user.avatar_url ? (
+                              <img src={user.avatar_url} alt="Avatar" className="w-8 h-8 rounded-full object-cover border border-slate-200 dark:border-slate-700" />
+                          ) : (
+                              <UserCircle className="w-8 h-8 text-slate-300" />
+                          )}
                           <div className="flex flex-col">
                             <span className="font-bold text-slate-800 dark:text-white flex items-center gap-2">
                               {user.full_name}
                             </span>
-                            <span className="text-[10px] text-slate-400 font-mono" title={user.id}>{user.email || user.id.substring(0,8) + "..."}</span>
+                            <span className="text-[10px] text-slate-400 font-mono" title={user.id}>{user.job_title || user.role} • {user.email || user.id.substring(0,8) + "..."}</span>
                           </div>
                         </div>
                       </td>
@@ -138,6 +133,9 @@ export default function HREmployeesPage() {
                         <span className="bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400 px-2.5 py-1 rounded-md text-xs font-bold">
                           {user.role}
                         </span>
+                        {user.employment_type && (
+                            <span className="ml-2 text-[10px] text-slate-500">{user.employment_type}</span>
+                        )}
                       </td>
                       <td className="py-3 px-6 text-slate-500 font-medium">
                         {user.team ? (
@@ -161,13 +159,14 @@ export default function HREmployeesPage() {
                       </td>
                       <td className="py-3 px-6 text-right">
                         <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button 
-                            onClick={() => handleEditClick(user)}
-                            className="p-1.5 text-slate-400 hover:text-blue-500 bg-white dark:bg-transparent hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors shadow-sm dark:shadow-none"
-                            title="Edit Employee"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </button>
+                          <Link href={`/hr/employees/${user.id}/edit`}>
+                              <button 
+                                className="p-1.5 text-slate-400 hover:text-blue-500 bg-white dark:bg-transparent hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors shadow-sm dark:shadow-none"
+                                title="Edit Employee"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </button>
+                          </Link>
                           <button 
                             onClick={() => handleDelete(user)}
                             className="p-1.5 text-slate-400 hover:text-red-500 bg-white dark:bg-transparent hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors shadow-sm dark:shadow-none"
@@ -193,11 +192,7 @@ export default function HREmployeesPage() {
         </Card>
       </div>
 
-      <EmployeeModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-        employee={selectedEmployee} 
-      />
+
     </DashboardLayout>
   )
 }

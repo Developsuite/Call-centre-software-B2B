@@ -107,6 +107,16 @@ export interface HREmployee {
   bonus: number
   status: "Active" | "Disabled"
   created_at: string
+  avatar_url?: string
+  father_name?: string
+  cnic_number?: string
+  mobile_number?: string
+  home_address?: string
+  job_title?: string
+  joining_date?: string
+  employment_type?: string
+  commission_per_sale?: number
+  document_url?: string
 }
 
 interface AppContextType {
