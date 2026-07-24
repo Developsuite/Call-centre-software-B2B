@@ -2,8 +2,8 @@
 
 import React, { useState, useMemo } from 'react'
 import { useAppContext } from "@/store/AppContext"
-import Topbar from "@/components/layout/topbar"
-import Sidebar from "@/components/layout/sidebar"
+import { TopBar } from "@/components/layout/topbar"
+import { Sidebar } from "@/components/layout/sidebar"
 import { Users, Clock, CalendarDays, CheckCircle, XCircle, AlertCircle, RefreshCw, Link as LinkIcon } from 'lucide-react'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
@@ -99,7 +99,7 @@ export default function AttendancePage() {
       <Sidebar />
       
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800">
-        <Topbar title="Attendance Dashboard" />
+        <TopBar title="Attendance Dashboard" />
         
         <main className="flex-1 overflow-y-auto p-4 lg:p-8 custom-scrollbar">
           
