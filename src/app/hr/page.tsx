@@ -1,11 +1,12 @@
 "use client"
 
-import React, { useMemo } from "react"
+import React, { useMemo, useState } from "react"
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { Card } from "@/components/ui/card"
 import { useAppContext, UserRole } from "@/store/AppContext"
-import { UsersRound, UserCheck, UserMinus, ShieldCheck, Banknote, Briefcase, Activity, ChevronRight, UserCircle, ArrowUpRight } from "lucide-react"
+import { UsersRound, UserCheck, UserMinus, ShieldCheck, Banknote, Briefcase, Activity, ChevronRight, UserCircle, ArrowUpRight, Fingerprint, RefreshCw } from "lucide-react"
 import Link from "next/link"
+import { toast } from "sonner"
 
 const BASE_SALARIES: Record<UserRole, number> = {
   SuperAdmin: 0,
@@ -17,6 +18,39 @@ const BASE_SALARIES: Record<UserRole, number> = {
 
 export default function HRDashboardPage() {
   const { hrEmployees, currentUser, isLoaded } = useAppContext()
+  const [isSyncing, setIsSyncing] = useState(false)
+
+  const handleSyncAttendance = async () => {
+    if (!currentUser) return;
+    try {
+      setIsSyncing(true)
+      toast.loading("Connecting to ZKTeco machine...")
+      
+      const response = await fetch('/api/attendance/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ip: "192.168.18.225",
+          port: 4370,
+          organization_id: currentUser.tenantId
+        })
+      })
+      
+      const data = await response.json()
+      toast.dismiss()
+      
+      if (data.success) {
+        toast.success(data.message)
+      } else {
+        toast.error(data.error || "Sync failed")
+      }
+    } catch (error) {
+      toast.dismiss()
+      toast.error("Failed to connect to machine")
+    } finally {
+      setIsSyncing(false)
+    }
+  }
 
   if (!isLoaded || !currentUser) {
     return (
@@ -68,6 +102,16 @@ export default function HRDashboardPage() {
             <p className="text-slate-500 text-xs max-w-xl">
               Overview of your organization's human resources and payroll estimations.
             </p>
+          </div>
+          <div className="flex gap-2">
+             <button 
+                onClick={handleSyncAttendance} 
+                disabled={isSyncing}
+                className="flex items-center gap-2 px-4 py-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl text-sm font-semibold hover:bg-slate-800 transition-colors disabled:opacity-50"
+              >
+                {isSyncing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Fingerprint className="w-4 h-4" />}
+                {isSyncing ? "Syncing..." : "Sync ZKTeco"}
+              </button>
           </div>
         </div>
 
