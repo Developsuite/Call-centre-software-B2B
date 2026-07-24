@@ -20,7 +20,8 @@ export default function AttendancePage() {
   const processedData = useMemo(() => {
     // 1. Group punches by ZK User ID for the selected date
     const dailyPunches = hrAttendance.filter(att => {
-      const punchDate = new Date(att.timestamp).toISOString().split('T')[0];
+      // Use date-fns format to get local date instead of UTC
+      const punchDate = format(new Date(att.timestamp), 'yyyy-MM-dd');
       return punchDate === selectedDate;
     });
 
