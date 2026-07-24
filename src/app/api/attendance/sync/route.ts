@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+// @ts-expect-error - node-zklib does not have type definitions
 import ZKLib from "node-zklib"
 import { createClient } from "@supabase/supabase-js"
 
