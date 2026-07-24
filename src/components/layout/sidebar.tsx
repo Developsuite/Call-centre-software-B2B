@@ -21,7 +21,8 @@ import {
   Network,
   UsersRound,
   Activity,
-  Banknote
+  Banknote,
+  Clock
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -84,6 +85,7 @@ export function Sidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: { isMobileMen
     { name: "All Processors", href: "/admin/processors", icon: Briefcase, roles: ["Admin"] },
     { name: "HR Dashboard", href: "/hr", icon: LayoutDashboard, roles: ["HR", "Admin"] },
     { name: "Employees", href: "/hr/employees", icon: UsersRound, roles: ["HR", "Admin"] },
+    { name: "Attendance", href: "/hr/attendance", icon: Clock, roles: ["HR", "Admin"] },
     { name: "Payroll", href: "/hr/payroll", icon: Banknote, roles: ["HR", "Admin"] },
     { name: "Agent Dashboard", href: "/", icon: LayoutDashboard, roles: ["Agent"] },
     { name: "My Sales", href: "/sales", icon: ListChecks, roles: ["Agent"] },

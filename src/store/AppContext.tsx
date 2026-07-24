@@ -118,6 +118,18 @@ export interface HREmployee {
   commission_per_sale?: number
   document_url?: string
   probation_end_date?: string
+  zk_user_id?: string
+}
+
+export interface HRAttendance {
+  id: string
+  organization_id: string
+  employee_id: string | null
+  zk_user_id: string
+  timestamp: string
+  status: number
+  verify_mode: number
+  created_at: string
 }
 
 interface AppContextType {
@@ -167,6 +179,9 @@ interface AppContextType {
   addHREmployee: (data: Partial<HREmployee>) => Promise<void>
   updateHREmployee: (id: string, updates: Partial<HREmployee>) => Promise<void>
   deleteHREmployee: (id: string) => Promise<void>
+  
+  hrAttendance: HRAttendance[]
+  fetchHRAttendance: () => Promise<void>
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined)
@@ -221,6 +236,7 @@ export function AppProvider({ children, serverUserId }: { children: ReactNode, s
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [tickets, setTickets] = useState<SupportTicket[]>([])
   const [hrEmployees, setHrEmployees] = useState<HREmployee[]>([])
+  const [hrAttendance, setHrAttendance] = useState<HRAttendance[]>([])
   const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [isLoaded, setIsLoaded] = useState(false)
 
@@ -273,14 +289,15 @@ export function AppProvider({ children, serverUserId }: { children: ReactNode, s
         hrQuery = hrQuery.eq('organization_id', orgId);
       }
 
-      const [orgsRes, usersRes, salesRes, notifRes, ticketsRes, teamsRes, hrRes] = await Promise.all([
+      const [orgsRes, usersRes, salesRes, notifRes, ticketsRes, teamsRes, hrRes, attRes] = await Promise.all([
         orgsQuery,
         usersQuery,
         supabase.from('sales').select('*').order('created_at', { ascending: false }).limit(500),
         supabase.from('notifications').select('*').eq('user_id', session.user.id).order('created_at', { ascending: false }).limit(100),
         supabase.from('support_tickets').select('*').order('created_at', { ascending: false }).limit(100),
         teamsQuery,
-        hrQuery
+        hrQuery,
+        orgId ? supabase.from('hr_attendance').select('*').eq('organization_id', orgId).order('timestamp', { ascending: false }).limit(2000) : Promise.resolve({ data: [] })
       ])
 
       if (!mounted) return;
@@ -289,6 +306,7 @@ export function AppProvider({ children, serverUserId }: { children: ReactNode, s
       if (usersRes.data) setUsers(usersRes.data.map(mapProfileToUser))
       if (teamsRes.data) setTeams(teamsRes.data)
       if (hrRes.data) setHrEmployees(hrRes.data)
+      if (attRes.data) setHrAttendance(attRes.data)
       if (salesRes.data) setSales(salesRes.data.map(mapDbSaleToSale))
       if (notifRes.data) setNotifications(notifRes.data.map(mapDbNotifToNotif))
       if (ticketsRes.data) setTickets(ticketsRes.data)
@@ -806,23 +824,61 @@ export function AppProvider({ children, serverUserId }: { children: ReactNode, s
   const deleteHREmployee = async (id: string) => {
     const { error } = await supabase.from('hr_employees').delete().eq('id', id)
     if (error) {
-      toast.error(error.message);
-      throw error;
+      toast.error("Failed to delete employee: " + error.message)
+    } else {
+      setHrEmployees(prev => prev.filter(e => e.id !== id))
+      toast.success("Employee deleted")
     }
-    setHrEmployees(prev => prev.filter(e => e.id !== id))
-    toast.success("Employee deleted successfully!");
+  }
+
+  const fetchHRAttendance = async () => {
+    if (!currentUser?.tenantId && currentUser?.role !== 'SuperAdmin') return;
+    const orgId = currentUser?.tenantId;
+    
+    if (orgId) {
+      const { data, error } = await supabase.from('hr_attendance').select('*').eq('organization_id', orgId).order('timestamp', { ascending: false }).limit(2000);
+      if (data) {
+        setHrAttendance(data);
+      }
+    }
   }
 
   return (
-    <AppContext.Provider value={{ 
-      sales, addSale, updateSaleStatus, updateSaleProcessorNotes, editSale, deleteSale,
-      tenants, addTenant, updateTenant,
-      users, addUser, deleteUser, updateUserStatus, updateUser, updateUserTeamAndLeadStatus,
-      teams, addTeam, updateTeam, deleteTeam,
-      currentUser, setCurrentUser, isLoaded,
-      notifications, markNotificationRead, markAllNotificationsRead,
-      tickets, addTicket, resolveTicket,
-      hrEmployees, addHREmployee, updateHREmployee, deleteHREmployee
+    <AppContext.Provider value={{
+      sales,
+      addSale,
+      updateSaleStatus,
+      updateSaleProcessorNotes,
+      editSale,
+      deleteSale,
+      tenants,
+      addTenant,
+      updateTenant,
+      users,
+      addUser,
+      deleteUser,
+      updateUserStatus,
+      updateUser,
+      updateUserTeamAndLeadStatus,
+      teams,
+      addTeam,
+      updateTeam,
+      deleteTeam,
+      currentUser,
+      setCurrentUser,
+      isLoaded,
+      notifications,
+      markNotificationRead,
+      markAllNotificationsRead,
+      tickets,
+      addTicket,
+      resolveTicket,
+      hrEmployees,
+      addHREmployee,
+      updateHREmployee,
+      deleteHREmployee,
+      hrAttendance,
+      fetchHRAttendance
     }}>
       {children}
     </AppContext.Provider>
@@ -831,6 +887,8 @@ export function AppProvider({ children, serverUserId }: { children: ReactNode, s
 
 export function useAppContext() {
   const context = useContext(AppContext)
-  if (context === undefined) throw new Error("useAppContext must be used within an AppProvider")
+  if (context === undefined) {
+    throw new Error("useAppContext must be used within an AppProvider")
+  }
   return context
 }
