@@ -244,59 +244,78 @@ export default function HREmployeesPage() {
               return (
                 <div 
                   key={user.id} 
-                  className="group relative rounded-[1.5rem] bg-white dark:bg-[#111111] border border-slate-200 dark:border-slate-800/80 p-5 transition-all duration-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:hover:shadow-none hover:border-slate-300 dark:hover:border-slate-700 flex flex-col gap-4"
+                  className="group relative rounded-2xl bg-white dark:bg-[#111111] border border-slate-200 dark:border-slate-800 overflow-hidden transition-all duration-300 hover:shadow-2xl hover:shadow-indigo-500/10 hover:-translate-y-1 flex flex-col"
                 >
-                  {/* Top Row: Avatar & Identity */}
-                  <div className="flex items-start gap-4">
-                    <img 
-                        src={avatarUrlToUse} 
-                        alt={user.full_name} 
-                        className="w-12 h-12 rounded-full object-cover border border-slate-100 dark:border-slate-800 shrink-0"
-                    />
-                    <div className="flex-1 min-w-0 pt-0.5">
-                      <div className="flex items-center justify-between gap-2">
-                        <h3 className="font-bold text-slate-900 dark:text-white text-base truncate tracking-tight leading-tight">{user.full_name}</h3>
-                        <span className={`w-2 h-2 rounded-full flex-shrink-0 ${isActive ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]' : 'bg-slate-300 dark:bg-slate-700'}`} title={isActive ? 'Active' : 'Inactive'} />
+                  {/* Glowing Top Accent */}
+                  <div className="h-1.5 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-[#ff5a36] opacity-80" />
+
+                  <div className="p-5 flex flex-col flex-1">
+                    <div className="flex justify-between items-start mb-4">
+                      {/* Avatar with gradient ring */}
+                      <div className="relative">
+                        <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-full blur-[6px] opacity-40 group-hover:opacity-70 transition-opacity duration-500" />
+                        <img 
+                            src={avatarUrlToUse} 
+                            alt={user.full_name} 
+                            className="relative w-14 h-14 rounded-full object-cover border-2 border-white dark:border-[#111111] shadow-sm"
+                        />
+                        <span className={`absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full border-2 border-white dark:border-[#111111] ${isActive ? 'bg-emerald-500' : 'bg-slate-400'}`} title={isActive ? 'Active' : 'Inactive'} />
                       </div>
-                      <p className="text-[13px] text-slate-500 dark:text-slate-400 truncate mt-0.5">{user.job_title || "Unassigned"}</p>
+
+                      {/* Badges */}
+                      <div className="flex gap-1.5">
+                        <span className="text-[10px] font-bold tracking-wider uppercase text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 px-2 py-1 rounded-md border border-indigo-100 dark:border-indigo-500/20">
+                          {user.employment_type || "Full-Time"}
+                        </span>
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Badges / Small Info */}
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-[10px] font-bold tracking-wide uppercase text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/50 px-2.5 py-1 rounded-lg">
-                      {user.employment_type || "Full-Time"}
-                    </span>
-                    <span className="text-[10px] font-bold tracking-wide uppercase text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-2.5 py-1 rounded-lg flex items-center gap-1">
-                      ★ 5.0
-                    </span>
-                  </div>
+                    {/* Identity */}
+                    <div>
+                      <h3 className="font-bold text-slate-900 dark:text-white text-lg tracking-tight leading-tight group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                        {user.full_name}
+                      </h3>
+                      <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-0.5">{user.job_title || "Unassigned Role"}</p>
+                    </div>
 
-                  {/* Base Salary */}
-                  <div className="flex items-center justify-between text-sm mt-1 py-3 border-t border-b border-slate-100 dark:border-slate-800/50">
-                    <span className="text-slate-500 dark:text-slate-400 text-[11px] font-semibold uppercase tracking-wider">Salary</span>
-                    <span className="font-bold text-slate-900 dark:text-white">
-                      <span className="text-[10px] text-slate-400 font-normal mr-1">PKR</span>
-                      {Number(user.base_salary).toLocaleString()}
-                    </span>
-                  </div>
+                    {/* Elegant Separator */}
+                    <div className="w-full h-px bg-gradient-to-r from-slate-100 via-slate-200 to-transparent dark:from-slate-800 dark:via-slate-700 my-4" />
 
-                  {/* Actions */}
-                  <div className="flex gap-2 mt-auto pt-1">
-                    <button 
-                      onClick={() => handleSeeDetails(user)}
-                      className="flex-1 py-2.5 bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition-colors border border-slate-200 dark:border-slate-800"
-                    >
-                      View Profile
-                    </button>
-                    <Link href={`/hr/employees/${user.id}/edit`}>
+                    {/* Financials / Meta */}
+                    <div className="flex items-end justify-between mt-auto pb-4">
+                      <div className="flex flex-col">
+                        <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-1">Base Salary</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-bold text-slate-400">PKR</span>
+                          <span className="text-xl font-black text-slate-800 dark:text-white leading-none tracking-tight">
+                            {Number(user.base_salary).toLocaleString()}
+                          </span>
+                        </div>
+                      </div>
+                      {Number(user.commission_per_sale) > 0 && (
+                        <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-1.5 rounded-md border border-emerald-100 dark:border-emerald-500/20">
+                          +{user.commission_per_sale}/sale
+                        </span>
+                      )}
+                    </div>
+
+                    {/* High-End Actions */}
+                    <div className="grid grid-cols-[1fr_auto] gap-2 pt-1">
                       <button 
-                        className="w-10 h-full flex items-center justify-center bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-xl transition-colors border border-slate-200 dark:border-slate-800"
-                        title="Edit"
+                        onClick={() => handleSeeDetails(user)}
+                        className="w-full py-2.5 bg-slate-50 dark:bg-slate-800/50 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-xl text-xs font-bold transition-all border border-slate-200 dark:border-slate-700 hover:border-indigo-200 dark:hover:border-indigo-500/30 shadow-sm"
                       >
-                        <Edit className="w-3.5 h-3.5" />
+                        View Full Profile
                       </button>
-                    </Link>
+                      <Link href={`/hr/employees/${user.id}/edit`}>
+                        <button 
+                          className="w-10 h-full flex items-center justify-center bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-xl transition-all border border-slate-200 dark:border-slate-700 shadow-sm hover:text-indigo-600 dark:hover:text-indigo-400"
+                          title="Edit"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                      </Link>
+                    </div>
                   </div>
                 </div>
               )
