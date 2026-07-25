@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useAppContext, HREmployee } from "@/store/AppContext"
-import { Search, Users, Plus, Edit, UserMinus, UserCheck, Trash2, UserCircle, LayoutGrid, List } from "lucide-react"
+import { Search, Users, Plus, Edit, UserMinus, UserCheck, Trash2, UserCircle, LayoutGrid, List, Eye } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
 import { EmployeeDetailsModal } from "@/components/hr/EmployeeDetailsModal"
@@ -84,12 +84,18 @@ export default function HREmployeesPage() {
 
   return (
     <DashboardLayout title="Employee Management">
-      <div className="flex flex-col gap-6 font-sans max-w-[1200px] mx-auto w-full pb-10">
+      <div className="relative flex flex-col gap-5 font-sans max-w-[1200px] mx-auto w-full pb-10 min-h-screen overflow-x-hidden px-4 md:px-0">
         
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 bg-white/50 dark:bg-card/50 p-6 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm backdrop-blur-md">
-          <div>
+        {/* Decorative Background Elements for Glassmorphism */}
+        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-gradient-to-br from-[#ff5a36]/20 to-purple-500/20 rounded-full blur-[100px] pointer-events-none -z-10" />
+        <div className="absolute bottom-[10%] right-[-10%] w-[40%] h-[40%] bg-gradient-to-br from-blue-500/20 to-emerald-500/20 rounded-full blur-[120px] pointer-events-none -z-10" />
+        <div className="absolute top-[30%] left-[30%] w-[30%] h-[30%] bg-gradient-to-tr from-amber-400/20 to-[#ff5a36]/20 rounded-full blur-[100px] pointer-events-none -z-10" />
+
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 bg-gradient-to-br from-white/90 to-white/50 dark:from-slate-900/60 dark:to-slate-900/20 p-6 rounded-[1.5rem] border border-white/60 dark:border-slate-700/50 shadow-2xl shadow-[#ff5a36]/5 backdrop-blur-2xl relative overflow-hidden group transition-all duration-500 hover:shadow-[#ff5a36]/10">
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full duration-1000 transition-transform pointer-events-none" />
+          <div className="relative z-10">
             <div className="flex items-center gap-3 mb-1">
-              <div className="bg-slate-100 dark:bg-slate-800 p-2 rounded-xl text-slate-500">
+              <div className="bg-[#ff5a36]/10 dark:bg-[#ff5a36]/20 p-2 rounded-xl text-[#ff5a36]">
                 <Users className="w-5 h-5" />
               </div>
               <h1 className="text-3xl font-bold text-slate-800 dark:text-white tracking-tight">Employees</h1>
@@ -136,13 +142,15 @@ export default function HREmployeesPage() {
         </div>
 
         {viewMode === "list" ? (
-          <Card className="rounded-[1.5rem] p-0 bg-white dark:bg-card border-none shadow-sm overflow-hidden">
+          <Card className="rounded-[1.5rem] p-0 bg-white/70 dark:bg-slate-900/40 backdrop-blur-2xl border border-slate-200/30 dark:border-slate-700/50 shadow-xl shadow-slate-200/20 dark:shadow-black/20 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-left">
-                <thead className="bg-slate-50 dark:bg-slate-900/50">
-                  <tr className="text-slate-500 font-medium border-b border-slate-100 dark:border-slate-800 text-xs uppercase tracking-wider">
+                <thead className="bg-white/30 dark:bg-slate-800/30 backdrop-blur-md border-b border-slate-200/70 dark:border-slate-700/50">
+                  <tr className="text-slate-500 font-medium text-xs uppercase tracking-wider">
                     <th className="py-4 px-6 font-bold">Employee</th>
                     <th className="py-4 px-6 font-bold">Role</th>
+                    <th className="py-4 px-6 font-bold">Type</th>
+                    <th className="py-4 px-6 font-bold">Joined</th>
                     <th className="py-4 px-6 font-bold text-center">Status</th>
                     <th className="py-4 px-6 text-right font-bold">Actions</th>
                   </tr>
@@ -153,7 +161,7 @@ export default function HREmployeesPage() {
                     const isActive = user.status === "Active"
 
                     return (
-                      <tr key={user.id} className={`group hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors ${!isLast ? 'border-b border-slate-50 dark:border-slate-800/50' : ''}`}>
+                      <tr key={user.id} className={`group hover:bg-white/50 dark:hover:bg-slate-800/50 transition-colors ${!isLast ? 'border-b border-white/30 dark:border-slate-700/30' : ''}`}>
                         <td className="py-3 px-6">
                           <div className="flex items-center gap-3">
                             {user.avatar_url ? (
@@ -165,9 +173,14 @@ export default function HREmployeesPage() {
                               <span className="font-bold text-slate-800 dark:text-white flex items-center gap-2">
                                 {user.full_name}
                               </span>
-                              <span className="text-[10px] text-slate-400 font-mono" title={user.id}>{user.job_title || "Unassigned"} • {user.email || user.id.substring(0,8) + "..."}</span>
+                              <span className="text-[10px] text-slate-400 font-mono" title={user.id}>{user.email || user.id.substring(0,8) + "..."}</span>
                             </div>
                           </div>
+                        </td>
+                        <td className="py-3 px-6">
+                          <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                            {user.job_title || "Unassigned"}
+                          </span>
                         </td>
                         <td className="py-3 px-6">
                           {user.employment_type && (
@@ -179,6 +192,11 @@ export default function HREmployeesPage() {
                                   {user.employment_type}
                               </span>
                           )}
+                        </td>
+                        <td className="py-3 px-6">
+                          <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                            {user.joining_date ? new Date(user.joining_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'}
+                          </span>
                         </td>
                         <td className="py-3 px-6 text-center">
                           <button 
@@ -194,19 +212,26 @@ export default function HREmployeesPage() {
                           </button>
                         </td>
                         <td className="py-3 px-6 text-right">
-                          <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
                             {(user.employment_type === "Training" || user.employment_type === "Probation") && (
                               <button 
                                 onClick={() => handleMakePermanent(user)}
-                                className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-amber-600 hover:text-white bg-amber-50 hover:bg-amber-500 dark:bg-amber-500/10 dark:text-amber-400 dark:hover:bg-amber-500 dark:hover:text-white rounded-lg transition-colors shadow-sm dark:shadow-none"
+                                className="px-2 py-1 text-[10px] font-extrabold uppercase tracking-wider text-amber-500 hover:text-amber-600 hover:scale-105 hover:-translate-y-0.5 transform transition-all duration-200 bg-transparent"
                                 title="Make Permanent"
                               >
                                 Make Permanent
                               </button>
                             )}
+                            <button 
+                              onClick={() => handleSeeDetails(user)}
+                              className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:scale-110 hover:-translate-y-0.5 transform transition-all duration-200 bg-transparent"
+                              title="View Details"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
                             <Link href={`/hr/employees/${user.id}/edit`}>
                                 <button 
-                                  className="p-1.5 text-slate-400 hover:text-blue-500 bg-white dark:bg-transparent hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors shadow-sm dark:shadow-none"
+                                  className="p-1 text-blue-500 hover:text-blue-600 hover:scale-110 hover:-translate-y-0.5 transform transition-all duration-200 bg-transparent"
                                   title="Edit Employee"
                                 >
                                   <Edit className="w-4 h-4" />
@@ -214,7 +239,7 @@ export default function HREmployeesPage() {
                             </Link>
                             <button 
                               onClick={() => handleDelete(user)}
-                              className="p-1.5 text-slate-400 hover:text-red-500 bg-white dark:bg-transparent hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors shadow-sm dark:shadow-none"
+                              className="p-1 text-rose-500 hover:text-rose-600 hover:scale-110 hover:-translate-y-0.5 transform transition-all duration-200 bg-transparent"
                               title="Delete Employee"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -244,24 +269,31 @@ export default function HREmployeesPage() {
               return (
                 <div 
                   key={user.id} 
-                  className="group relative rounded-[2rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-6 flex flex-col transition-all duration-300 hover:shadow-xl hover:-translate-y-1 shadow-sm"
+                  className="group relative rounded-[1.5rem] bg-white/70 dark:bg-slate-900/40 backdrop-blur-2xl border border-slate-200/30 dark:border-slate-700/50 p-6 flex flex-col transition-all hover:bg-white/90 dark:hover:bg-slate-800/60 hover:-translate-y-1 hover:shadow-2xl shadow-xl shadow-slate-200/20 dark:shadow-black/20 duration-300"
                 >
                   {/* Top Right Action Buttons */}
-                  <div className="absolute top-4 right-4 flex items-center gap-1.5">
+                  <div className="absolute top-4 right-4 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button 
+                      onClick={() => handleSeeDetails(user)}
+                      className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 hover:scale-110 transition-all duration-200"
+                      title="View Details"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </button>
                     <Link href={`/hr/employees/${user.id}/edit`}>
                       <button 
-                        className="w-9 h-9 rounded-full bg-transparent hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                        className="w-8 h-8 rounded-full flex items-center justify-center text-blue-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/10 hover:scale-110 transition-all duration-200"
                         title="Edit Employee"
                       >
-                        <Edit className="w-3.5 h-3.5" />
+                        <Edit className="w-4 h-4" />
                       </button>
                     </Link>
                     <button 
-                      onClick={() => handleSeeDetails(user)}
-                      className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
-                      title="View Details"
+                      onClick={() => handleDelete(user)}
+                      className="w-8 h-8 rounded-full flex items-center justify-center text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10 hover:scale-110 transition-all duration-200"
+                      title="Delete Employee"
                     >
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17l9.2-9.2M17 17V7H7"/></svg>
+                      <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
 
@@ -280,29 +312,33 @@ export default function HREmployeesPage() {
                     <p className="text-[11px] font-medium text-slate-400 mt-1">
                       {user.job_title || "Unassigned"} • {user.employment_type || "Full-Time"}
                     </p>
+                    <p className="text-[10px] font-bold text-slate-400 mt-1">
+                      Joined: {user.joining_date ? new Date(user.joining_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'}
+                    </p>
                   </div>
 
                   {/* Bottom Columns */}
                   <div className="flex items-end justify-between gap-2 mt-auto">
                     {/* Salary (Mapped to Source) */}
                     <div className="flex flex-col gap-2">
-                      <span className="text-[10px] font-semibold text-slate-400">Salary</span>
+                      <span className="text-[10px] font-extrabold text-[#ff5a36] uppercase tracking-wider">Salary</span>
                       <div className="flex flex-col gap-1">
-                        <span className="px-2.5 py-1 w-fit bg-slate-100 dark:bg-slate-800/80 rounded-full text-[10px] font-bold text-slate-500 dark:text-slate-400 tracking-wide">
+                        <span className="text-[12px] font-bold text-slate-600 dark:text-slate-300 tracking-wide">
                           PKR {Number(user.base_salary).toLocaleString()}
                         </span>
                         {Number(user.commission_per_sale) > 0 && (
-                          <span className="px-2.5 py-1 w-fit bg-slate-100 dark:bg-slate-800/80 rounded-full text-[10px] font-bold text-slate-500 dark:text-slate-400 tracking-wide">
+                          <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 tracking-wide">
                             +PKR {user.commission_per_sale}/s
                           </span>
                         )}
                       </div>
                     </div>
 
-                    {/* Status (Mapped to Hot Client) */}
+                    {/* Status Indicator */}
                     <div className="flex flex-col gap-2 items-end">
-                      <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                        <span className="text-[11px]">🔥</span> {isActive ? "Active" : "Disabled"}
+                      <span className={`text-[10px] font-bold flex items-center gap-1.5 ${isActive ? "text-emerald-500 dark:text-emerald-400" : "text-slate-500 dark:text-slate-400"}`}>
+                        {isActive ? <UserCheck className="w-3.5 h-3.5" /> : <UserMinus className="w-3.5 h-3.5" />}
+                        {isActive ? "Active" : "Disabled"}
                       </span>
                       <div className="px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800/80 rounded-full flex gap-1 items-center">
                         <div className={`w-2 h-2 rounded-full ${isActive ? 'bg-rose-400' : 'bg-slate-300 dark:bg-slate-600'}`} />

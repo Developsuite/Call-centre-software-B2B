@@ -90,20 +90,31 @@ export function TopBar({ title, onMenuToggle }: { title?: string, onMenuToggle?:
       </div>
 
       <div className="hidden lg:flex items-center bg-white dark:bg-card rounded-full p-1.5 shadow-sm">
-        {topNav.map((item) => (
-          <Link
-            key={item.name}
-            href={item.href}
-            className={cn(
-              "px-5 py-2 text-sm font-medium rounded-full transition-all duration-300",
-              pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href))
-                ? "bg-gradient-to-b from-[#404040] to-[#111111] dark:from-[#3a414e] dark:to-[#0f172a] shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_4px_10px_rgba(0,0,0,0.3)] text-white border border-[#2a2a2a] dark:border-border"
-                : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
-            )}
-          >
-            {item.name}
-          </Link>
-        ))}
+        {topNav.map((item) => {
+          // Find the longest matching href to prevent overlapping active states
+          const isActive = (() => {
+            if (item.href === "/") return pathname === "/";
+            const bestMatch = [...topNav]
+              .filter(nav => pathname === nav.href || pathname.startsWith(nav.href + "/"))
+              .sort((a, b) => b.href.length - a.href.length)[0];
+            return bestMatch?.href === item.href;
+          })();
+
+          return (
+            <Link
+              key={item.name}
+              href={item.href}
+              className={cn(
+                "px-5 py-2 text-sm font-medium rounded-full transition-all duration-300",
+                isActive
+                  ? "bg-gradient-to-b from-[#404040] to-[#111111] dark:from-[#3a414e] dark:to-[#0f172a] shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_4px_10px_rgba(0,0,0,0.3)] text-white border border-[#2a2a2a] dark:border-border"
+                  : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+              )}
+            >
+              {item.name}
+            </Link>
+          );
+        })}
       </div>
 
       <div className="flex items-center gap-4">
