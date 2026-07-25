@@ -241,102 +241,61 @@ export default function HREmployeesPage() {
               const isActive = user.status === "Active"
               const avatarUrlToUse = user.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.full_name || 'Employee')}&background=random&color=fff&size=400`
               
-              return (
                 <div 
                   key={user.id} 
-                  className="group relative rounded-[2rem] bg-white dark:bg-[#111111] border border-slate-200 dark:border-slate-800/80 overflow-hidden transition-all duration-500 hover:shadow-2xl hover:shadow-indigo-500/10 hover:-translate-y-1 flex flex-col"
+                  className="group relative rounded-[1.5rem] bg-white dark:bg-[#111111] border border-slate-200 dark:border-slate-800/80 p-5 transition-all duration-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:hover:shadow-none hover:border-slate-300 dark:hover:border-slate-700 flex flex-col gap-4"
                 >
-                  {/* Abstract Gradient Header */}
-                  <div className="h-28 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-[#ff5a36] relative overflow-hidden">
-                    <div className="absolute inset-0 bg-black/20" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-white dark:from-[#111111] to-transparent opacity-90" />
-                    
-                    <div className="absolute top-4 right-4 z-10">
-                      <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold tracking-wide backdrop-blur-md border ${
-                        isActive 
-                          ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/30' 
-                          : 'bg-slate-500/20 text-slate-700 dark:text-slate-300 border-slate-500/30'
-                      }`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-emerald-500 animate-pulse' : 'bg-slate-500'}`} />
-                        {isActive ? 'Active' : 'Inactive'}
-                      </span>
+                  {/* Top Row: Avatar & Identity */}
+                  <div className="flex items-start gap-4">
+                    <img 
+                        src={avatarUrlToUse} 
+                        alt={user.full_name} 
+                        className="w-12 h-12 rounded-full object-cover border border-slate-100 dark:border-slate-800 shrink-0"
+                    />
+                    <div className="flex-1 min-w-0 pt-0.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <h3 className="font-bold text-slate-900 dark:text-white text-base truncate tracking-tight leading-tight">{user.full_name}</h3>
+                        <span className={`w-2 h-2 rounded-full flex-shrink-0 ${isActive ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]' : 'bg-slate-300 dark:bg-slate-700'}`} title={isActive ? 'Active' : 'Inactive'} />
+                      </div>
+                      <p className="text-[13px] text-slate-500 dark:text-slate-400 truncate mt-0.5">{user.job_title || "Unassigned"}</p>
                     </div>
                   </div>
 
-                  <div className="p-6 pt-0 flex flex-col flex-1 relative">
-                    {/* Floating Avatar */}
-                    <div className="relative -mt-12 mb-4 inline-block w-fit">
-                      <img 
-                          src={avatarUrlToUse} 
-                          alt={user.full_name} 
-                          className="w-24 h-24 object-cover rounded-[1.5rem] shadow-xl border-4 border-white dark:border-[#111111] bg-white dark:bg-[#111111] transition-transform duration-500 group-hover:scale-105 group-hover:rotate-3"
-                      />
-                    </div>
+                  {/* Badges / Small Info */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-[10px] font-bold tracking-wide uppercase text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/50 px-2.5 py-1 rounded-lg">
+                      {user.employment_type || "Full-Time"}
+                    </span>
+                    <span className="text-[10px] font-bold tracking-wide uppercase text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-2.5 py-1 rounded-lg flex items-center gap-1">
+                      ★ 5.0
+                    </span>
+                  </div>
 
-                    {/* Identity */}
-                    <div className="flex flex-col">
-                      <h3 className="font-bold text-slate-800 dark:text-white text-xl leading-tight truncate tracking-tight">{user.full_name}</h3>
-                      <p className="text-sm font-medium text-[#ff5a36] mt-1 line-clamp-1">{user.job_title || "Unassigned Role"}</p>
-                    </div>
+                  {/* Base Salary */}
+                  <div className="flex items-center justify-between text-sm mt-1 py-3 border-t border-b border-slate-100 dark:border-slate-800/50">
+                    <span className="text-slate-500 dark:text-slate-400 text-[11px] font-semibold uppercase tracking-wider">Salary</span>
+                    <span className="font-bold text-slate-900 dark:text-white">
+                      <span className="text-[10px] text-slate-400 font-normal mr-1">PKR</span>
+                      {Number(user.base_salary).toLocaleString()}
+                    </span>
+                  </div>
 
-                    {/* Badges */}
-                    <div className="flex items-center gap-2 mt-4 flex-wrap">
-                      <span className="flex items-center gap-1 bg-amber-50 dark:bg-amber-500/10 px-2 py-1 rounded-md">
-                        <svg className="w-3.5 h-3.5 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                        </svg>
-                        <span className="text-xs text-amber-700 dark:text-amber-400 font-bold">5.0</span>
-                      </span>
-                      <span className="text-xs text-indigo-700 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 px-2 py-1 rounded-md font-bold">
-                        {user.employment_type || "Full-Time"}
-                      </span>
-                    </div>
-
-                    {/* Financials Block */}
-                    <div className="mt-5 bg-slate-50 dark:bg-white/5 rounded-2xl p-4 border border-slate-100 dark:border-white/5 flex flex-col gap-1">
-                      <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Base Salary</span>
-                      <div className="flex items-end justify-between">
-                        <span className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-                          <span className="text-sm font-bold text-slate-500 dark:text-slate-400 mr-1">PKR</span>
-                          {Number(user.base_salary).toLocaleString()}
-                        </span>
-                        {Number(user.commission_per_sale) > 0 && (
-                            <span className="px-2 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold border border-emerald-200 dark:border-emerald-500/20 shadow-sm">
-                                +{user.commission_per_sale}/sale
-                            </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex gap-3 mt-auto pt-6">
+                  {/* Actions */}
+                  <div className="flex gap-2 mt-auto pt-1">
+                    <button 
+                      onClick={() => handleSeeDetails(user)}
+                      className="flex-1 py-2.5 bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition-colors border border-slate-200 dark:border-slate-800"
+                    >
+                      View Profile
+                    </button>
+                    <Link href={`/hr/employees/${user.id}/edit`}>
                       <button 
-                        onClick={() => handleSeeDetails(user)}
-                        className="flex-1 py-3 bg-slate-900 dark:bg-white hover:bg-slate-800 dark:hover:bg-slate-200 text-white dark:text-slate-900 rounded-xl text-sm font-bold transition-all shadow-md hover:shadow-xl hover:-translate-y-0.5"
+                        className="w-10 h-full flex items-center justify-center bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-xl transition-colors border border-slate-200 dark:border-slate-800"
+                        title="Edit"
                       >
-                        View Profile
+                        <Edit className="w-3.5 h-3.5" />
                       </button>
-                      
-                      <div className="flex gap-2">
-                        <Link href={`/hr/employees/${user.id}/edit`}>
-                          <button 
-                            className="w-12 h-full flex items-center justify-center bg-white dark:bg-[#1a1a1a] border-2 border-slate-200 dark:border-slate-800 hover:border-indigo-500 dark:hover:border-indigo-500 text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-xl transition-all"
-                            title="Edit"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </button>
-                        </Link>
-                        {(user.employment_type === "Training" || user.employment_type === "Probation") && (
-                          <button 
-                              onClick={() => handleMakePermanent(user)}
-                              className="w-12 h-full flex items-center justify-center bg-white dark:bg-[#1a1a1a] border-2 border-amber-200 dark:border-amber-900 hover:border-amber-500 dark:hover:border-amber-500 text-amber-500 rounded-xl transition-all"
-                              title="Make Permanent"
-                          >
-                              <UserCheck className="w-4 h-4" />
-                          </button>
-                        )}
-                      </div>
-                    </div>
+                    </Link>
                   </div>
                 </div>
               )
