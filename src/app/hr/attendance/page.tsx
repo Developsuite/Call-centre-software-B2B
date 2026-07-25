@@ -93,13 +93,13 @@ export default function AttendancePage() {
     }
   }
 
-  if (!isLoaded) return <div className="flex h-screen items-center justify-center bg-gray-900 text-white">Loading HR Systems...</div>
+  if (!isLoaded) return <div className="flex h-screen items-center justify-center bg-slate-50 dark:bg-gray-900 text-slate-800 dark:text-white">Loading HR Systems...</div>
 
   return (
-    <div className="flex h-screen bg-gray-900 text-white overflow-hidden selection:bg-indigo-500/30">
+    <div className="flex h-screen bg-slate-50 dark:bg-gray-900 text-slate-800 dark:text-white overflow-hidden selection:bg-indigo-500/30">
       <Sidebar />
       
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-slate-50 dark:bg-gradient-to-br dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
         <TopBar title="Attendance Dashboard" />
         
         <main className="flex-1 overflow-y-auto p-4 lg:p-8 custom-scrollbar">
@@ -107,10 +107,10 @@ export default function AttendancePage() {
           <div className="max-w-7xl mx-auto space-y-6">
             
             {/* Header Section */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gray-800/40 p-6 rounded-2xl border border-gray-700/50 backdrop-blur-sm">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-gray-800/40 p-6 rounded-2xl border border-slate-200 dark:border-gray-700/50 shadow-sm dark:shadow-none backdrop-blur-sm">
               <div>
-                <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">Daily Attendance</h1>
-                <p className="text-gray-400 text-sm mt-1">Monitor real-time machine fingerprints and check-ins.</p>
+                <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-cyan-600 dark:from-indigo-400 dark:to-cyan-400">Daily Attendance</h1>
+                <p className="text-slate-500 dark:text-gray-400 text-sm mt-1">Monitor real-time machine fingerprints and check-ins.</p>
               </div>
               
               <div className="flex items-center gap-3">
@@ -118,7 +118,7 @@ export default function AttendancePage() {
                   type="date" 
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
-                  className="bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                  className="bg-white dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-slate-800 dark:text-white"
                 />
                 <button 
                   onClick={handleRefresh}
@@ -132,11 +132,11 @@ export default function AttendancePage() {
             </div>
 
             {/* Attendance Table */}
-            <div className="bg-gray-800/40 border border-gray-700/50 rounded-2xl overflow-hidden backdrop-blur-sm">
+            <div className="bg-white dark:bg-gray-800/40 border border-slate-200 dark:border-gray-700/50 rounded-2xl overflow-hidden shadow-sm dark:shadow-none backdrop-blur-sm">
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="bg-gray-800/80 border-b border-gray-700/50 text-gray-400 text-xs uppercase tracking-wider">
+                    <tr className="bg-slate-50 dark:bg-gray-800/80 border-b border-slate-200 dark:border-gray-700/50 text-slate-500 dark:text-gray-400 text-xs uppercase tracking-wider">
                       <th className="px-6 py-4 font-medium">Employee</th>
                       <th className="px-6 py-4 font-medium">Check In</th>
                       <th className="px-6 py-4 font-medium">Check Out</th>
@@ -145,20 +145,20 @@ export default function AttendancePage() {
                       <th className="px-6 py-4 font-medium text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-700/50">
+                  <tbody className="divide-y divide-slate-200 dark:divide-gray-700/50">
                     {processedData.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="px-6 py-12 text-center text-gray-400">
+                        <td colSpan={6} className="px-6 py-12 text-center text-slate-500 dark:text-gray-400">
                           <div className="flex flex-col items-center justify-center">
-                            <CalendarDays className="w-12 h-12 text-gray-600 mb-3" />
-                            <p className="text-lg font-medium text-gray-300">No punches found</p>
+                            <CalendarDays className="w-12 h-12 text-slate-300 dark:text-gray-600 mb-3" />
+                            <p className="text-lg font-medium text-slate-700 dark:text-gray-300">No punches found</p>
                             <p className="text-sm">There are no machine fingerprints recorded for {selectedDate}.</p>
                           </div>
                         </td>
                       </tr>
                     ) : (
                       processedData.map((row, idx) => (
-                        <tr key={idx} className="hover:bg-gray-700/20 transition-colors group">
+                        <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-gray-700/20 transition-colors group">
                           
                           {/* Employee Identity */}
                           <td className="px-6 py-4">
@@ -172,22 +172,22 @@ export default function AttendancePage() {
                                   )}
                                 </div>
                                 <div>
-                                  <div className="font-semibold text-gray-100">{row.employee.full_name}</div>
-                                  <div className="text-xs text-gray-400 flex items-center gap-1">
+                                  <div className="font-semibold text-slate-800 dark:text-gray-100">{row.employee.full_name}</div>
+                                  <div className="text-xs text-slate-500 dark:text-gray-400 flex items-center gap-1">
                                     Machine ID: {row.zk_user_id}
                                   </div>
                                 </div>
                               </div>
                             ) : (
                               <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-gray-400">
+                                <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-gray-700 flex items-center justify-center text-slate-500 dark:text-gray-400">
                                   ?
                                 </div>
                                 <div>
-                                  <div className="font-semibold text-rose-400 flex items-center gap-1">
+                                  <div className="font-semibold text-rose-600 dark:text-rose-400 flex items-center gap-1">
                                     <AlertCircle className="w-3 h-3" /> Unknown User
                                   </div>
-                                  <div className="text-xs text-gray-400">
+                                  <div className="text-xs text-slate-500 dark:text-gray-400">
                                     Machine ID: {row.zk_user_id}
                                   </div>
                                 </div>
@@ -197,7 +197,7 @@ export default function AttendancePage() {
 
                           {/* Check In */}
                           <td className="px-6 py-4">
-                            <div className="flex items-center gap-2 text-emerald-400 font-medium">
+                            <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-medium">
                               <CheckCircle className="w-4 h-4" />
                               {format(new Date(row.firstPunch), 'hh:mm a')}
                             </div>
@@ -206,19 +206,19 @@ export default function AttendancePage() {
                           {/* Check Out */}
                           <td className="px-6 py-4">
                             {row.lastPunch ? (
-                               <div className="flex items-center gap-2 text-rose-400 font-medium">
+                               <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400 font-medium">
                                <XCircle className="w-4 h-4" />
                                {format(new Date(row.lastPunch), 'hh:mm a')}
                              </div>
                             ) : (
-                              <span className="text-gray-500 text-sm italic">Missing</span>
+                              <span className="text-slate-400 dark:text-gray-500 text-sm italic">Missing</span>
                             )}
                           </td>
 
                           {/* Work Hours */}
                           <td className="px-6 py-4">
-                            <div className="flex items-center gap-2 text-gray-300">
-                              <Clock className="w-4 h-4 text-gray-500" />
+                            <div className="flex items-center gap-2 text-slate-700 dark:text-gray-300">
+                              <Clock className="w-4 h-4 text-slate-400 dark:text-gray-500" />
                               {row.workedHours}
                             </div>
                           </td>
@@ -226,11 +226,11 @@ export default function AttendancePage() {
                           {/* Status */}
                           <td className="px-6 py-4">
                             {row.status === 'On Time' ? (
-                              <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-medium border border-emerald-500/20">
+                              <span className="px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-xs font-medium border border-emerald-200 dark:border-emerald-500/20">
                                 On Time
                               </span>
                             ) : (
-                              <span className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-400 text-xs font-medium border border-amber-500/20">
+                              <span className="px-3 py-1 rounded-full bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs font-medium border border-amber-200 dark:border-amber-500/20">
                                 Late
                               </span>
                             )}
@@ -241,7 +241,7 @@ export default function AttendancePage() {
                             {!row.employee && mappingId !== row.zk_user_id && (
                               <button 
                                 onClick={() => setMappingId(row.zk_user_id)}
-                                className="flex items-center gap-2 text-indigo-400 hover:text-indigo-300 transition-colors text-sm ml-auto bg-indigo-500/10 px-3 py-1.5 rounded-lg border border-indigo-500/20"
+                                className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors text-sm ml-auto bg-indigo-50 dark:bg-indigo-500/10 px-3 py-1.5 rounded-lg border border-indigo-200 dark:border-indigo-500/20"
                               >
                                 <LinkIcon className="w-4 h-4" /> Link Profile
                               </button>
@@ -252,7 +252,7 @@ export default function AttendancePage() {
                                 <select 
                                   value={selectedEmployeeId}
                                   onChange={(e) => setSelectedEmployeeId(e.target.value)}
-                                  className="bg-gray-800 border border-gray-600 rounded-lg px-2 py-1.5 text-sm max-w-[150px] outline-none"
+                                  className="bg-white dark:bg-gray-800 border border-slate-300 dark:border-gray-600 rounded-lg px-2 py-1.5 text-sm max-w-[150px] outline-none text-slate-800 dark:text-white"
                                 >
                                   <option value="">Select Employee...</option>
                                   {hrEmployees.filter(e => !e.zk_user_id).map(emp => (
@@ -267,7 +267,7 @@ export default function AttendancePage() {
                                 </button>
                                 <button 
                                   onClick={() => setMappingId(null)}
-                                  className="bg-gray-700 hover:bg-gray-600 text-white px-3 py-1.5 rounded-lg text-sm transition-colors"
+                                  className="bg-slate-200 dark:bg-gray-700 hover:bg-slate-300 dark:hover:bg-gray-600 text-slate-800 dark:text-white px-3 py-1.5 rounded-lg text-sm transition-colors"
                                 >
                                   Cancel
                                 </button>
