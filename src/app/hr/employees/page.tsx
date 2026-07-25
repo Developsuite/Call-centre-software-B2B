@@ -241,6 +241,7 @@ export default function HREmployeesPage() {
               const isActive = user.status === "Active"
               const avatarUrlToUse = user.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.full_name || 'Employee')}&background=random&color=fff&size=400`
               
+              return (
                 <div 
                   key={user.id} 
                   className="group relative rounded-[1.5rem] bg-white dark:bg-[#111111] border border-slate-200 dark:border-slate-800/80 p-5 transition-all duration-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:hover:shadow-none hover:border-slate-300 dark:hover:border-slate-700 flex flex-col gap-4"
