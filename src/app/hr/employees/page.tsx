@@ -244,77 +244,73 @@ export default function HREmployeesPage() {
               return (
                 <div 
                   key={user.id} 
-                  className="group relative rounded-2xl bg-white dark:bg-[#111111] border border-slate-200 dark:border-slate-800 overflow-hidden transition-all duration-300 hover:shadow-2xl hover:shadow-indigo-500/10 hover:-translate-y-1 flex flex-col"
+                  className="group relative rounded-[2.5rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-8 flex flex-col transition-all duration-300 hover:shadow-xl hover:-translate-y-1 shadow-sm"
                 >
-                  {/* Glowing Top Accent */}
-                  <div className="h-1.5 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-[#ff5a36] opacity-80" />
-
-                  <div className="p-5 flex flex-col flex-1">
-                    <div className="flex justify-between items-start mb-4">
-                      {/* Avatar with gradient ring */}
-                      <div className="relative">
-                        <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-full blur-[6px] opacity-40 group-hover:opacity-70 transition-opacity duration-500" />
-                        <img 
-                            src={avatarUrlToUse} 
-                            alt={user.full_name} 
-                            className="relative w-14 h-14 rounded-full object-cover border-2 border-white dark:border-[#111111] shadow-sm"
-                        />
-                        <span className={`absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full border-2 border-white dark:border-[#111111] ${isActive ? 'bg-emerald-500' : 'bg-slate-400'}`} title={isActive ? 'Active' : 'Inactive'} />
-                      </div>
-
-                      {/* Badges */}
-                      <div className="flex gap-1.5">
-                        <span className="text-[10px] font-bold tracking-wider uppercase text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 px-2 py-1 rounded-md border border-indigo-100 dark:border-indigo-500/20">
-                          {user.employment_type || "Full-Time"}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Identity */}
-                    <div>
-                      <h3 className="font-bold text-slate-900 dark:text-white text-lg tracking-tight leading-tight group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                        {user.full_name}
-                      </h3>
-                      <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-0.5">{user.job_title || "Unassigned Role"}</p>
-                    </div>
-
-                    {/* Elegant Separator */}
-                    <div className="w-full h-px bg-gradient-to-r from-slate-100 via-slate-200 to-transparent dark:from-slate-800 dark:via-slate-700 my-4" />
-
-                    {/* Financials / Meta */}
-                    <div className="flex items-end justify-between mt-auto pb-4">
-                      <div className="flex flex-col">
-                        <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-1">Base Salary</span>
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-xs font-bold text-slate-400">PKR</span>
-                          <span className="text-xl font-black text-slate-800 dark:text-white leading-none tracking-tight">
-                            {Number(user.base_salary).toLocaleString()}
-                          </span>
-                        </div>
-                      </div>
-                      {Number(user.commission_per_sale) > 0 && (
-                        <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-1.5 rounded-md border border-emerald-100 dark:border-emerald-500/20">
-                          +{user.commission_per_sale}/sale
-                        </span>
-                      )}
-                    </div>
-
-                    {/* High-End Actions */}
-                    <div className="grid grid-cols-[1fr_auto] gap-2 pt-1">
+                  {/* Top Right Action Buttons */}
+                  <div className="absolute top-6 right-6 flex items-center gap-2">
+                    <Link href={`/hr/employees/${user.id}/edit`}>
                       <button 
-                        onClick={() => handleSeeDetails(user)}
-                        className="w-full py-2.5 bg-slate-50 dark:bg-slate-800/50 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-xl text-xs font-bold transition-all border border-slate-200 dark:border-slate-700 hover:border-indigo-200 dark:hover:border-indigo-500/30 shadow-sm"
+                        className="w-12 h-12 rounded-full bg-transparent hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                        title="Edit Employee"
                       >
-                        View Full Profile
+                        <Edit className="w-4 h-4" />
                       </button>
-                      <Link href={`/hr/employees/${user.id}/edit`}>
-                        <button 
-                          className="w-10 h-full flex items-center justify-center bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-xl transition-all border border-slate-200 dark:border-slate-700 shadow-sm hover:text-indigo-600 dark:hover:text-indigo-400"
-                          title="Edit"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                      </Link>
+                    </Link>
+                    <button 
+                      onClick={() => handleSeeDetails(user)}
+                      className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                      title="View Details"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17l9.2-9.2M17 17V7H7"/></svg>
+                    </button>
+                  </div>
+
+                  {/* Avatar */}
+                  <img 
+                      src={avatarUrlToUse} 
+                      alt={user.full_name} 
+                      className="w-16 h-16 rounded-full object-cover shadow-sm bg-slate-100"
+                  />
+
+                  {/* Name & Title */}
+                  <div className="mt-6 mb-10">
+                    <h3 className="text-[1.75rem] font-bold text-slate-800 dark:text-white tracking-tight leading-tight">
+                      {user.full_name}
+                    </h3>
+                    <p className="text-[13px] font-medium text-slate-400 mt-2">
+                      {user.job_title || "Unassigned"} • {user.employment_type || "Full-Time"}
+                    </p>
+                  </div>
+
+                  {/* Bottom Columns */}
+                  <div className="flex items-end justify-between mt-auto">
+                    {/* Salary (Mapped to Source) */}
+                    <div className="flex flex-col gap-3">
+                      <span className="text-xs font-semibold text-slate-400">Salary</span>
+                      <div className="flex gap-2">
+                        <span className="px-4 py-2 bg-slate-100 dark:bg-slate-800/80 rounded-full text-xs font-bold text-slate-500 dark:text-slate-400 tracking-wide">
+                          PKR {Number(user.base_salary).toLocaleString()}
+                        </span>
+                        {Number(user.commission_per_sale) > 0 && (
+                          <span className="px-4 py-2 bg-slate-100 dark:bg-slate-800/80 rounded-full text-xs font-bold text-slate-500 dark:text-slate-400 tracking-wide">
+                            +PKR {user.commission_per_sale}/sale
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Status (Mapped to Hot Client) */}
+                    <div className="flex flex-col gap-3 items-end">
+                      <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                        <span className="text-sm">🔥</span> {isActive ? "Active" : "Disabled"}
+                      </span>
+                      <div className="px-3.5 py-2.5 bg-slate-100 dark:bg-slate-800/80 rounded-full flex gap-2 items-center">
+                        <div className={`w-3 h-3 rounded-full ${isActive ? 'bg-rose-400' : 'bg-slate-300 dark:bg-slate-600'}`} />
+                        <div className={`w-3 h-3 rounded-full ${isActive ? 'bg-orange-400' : 'bg-slate-300 dark:bg-slate-600'}`} />
+                        <div className={`w-3 h-3 rounded-full ${isActive ? 'bg-amber-400' : 'bg-slate-300 dark:bg-slate-600'}`} />
+                        <div className={`w-3 h-3 rounded-full ${isActive ? 'bg-emerald-400' : 'bg-slate-300 dark:bg-slate-600'}`} />
+                        <div className={`w-3 h-3 rounded-full ${isActive ? 'bg-emerald-400' : 'bg-slate-300 dark:bg-slate-600'}`} />
+                      </div>
                     </div>
                   </div>
                 </div>
