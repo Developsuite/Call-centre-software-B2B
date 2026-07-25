@@ -244,73 +244,67 @@ export default function HREmployeesPage() {
               return (
                 <div 
                   key={user.id} 
-                  className="group relative rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-5 flex flex-col transition-all duration-300 hover:shadow-xl hover:-translate-y-1 shadow-sm"
+                  className="group relative rounded-[2rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-6 flex flex-col transition-all duration-300 hover:shadow-xl hover:-translate-y-1 shadow-sm"
                 >
                   {/* Top Right Action Buttons */}
-                  <div className="absolute top-4 right-4 flex items-center gap-1.5">
+                  <div className="absolute top-5 right-5 flex items-center gap-2">
                     <Link href={`/hr/employees/${user.id}/edit`}>
                       <button 
-                        className="w-9 h-9 rounded-full bg-transparent hover:bg-[#ff5a36]/10 flex items-center justify-center text-slate-400 hover:text-[#ff5a36] transition-colors"
+                        className="w-10 h-10 rounded-full bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors"
                         title="Edit Employee"
                       >
-                        <Edit className="w-3.5 h-3.5" />
+                        <Edit className="w-4 h-4" />
                       </button>
                     </Link>
-                    <button 
-                      onClick={() => handleSeeDetails(user)}
-                      className="w-9 h-9 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-500 hover:bg-[#ff5a36] hover:text-white transition-colors"
-                      title="View Details"
-                    >
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17l9.2-9.2M17 17V7H7"/></svg>
-                    </button>
                   </div>
 
                   {/* Avatar */}
                   <img 
                       src={avatarUrlToUse} 
                       alt={user.full_name} 
-                      className="w-12 h-12 rounded-full object-cover shadow-sm bg-slate-100 ring-2 ring-transparent group-hover:ring-[#ff5a36]/20 transition-all"
+                      className="w-12 h-12 rounded-full object-cover shadow-sm bg-slate-100"
                   />
 
                   {/* Name & Title */}
-                  <div className="mt-4 mb-6 pr-16">
-                    <h3 className="text-xl font-bold text-slate-800 dark:text-white tracking-tight leading-tight truncate">
+                  <div className="mt-5 mb-8">
+                    <h3 className="text-xl font-bold text-slate-800 dark:text-white tracking-tight leading-tight">
                       {user.full_name}
                     </h3>
-                    <p className="text-[12px] font-semibold text-[#ff5a36] mt-1 line-clamp-1">
-                      {user.job_title || "Unassigned"} <span className="text-slate-300 dark:text-slate-600 px-1">•</span> <span className="text-slate-500 dark:text-slate-400 font-medium">{user.employment_type || "Full-Time"}</span>
+                    <p className="text-[13px] font-medium text-slate-400 mt-1">
+                      {user.job_title || "Unassigned"} • {user.employment_type || "Full-Time"}
                     </p>
                   </div>
 
                   {/* Bottom Columns */}
                   <div className="flex items-end justify-between mt-auto">
                     {/* Salary (Mapped to Source) */}
-                    <div className="flex flex-col gap-2">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Salary</span>
-                      <div className="flex gap-1.5 flex-wrap">
-                        <span className="px-2.5 py-1.5 bg-slate-50 dark:bg-slate-800/80 rounded-md text-[11px] font-bold text-slate-600 dark:text-slate-300">
+                    <div className="flex flex-col gap-2.5">
+                      <span className="text-xs font-semibold text-slate-400">Salary</span>
+                      <div className="flex flex-col gap-1.5">
+                        <span className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800/80 rounded-full text-xs font-bold text-slate-500 dark:text-slate-400 tracking-wide w-fit">
                           PKR {Number(user.base_salary).toLocaleString()}
                         </span>
                         {Number(user.commission_per_sale) > 0 && (
-                          <span className="px-2.5 py-1.5 bg-[#ff5a36]/10 rounded-md text-[11px] font-bold text-[#ff5a36]">
+                          <span className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800/80 rounded-full text-xs font-bold text-slate-500 dark:text-slate-400 tracking-wide w-fit">
                             +{user.commission_per_sale}/sale
                           </span>
                         )}
                       </div>
                     </div>
 
-                    {/* Status (Mapped to Hot Client) */}
-                    <div className="flex flex-col gap-2 items-end">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1">
-                        <span className="text-xs">🔥</span> {isActive ? "Active" : "Disabled"}
+                    {/* Status & View Details Button */}
+                    <div className="flex flex-col gap-2.5 items-end">
+                      <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                        {/* Illustrator-style icon instead of emoji */}
+                        <svg className="w-3.5 h-3.5 text-[#ff5a36]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                        {isActive ? "Active Account" : "Disabled"}
                       </span>
-                      <div className="px-2.5 py-1.5 bg-slate-50 dark:bg-slate-800/80 rounded-md flex gap-1.5 items-center h-[28px]">
-                        <div className={`w-2 h-2 rounded-full ${isActive ? 'bg-[#ff5a36]' : 'bg-slate-300 dark:bg-slate-600'}`} />
-                        <div className={`w-2 h-2 rounded-full ${isActive ? 'bg-orange-400' : 'bg-slate-300 dark:bg-slate-600'}`} />
-                        <div className={`w-2 h-2 rounded-full ${isActive ? 'bg-amber-400' : 'bg-slate-300 dark:bg-slate-600'}`} />
-                        <div className={`w-2 h-2 rounded-full ${isActive ? 'bg-emerald-400' : 'bg-slate-300 dark:bg-slate-600'}`} />
-                        <div className={`w-2 h-2 rounded-full ${isActive ? 'bg-emerald-400' : 'bg-slate-300 dark:bg-slate-600'}`} />
-                      </div>
+                      <button 
+                        onClick={() => handleSeeDetails(user)}
+                        className="px-5 py-2 bg-[#ff5a36] hover:bg-[#e04a29] text-white rounded-full text-[11px] font-bold uppercase tracking-wider transition-all shadow-md shadow-[#ff5a36]/20"
+                      >
+                        View Details
+                      </button>
                     </div>
                   </div>
                 </div>
