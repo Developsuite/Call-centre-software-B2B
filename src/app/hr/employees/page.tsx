@@ -244,24 +244,24 @@ export default function HREmployeesPage() {
               return (
                 <div 
                   key={user.id} 
-                  className="group relative rounded-[2.5rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-8 flex flex-col transition-all duration-300 hover:shadow-xl hover:-translate-y-1 shadow-sm"
+                  className="group relative rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-5 flex flex-col transition-all duration-300 hover:shadow-xl hover:-translate-y-1 shadow-sm"
                 >
                   {/* Top Right Action Buttons */}
-                  <div className="absolute top-6 right-6 flex items-center gap-2">
+                  <div className="absolute top-4 right-4 flex items-center gap-1.5">
                     <Link href={`/hr/employees/${user.id}/edit`}>
                       <button 
-                        className="w-12 h-12 rounded-full bg-transparent hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                        className="w-9 h-9 rounded-full bg-transparent hover:bg-[#ff5a36]/10 flex items-center justify-center text-slate-400 hover:text-[#ff5a36] transition-colors"
                         title="Edit Employee"
                       >
-                        <Edit className="w-4 h-4" />
+                        <Edit className="w-3.5 h-3.5" />
                       </button>
                     </Link>
                     <button 
                       onClick={() => handleSeeDetails(user)}
-                      className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                      className="w-9 h-9 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-500 hover:bg-[#ff5a36] hover:text-white transition-colors"
                       title="View Details"
                     >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17l9.2-9.2M17 17V7H7"/></svg>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17l9.2-9.2M17 17V7H7"/></svg>
                     </button>
                   </div>
 
@@ -269,47 +269,47 @@ export default function HREmployeesPage() {
                   <img 
                       src={avatarUrlToUse} 
                       alt={user.full_name} 
-                      className="w-16 h-16 rounded-full object-cover shadow-sm bg-slate-100"
+                      className="w-12 h-12 rounded-full object-cover shadow-sm bg-slate-100 ring-2 ring-transparent group-hover:ring-[#ff5a36]/20 transition-all"
                   />
 
                   {/* Name & Title */}
-                  <div className="mt-6 mb-10">
-                    <h3 className="text-[1.75rem] font-bold text-slate-800 dark:text-white tracking-tight leading-tight">
+                  <div className="mt-4 mb-6 pr-16">
+                    <h3 className="text-xl font-bold text-slate-800 dark:text-white tracking-tight leading-tight truncate">
                       {user.full_name}
                     </h3>
-                    <p className="text-[13px] font-medium text-slate-400 mt-2">
-                      {user.job_title || "Unassigned"} • {user.employment_type || "Full-Time"}
+                    <p className="text-[12px] font-semibold text-[#ff5a36] mt-1 line-clamp-1">
+                      {user.job_title || "Unassigned"} <span className="text-slate-300 dark:text-slate-600 px-1">•</span> <span className="text-slate-500 dark:text-slate-400 font-medium">{user.employment_type || "Full-Time"}</span>
                     </p>
                   </div>
 
                   {/* Bottom Columns */}
                   <div className="flex items-end justify-between mt-auto">
                     {/* Salary (Mapped to Source) */}
-                    <div className="flex flex-col gap-3">
-                      <span className="text-xs font-semibold text-slate-400">Salary</span>
-                      <div className="flex gap-2">
-                        <span className="px-4 py-2 bg-slate-100 dark:bg-slate-800/80 rounded-full text-xs font-bold text-slate-500 dark:text-slate-400 tracking-wide">
+                    <div className="flex flex-col gap-2">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Salary</span>
+                      <div className="flex gap-1.5 flex-wrap">
+                        <span className="px-2.5 py-1.5 bg-slate-50 dark:bg-slate-800/80 rounded-md text-[11px] font-bold text-slate-600 dark:text-slate-300">
                           PKR {Number(user.base_salary).toLocaleString()}
                         </span>
                         {Number(user.commission_per_sale) > 0 && (
-                          <span className="px-4 py-2 bg-slate-100 dark:bg-slate-800/80 rounded-full text-xs font-bold text-slate-500 dark:text-slate-400 tracking-wide">
-                            +PKR {user.commission_per_sale}/sale
+                          <span className="px-2.5 py-1.5 bg-[#ff5a36]/10 rounded-md text-[11px] font-bold text-[#ff5a36]">
+                            +{user.commission_per_sale}/sale
                           </span>
                         )}
                       </div>
                     </div>
 
                     {/* Status (Mapped to Hot Client) */}
-                    <div className="flex flex-col gap-3 items-end">
-                      <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                        <span className="text-sm">🔥</span> {isActive ? "Active" : "Disabled"}
+                    <div className="flex flex-col gap-2 items-end">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1">
+                        <span className="text-xs">🔥</span> {isActive ? "Active" : "Disabled"}
                       </span>
-                      <div className="px-3.5 py-2.5 bg-slate-100 dark:bg-slate-800/80 rounded-full flex gap-2 items-center">
-                        <div className={`w-3 h-3 rounded-full ${isActive ? 'bg-rose-400' : 'bg-slate-300 dark:bg-slate-600'}`} />
-                        <div className={`w-3 h-3 rounded-full ${isActive ? 'bg-orange-400' : 'bg-slate-300 dark:bg-slate-600'}`} />
-                        <div className={`w-3 h-3 rounded-full ${isActive ? 'bg-amber-400' : 'bg-slate-300 dark:bg-slate-600'}`} />
-                        <div className={`w-3 h-3 rounded-full ${isActive ? 'bg-emerald-400' : 'bg-slate-300 dark:bg-slate-600'}`} />
-                        <div className={`w-3 h-3 rounded-full ${isActive ? 'bg-emerald-400' : 'bg-slate-300 dark:bg-slate-600'}`} />
+                      <div className="px-2.5 py-1.5 bg-slate-50 dark:bg-slate-800/80 rounded-md flex gap-1.5 items-center h-[28px]">
+                        <div className={`w-2 h-2 rounded-full ${isActive ? 'bg-[#ff5a36]' : 'bg-slate-300 dark:bg-slate-600'}`} />
+                        <div className={`w-2 h-2 rounded-full ${isActive ? 'bg-orange-400' : 'bg-slate-300 dark:bg-slate-600'}`} />
+                        <div className={`w-2 h-2 rounded-full ${isActive ? 'bg-amber-400' : 'bg-slate-300 dark:bg-slate-600'}`} />
+                        <div className={`w-2 h-2 rounded-full ${isActive ? 'bg-emerald-400' : 'bg-slate-300 dark:bg-slate-600'}`} />
+                        <div className={`w-2 h-2 rounded-full ${isActive ? 'bg-emerald-400' : 'bg-slate-300 dark:bg-slate-600'}`} />
                       </div>
                     </div>
                   </div>
