@@ -236,7 +236,7 @@ export default function HREmployeesPage() {
             </div>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {filteredUsers.map((user) => {
               const isActive = user.status === "Active"
               const avatarUrlToUse = user.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.full_name || 'Employee')}&background=random&color=fff&size=400`
@@ -247,15 +247,22 @@ export default function HREmployeesPage() {
                   className="group relative rounded-[2rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-6 flex flex-col transition-all duration-300 hover:shadow-xl hover:-translate-y-1 shadow-sm"
                 >
                   {/* Top Right Action Buttons */}
-                  <div className="absolute top-5 right-5 flex items-center gap-2">
+                  <div className="absolute top-4 right-4 flex items-center gap-1.5">
                     <Link href={`/hr/employees/${user.id}/edit`}>
                       <button 
-                        className="w-10 h-10 rounded-full bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors"
+                        className="w-9 h-9 rounded-full bg-transparent hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
                         title="Edit Employee"
                       >
-                        <Edit className="w-4 h-4" />
+                        <Edit className="w-3.5 h-3.5" />
                       </button>
                     </Link>
+                    <button 
+                      onClick={() => handleSeeDetails(user)}
+                      className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                      title="View Details"
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17l9.2-9.2M17 17V7H7"/></svg>
+                    </button>
                   </div>
 
                   {/* Avatar */}
@@ -266,45 +273,44 @@ export default function HREmployeesPage() {
                   />
 
                   {/* Name & Title */}
-                  <div className="mt-5 mb-8">
+                  <div className="mt-4 mb-6">
                     <h3 className="text-xl font-bold text-slate-800 dark:text-white tracking-tight leading-tight">
                       {user.full_name}
                     </h3>
-                    <p className="text-[13px] font-medium text-slate-400 mt-1">
+                    <p className="text-[11px] font-medium text-slate-400 mt-1">
                       {user.job_title || "Unassigned"} • {user.employment_type || "Full-Time"}
                     </p>
                   </div>
 
                   {/* Bottom Columns */}
-                  <div className="flex items-end justify-between mt-auto">
+                  <div className="flex items-end justify-between gap-2 mt-auto">
                     {/* Salary (Mapped to Source) */}
-                    <div className="flex flex-col gap-2.5">
-                      <span className="text-xs font-semibold text-slate-400">Salary</span>
-                      <div className="flex flex-col gap-1.5">
-                        <span className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800/80 rounded-full text-xs font-bold text-slate-500 dark:text-slate-400 tracking-wide w-fit">
+                    <div className="flex flex-col gap-2">
+                      <span className="text-[10px] font-semibold text-slate-400">Salary</span>
+                      <div className="flex flex-col gap-1">
+                        <span className="px-2.5 py-1 w-fit bg-slate-100 dark:bg-slate-800/80 rounded-full text-[10px] font-bold text-slate-500 dark:text-slate-400 tracking-wide">
                           PKR {Number(user.base_salary).toLocaleString()}
                         </span>
                         {Number(user.commission_per_sale) > 0 && (
-                          <span className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800/80 rounded-full text-xs font-bold text-slate-500 dark:text-slate-400 tracking-wide w-fit">
-                            +{user.commission_per_sale}/sale
+                          <span className="px-2.5 py-1 w-fit bg-slate-100 dark:bg-slate-800/80 rounded-full text-[10px] font-bold text-slate-500 dark:text-slate-400 tracking-wide">
+                            +PKR {user.commission_per_sale}/s
                           </span>
                         )}
                       </div>
                     </div>
 
-                    {/* Status & View Details Button */}
-                    <div className="flex flex-col gap-2.5 items-end">
-                      <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                        {/* Illustrator-style icon instead of emoji */}
-                        <svg className="w-3.5 h-3.5 text-[#ff5a36]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                        {isActive ? "Active Account" : "Disabled"}
+                    {/* Status (Mapped to Hot Client) */}
+                    <div className="flex flex-col gap-2 items-end">
+                      <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                        <span className="text-[11px]">🔥</span> {isActive ? "Active" : "Disabled"}
                       </span>
-                      <button 
-                        onClick={() => handleSeeDetails(user)}
-                        className="px-5 py-2 bg-[#ff5a36] hover:bg-[#e04a29] text-white rounded-full text-[11px] font-bold uppercase tracking-wider transition-all shadow-md shadow-[#ff5a36]/20"
-                      >
-                        View Details
-                      </button>
+                      <div className="px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800/80 rounded-full flex gap-1 items-center">
+                        <div className={`w-2 h-2 rounded-full ${isActive ? 'bg-rose-400' : 'bg-slate-300 dark:bg-slate-600'}`} />
+                        <div className={`w-2 h-2 rounded-full ${isActive ? 'bg-orange-400' : 'bg-slate-300 dark:bg-slate-600'}`} />
+                        <div className={`w-2 h-2 rounded-full ${isActive ? 'bg-amber-400' : 'bg-slate-300 dark:bg-slate-600'}`} />
+                        <div className={`w-2 h-2 rounded-full ${isActive ? 'bg-emerald-400' : 'bg-slate-300 dark:bg-slate-600'}`} />
+                        <div className={`w-2 h-2 rounded-full ${isActive ? 'bg-emerald-400' : 'bg-slate-300 dark:bg-slate-600'}`} />
+                      </div>
                     </div>
                   </div>
                 </div>
