@@ -37,6 +37,17 @@ export default function HRDashboardPage() {
     }).sort((a, b) => b.totalCompensation - a.totalCompensation).slice(0, 4); // Top 4 earners
   }, [activeStaff])
 
+  const topEarnersChartData = useMemo(() => {
+    return activeStaff.map(user => {
+      return {
+        name: user.full_name,
+        base: Number(user.base_salary || 0),
+        bonus: Number(user.bonus || 0),
+        total: Number(user.base_salary || 0) + Number(user.bonus || 0)
+      };
+    }).sort((a, b) => b.total - a.total).slice(0, 5);
+  }, [activeStaff])
+
   if (!isLoaded || !currentUser) {
     return (
       <DashboardLayout title="HR Command Center">
@@ -62,17 +73,6 @@ export default function HRDashboardPage() {
     { name: 'Processors', value: processorsCount, color: '#ff7a5c' },
     { name: 'HR', value: hrCount, color: '#ff9a82' },
   ];
-
-  const topEarnersChartData = useMemo(() => {
-    return activeStaff.map(user => {
-      return {
-        name: user.full_name,
-        base: Number(user.base_salary || 0),
-        bonus: Number(user.bonus || 0),
-        total: Number(user.base_salary || 0) + Number(user.bonus || 0)
-      };
-    }).sort((a, b) => b.total - a.total).slice(0, 5);
-  }, [activeStaff])
 
   const CustomTooltipLabel = (props: any) => {
     const { x, y, value } = props;
@@ -122,52 +122,41 @@ export default function HRDashboardPage() {
 
         {/* Global KPIs Row */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <Card className="rounded-2xl p-3 bg-white/70 dark:bg-slate-900/40 backdrop-blur-2xl border border-slate-200/30 dark:border-slate-700/50 shadow-xl shadow-slate-200/20 dark:shadow-black/20 flex flex-col justify-between transition-all hover:-translate-y-1 hover:shadow-2xl hover:bg-white/90 dark:hover:bg-slate-800/60 duration-300">
-            <div className="flex justify-between items-start">
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Total Headcount</span>
-              <div className="w-10 h-10 -mt-1 -mr-1">
-                <img src="/images/hr/number_cards/total_staff.png" alt="Total" className="w-full h-full object-contain drop-shadow-sm" />
-              </div>
-            </div>
-            <div className="mt-2">
+          <Card className="rounded-2xl p-4 bg-white/70 dark:bg-slate-900/40 backdrop-blur-2xl border border-slate-200/30 dark:border-slate-700/50 shadow-xl shadow-slate-200/20 dark:shadow-black/20 flex flex-row justify-between items-center transition-all hover:-translate-y-1 hover:shadow-2xl hover:bg-white/90 dark:hover:bg-slate-800/60 duration-300">
+            <div className="flex flex-col">
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Total Headcount</span>
               <h3 className="text-3xl font-extrabold text-slate-800 dark:text-white drop-shadow-sm">{totalEmployees}</h3>
             </div>
+            <div className="w-20 h-20 shrink-0 transition-transform group-hover:scale-105 duration-300">
+              <img src="/images/cards_icons/5.png" alt="Total" className="w-full h-full object-contain" />
+            </div>
           </Card>
 
-          <Card className="rounded-2xl p-3 bg-white/70 dark:bg-slate-900/40 backdrop-blur-2xl border border-slate-200/30 dark:border-slate-700/50 shadow-xl shadow-slate-200/20 dark:shadow-black/20 flex flex-col justify-between transition-all hover:-translate-y-1 hover:shadow-2xl hover:bg-white/90 dark:hover:bg-slate-800/60 duration-300">
-            <div className="flex justify-between items-start">
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Active Staff</span>
-              <div className="w-10 h-10 -mt-1 -mr-1">
-                <img src="/images/hr/number_cards/active_staff.png" alt="Active" className="w-full h-full object-contain drop-shadow-sm" />
-              </div>
-            </div>
-            <div className="mt-2">
+          <Card className="rounded-2xl p-4 bg-white/70 dark:bg-slate-900/40 backdrop-blur-2xl border border-slate-200/30 dark:border-slate-700/50 shadow-xl shadow-slate-200/20 dark:shadow-black/20 flex flex-row justify-between items-center transition-all hover:-translate-y-1 hover:shadow-2xl hover:bg-white/90 dark:hover:bg-slate-800/60 duration-300">
+            <div className="flex flex-col">
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Active Staff</span>
               <h3 className="text-3xl font-extrabold text-slate-800 dark:text-white drop-shadow-sm">{activeEmployees}</h3>
             </div>
+            <div className="w-20 h-20 shrink-0 transition-transform group-hover:scale-105 duration-300">
+              <img src="/images/cards_icons/6.png" alt="Active" className="w-full h-full object-contain" />
+            </div>
           </Card>
 
-          <Card className="rounded-2xl p-3 bg-white/70 dark:bg-slate-900/40 backdrop-blur-2xl border border-slate-200/30 dark:border-slate-700/50 shadow-xl shadow-slate-200/20 dark:shadow-black/20 flex flex-col justify-between transition-all hover:-translate-y-1 hover:shadow-2xl hover:bg-white/90 dark:hover:bg-slate-800/60 duration-300">
-            <div className="flex justify-between items-start">
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Disabled</span>
-              <div className="p-1.5 bg-slate-100/50 dark:bg-slate-800/50 rounded-lg backdrop-blur-md">
-                <UserMinus className="w-4 h-4 text-slate-400" />
-              </div>
-            </div>
-            <div className="mt-2">
+          <Card className="rounded-2xl p-4 bg-white/70 dark:bg-slate-900/40 backdrop-blur-2xl border border-slate-200/30 dark:border-slate-700/50 shadow-xl shadow-slate-200/20 dark:shadow-black/20 flex flex-row justify-between items-center transition-all hover:-translate-y-1 hover:shadow-2xl hover:bg-white/90 dark:hover:bg-slate-800/60 duration-300">
+            <div className="flex flex-col">
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Disabled</span>
               <h3 className="text-3xl font-extrabold text-slate-800 dark:text-white drop-shadow-sm">{disabledEmployees}</h3>
             </div>
+            <div className="w-20 h-20 shrink-0 transition-transform group-hover:scale-105 duration-300">
+              <img src="/images/cards_icons/7.png" alt="Disabled" className="w-full h-full object-contain" />
+            </div>
           </Card>
 
-          <Card className="rounded-2xl p-3 bg-gradient-to-br from-[#ff7a5c]/90 to-[#ff5a36]/90 backdrop-blur-xl border border-white/30 text-white shadow-sm flex flex-col justify-between transition-all hover:-translate-y-1 duration-300 relative overflow-hidden group">
+          <Card className="rounded-2xl p-4 bg-gradient-to-br from-[#ff7a5c]/90 to-[#ff5a36]/90 backdrop-blur-xl border border-white/30 text-white shadow-sm flex flex-col justify-center transition-all hover:-translate-y-1 duration-300 relative overflow-hidden group">
             <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent pointer-events-none" />
             
-            <div className="flex justify-between items-start relative z-10">
-              <span className="text-[10px] font-bold text-white/90 uppercase tracking-wider">Est. Monthly Payroll</span>
-              <div className="w-10 h-10 -mt-1 -mr-1">
-                <img src="/images/hr/number_cards/montly_payrool.png" alt="Payroll" className="w-full h-full object-contain drop-shadow-md brightness-110" />
-              </div>
-            </div>
-            <div className="mt-2 relative z-10">
+            <div className="flex flex-col relative z-10">
+              <span className="text-[10px] font-bold text-white/90 uppercase tracking-wider mb-1">Est. Monthly Payroll</span>
               <h3 className="text-3xl font-extrabold text-white drop-shadow-sm">PKR {totalMonthlyPayroll.toLocaleString()}</h3>
             </div>
           </Card>
