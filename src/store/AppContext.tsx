@@ -132,6 +132,17 @@ export interface HRAttendance {
   created_at: string
 }
 
+export interface HRLeave {
+  id: string
+  organization_id: string
+  employee_id: string
+  leave_date: string
+  leave_type: 'Casual' | 'Sick' | 'Unpaid'
+  reason?: string
+  is_paid: boolean
+  created_at: string
+}
+
 interface AppContextType {
   // Sales State
   sales: Sale[]
@@ -182,6 +193,16 @@ interface AppContextType {
   
   hrAttendance: HRAttendance[]
   fetchHRAttendance: () => Promise<void>
+  
+  // HR Leaves
+  hrLeaves: HRLeave[]
+  addHRLeave: (data: Partial<HRLeave>) => Promise<void>
+  deleteHRLeave: (id: string) => Promise<void>
+  
+  // App Settings
+  useKFormat: boolean
+  setUseKFormat: (val: boolean) => void
+  formatCurrency: (value: number) => string
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined)
@@ -237,8 +258,30 @@ export function AppProvider({ children, serverUserId }: { children: ReactNode, s
   const [tickets, setTickets] = useState<SupportTicket[]>([])
   const [hrEmployees, setHrEmployees] = useState<HREmployee[]>([])
   const [hrAttendance, setHrAttendance] = useState<HRAttendance[]>([])
+  const [hrLeaves, setHrLeaves] = useState<HRLeave[]>([])
   const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [isLoaded, setIsLoaded] = useState(false)
+  const [useKFormatState, setUseKFormatState] = useState(false)
+
+  useEffect(() => {
+    const stored = localStorage.getItem('useKFormat');
+    if (stored) {
+      try { setUseKFormatState(JSON.parse(stored)); } catch(e) {}
+    }
+  }, []);
+
+  const setUseKFormat = (val: boolean) => {
+    setUseKFormatState(val);
+    localStorage.setItem('useKFormat', JSON.stringify(val));
+  };
+
+  const formatCurrency = (value: number) => {
+    if (useKFormatState && value >= 1000) {
+      const formatted = (value / 1000);
+      return formatted % 1 === 0 ? formatted + 'K' : formatted.toFixed(1) + 'K';
+    }
+    return value.toLocaleString();
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -289,7 +332,7 @@ export function AppProvider({ children, serverUserId }: { children: ReactNode, s
         hrQuery = hrQuery.eq('organization_id', orgId);
       }
 
-      const [orgsRes, usersRes, salesRes, notifRes, ticketsRes, teamsRes, hrRes, attRes] = await Promise.all([
+      const [orgsRes, usersRes, salesRes, notifRes, ticketsRes, teamsRes, hrRes, attRes, leavesRes] = await Promise.all([
         orgsQuery,
         usersQuery,
         supabase.from('sales').select('*').order('created_at', { ascending: false }).limit(500),
@@ -297,7 +340,8 @@ export function AppProvider({ children, serverUserId }: { children: ReactNode, s
         supabase.from('support_tickets').select('*').order('created_at', { ascending: false }).limit(100),
         teamsQuery,
         hrQuery,
-        orgId ? supabase.from('hr_attendance').select('*').eq('organization_id', orgId).order('timestamp', { ascending: false }).limit(2000) : Promise.resolve({ data: [] })
+        orgId ? supabase.from('hr_attendance').select('*').eq('organization_id', orgId).order('timestamp', { ascending: false }).limit(2000) : Promise.resolve({ data: [] }),
+        orgId ? supabase.from('hr_leaves').select('*').eq('organization_id', orgId).order('leave_date', { ascending: false }) : Promise.resolve({ data: [] })
       ])
 
       if (!mounted) return;
@@ -307,6 +351,7 @@ export function AppProvider({ children, serverUserId }: { children: ReactNode, s
       if (teamsRes.data) setTeams(teamsRes.data)
       if (hrRes.data) setHrEmployees(hrRes.data)
       if (attRes.data) setHrAttendance(attRes.data)
+      if (leavesRes.data) setHrLeaves(leavesRes.data)
       if (salesRes.data) setSales(salesRes.data.map(mapDbSaleToSale))
       if (notifRes.data) setNotifications(notifRes.data.map(mapDbNotifToNotif))
       if (ticketsRes.data) setTickets(ticketsRes.data)
@@ -843,6 +888,35 @@ export function AppProvider({ children, serverUserId }: { children: ReactNode, s
     }
   }
 
+  const addHRLeave = async (data: Partial<HRLeave>) => {
+    if (!currentUser?.tenantId && currentUser?.role !== 'SuperAdmin') return;
+    const orgId = data.organization_id || currentUser?.tenantId;
+    
+    const { data: inserted, error } = await supabase.from('hr_leaves').insert({
+      ...data,
+      organization_id: orgId
+    }).select().single()
+    
+    if (error) {
+      toast.error(error.message);
+      throw error;
+    }
+    if (inserted) {
+      setHrLeaves(prev => [inserted, ...prev])
+      toast.success("Leave recorded successfully!");
+    }
+  }
+
+  const deleteHRLeave = async (id: string) => {
+    const { error } = await supabase.from('hr_leaves').delete().eq('id', id)
+    if (error) {
+      toast.error("Failed to delete leave: " + error.message)
+    } else {
+      setHrLeaves(prev => prev.filter(l => l.id !== id))
+      toast.success("Leave deleted")
+    }
+  }
+
   return (
     <AppContext.Provider value={{
       sales,
@@ -878,7 +952,13 @@ export function AppProvider({ children, serverUserId }: { children: ReactNode, s
       updateHREmployee,
       deleteHREmployee,
       hrAttendance,
-      fetchHRAttendance
+      fetchHRAttendance,
+      hrLeaves,
+      addHRLeave,
+      deleteHRLeave,
+      useKFormat: useKFormatState,
+      setUseKFormat,
+      formatCurrency
     }}>
       {children}
     </AppContext.Provider>

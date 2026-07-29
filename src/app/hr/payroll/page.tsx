@@ -8,28 +8,13 @@ import { useAppContext, UserRole } from "@/store/AppContext"
 import { Search, Banknote, Download, ArrowUpRight } from "lucide-react"
 
 export default function HRPayrollPage() {
- const { hrEmployees, currentUser, isLoaded } = useAppContext()
+ const { hrEmployees, currentUser, isLoaded, formatCurrency } = useAppContext()
  const [searchQuery, setSearchQuery] = useState("")
 
- if (!isLoaded || !currentUser) {
- return (
- <DashboardLayout title="Payroll Overview">
- <div className="flex items-center justify-center h-[50vh]">
- {/* Decorative Background Elements for Glassmorphism */}
- <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-gradient-to-br from-[#ff5a36]/20 to-purple-500/20 rounded-full blur-[100px] pointer-events-none -z-10" />
- <div className="absolute bottom-[10%] right-[-10%] w-[40%] h-[40%] bg-gradient-to-br from-blue-500/20 to-emerald-500/20 rounded-full blur-[120px] pointer-events-none -z-10" />
- <div className="absolute top-[30%] left-[30%] w-[30%] h-[30%] bg-gradient-to-tr from-amber-400/20 to-[#ff5a36]/20 rounded-full blur-[100px] pointer-events-none -z-10" />
-
- <div className="w-6 h-6 border-2 border-[#ff5a36] border-t-transparent rounded-full animate-spin"></div>
- </div>
- </DashboardLayout>
- )
- }
-
  // Isolate to current org
- const tenantUsers = currentUser.role === "SuperAdmin" 
+ const tenantUsers = currentUser?.role === "SuperAdmin" 
  ? hrEmployees 
- : hrEmployees.filter(u => u.organization_id === currentUser.tenantId)
+ : hrEmployees.filter(u => u.organization_id === currentUser?.tenantId)
 
  // Filter out disabled or SuperAdmins from payroll
  const activeStaff = tenantUsers.filter(u => u.status === "Active" && u.role !== "SuperAdmin")
@@ -53,6 +38,21 @@ export default function HRPayrollPage() {
  }, [activeStaff, searchQuery])
 
  const totalPayroll = payrollData.reduce((sum, item) => sum + item.totalCompensation, 0);
+
+ if (!isLoaded || !currentUser) {
+ return (
+ <DashboardLayout title="Payroll Overview">
+ <div className="flex items-center justify-center h-[50vh]">
+ {/* Decorative Background Elements for Glassmorphism */}
+ <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-gradient-to-br from-[#ff5a36]/20 to-purple-500/20 rounded-full blur-[100px] pointer-events-none -z-10" />
+ <div className="absolute bottom-[10%] right-[-10%] w-[40%] h-[40%] bg-gradient-to-br from-blue-500/20 to-emerald-500/20 rounded-full blur-[120px] pointer-events-none -z-10" />
+ <div className="absolute top-[30%] left-[30%] w-[30%] h-[30%] bg-gradient-to-tr from-amber-400/20 to-[#ff5a36]/20 rounded-full blur-[100px] pointer-events-none -z-10" />
+
+ <div className="w-6 h-6 border-2 border-[#ff5a36] border-t-transparent rounded-full animate-spin"></div>
+ </div>
+ </DashboardLayout>
+ )
+ }
 
  return (
  <DashboardLayout title="Payroll Overview">
@@ -95,7 +95,7 @@ export default function HRPayrollPage() {
  </div>
  <div className="text-right">
  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">Total Estimated Run</p>
- <h2 className="text-2xl font-bold text-emerald-600">PKR {totalPayroll.toLocaleString()}</h2>
+ <h2 className="text-2xl font-bold text-emerald-600">PKR {formatCurrency(totalPayroll)}</h2>
  </div>
  </div>
  <div className="overflow-x-auto">
@@ -116,22 +116,33 @@ export default function HRPayrollPage() {
  return (
  <tr key={item.id} className={`hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors ${!isLast ? 'border-b border-slate-50 dark:border-slate-800/50' : ''}`}>
  <td className="py-4 px-6">
+ <div className="flex items-center gap-3">
+ {item.avatar_url ? (
+ <img src={item.avatar_url} alt={item.full_name} className="w-8 h-8 rounded-full object-cover shadow-sm border border-slate-200 dark:border-slate-700" />
+ ) : (
+ <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400 flex items-center justify-center font-bold text-xs shadow-sm border border-indigo-200 dark:border-indigo-800">
+ {item.full_name.charAt(0).toUpperCase()}
+ </div>
+ )}
+ <div>
  <span className="font-bold text-slate-800 dark:text-white block">{item.full_name}</span>
  {item.team && <span className="text-[10px] text-slate-400">{item.team}</span>}
+ </div>
+ </div>
  </td>
  <td className="py-4 px-6">
  <span className="bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-md text-xs font-bold text-slate-600 dark:text-slate-300">
- {item.role}
+ {item.job_title || item.role}
  </span>
  </td>
  <td className="py-4 px-6 text-right font-medium text-slate-600 dark:text-slate-400">
- PKR {item.baseSalary.toLocaleString()}
+ PKR {formatCurrency(item.baseSalary)}
  </td>
  <td className="py-4 px-6 text-right">
  {item.commissionRate > 0 ? (
  <span className="inline-flex items-center gap-1 font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-1 rounded-md text-xs">
  <ArrowUpRight className="w-3 h-3" />
- PKR {item.commissionRate.toLocaleString()}/sale
+ PKR {formatCurrency(item.commissionRate)}/sale
  </span>
  ) : (
  <span className="text-slate-400">-</span>
@@ -139,7 +150,7 @@ export default function HRPayrollPage() {
  </td>
  <td className="py-4 px-6 text-right">
  <span className="font-bold text-slate-800 dark:text-white text-base">
- PKR {item.totalCompensation.toLocaleString()}
+ PKR {formatCurrency(item.totalCompensation)}
  </span>
  </td>
  </tr>

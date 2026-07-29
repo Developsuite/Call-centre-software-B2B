@@ -22,7 +22,9 @@ import {
   UsersRound,
   Activity,
   Banknote,
-  Clock
+  Clock,
+  CalendarOff,
+  FileText
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -87,6 +89,8 @@ export function Sidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: { isMobileMen
     { name: "Employees", href: "/hr/employees", icon: UsersRound, roles: ["HR", "Admin"] },
     { name: "Attendance", href: "/hr/attendance", icon: Clock, roles: ["HR", "Admin"] },
     { name: "Payroll", href: "/hr/payroll", icon: Banknote, roles: ["HR", "Admin"] },
+    { name: "Leave Mgmt", href: "/hr/leaves", icon: CalendarOff, roles: ["HR", "Admin"] },
+    { name: "Salary Slips", href: "/hr/salary-slips", icon: FileText, roles: ["HR", "Admin"] },
     { name: "Agent Dashboard", href: "/", icon: LayoutDashboard, roles: ["Agent"] },
     { name: "My Sales", href: "/sales", icon: ListChecks, roles: ["Agent"] },
     { name: "Processor Dashboard", href: "/processor/queue", icon: Briefcase, roles: ["Processor"] },
@@ -117,9 +121,9 @@ export function Sidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: { isMobileMen
       )}
 
       <div className={cn(
-        "flex flex-col gap-6 z-[101] md:z-50 transition-transform duration-300",
+        "flex flex-col gap-3 z-[101] md:z-50 transition-transform duration-300",
         "fixed md:sticky top-0 md:top-4 left-0 h-screen md:h-[calc(100vh-2rem)]",
-        "w-64 md:w-[72px] bg-[#f3f4f6] md:bg-transparent dark:bg-background md:dark:bg-transparent p-4 md:p-0 border-r border-slate-200 md:border-none dark:border-slate-800",
+        "w-64 md:w-[64px] bg-[#f3f4f6] md:bg-transparent dark:bg-background md:dark:bg-transparent p-4 md:p-0 border-r border-slate-200 md:border-none dark:border-slate-800",
         isMobileMenuOpen ? "translate-x-0 shadow-2xl md:shadow-none" : "-translate-x-full md:translate-x-0"
       )}>
         
@@ -131,23 +135,23 @@ export function Sidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: { isMobileMen
         </div>
 
         {/* Top Pill: Theme Toggle */}
-        <div className="flex md:flex-col items-center justify-center gap-2 bg-white dark:bg-card p-2 rounded-full shadow-sm">
+        <div className="flex md:flex-col items-center justify-center gap-1 bg-white dark:bg-card p-1.5 rounded-full shadow-sm">
           <button 
             onClick={() => setTheme("light")}
-            className={cn("p-2 rounded-full transition-all duration-300", theme !== "dark" ? "bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.5),0_1px_2px_rgba(0,0,0,0.1)]" : "text-slate-400 hover:text-slate-700")}
+            className={cn("p-1.5 rounded-full transition-all duration-300", theme !== "dark" ? "bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.5),0_1px_2px_rgba(0,0,0,0.1)]" : "text-slate-400 hover:text-slate-700")}
           >
-            <Sun className="h-5 w-5" strokeWidth={theme !== "dark" ? 2 : 1.5} />
+            <Sun className="h-[18px] w-[18px]" strokeWidth={theme !== "dark" ? 2 : 1.5} />
           </button>
           <button 
             onClick={() => setTheme("dark")}
-            className={cn("p-2 rounded-full transition-all duration-300", theme === "dark" ? "bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.5),0_1px_2px_rgba(0,0,0,0.1)]" : "text-slate-400 hover:text-slate-700")}
+            className={cn("p-1.5 rounded-full transition-all duration-300", theme === "dark" ? "bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.5),0_1px_2px_rgba(0,0,0,0.1)]" : "text-slate-400 hover:text-slate-700")}
           >
-            <Moon className="h-5 w-5" strokeWidth={theme === "dark" ? 2 : 1.5} />
+            <Moon className="h-[18px] w-[18px]" strokeWidth={theme === "dark" ? 2 : 1.5} />
           </button>
         </div>
 
         {/* Middle Pill: Navigation Icons */}
-        <div className="flex flex-col items-stretch md:items-center gap-2 bg-white dark:bg-card p-2 rounded-[1.5rem] md:rounded-[2.5rem] shadow-sm w-full my-auto overflow-y-auto md:overflow-visible custom-scrollbar">
+        <div className="flex flex-col items-stretch md:items-center gap-1.5 bg-white dark:bg-card p-1.5 rounded-[1.5rem] md:rounded-[2rem] shadow-sm w-full my-auto overflow-y-auto md:overflow-visible custom-scrollbar">
           {menuItems.map((item) => {
             const isActive = pathname === item.href;
             return (
@@ -156,13 +160,13 @@ export function Sidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: { isMobileMen
                 href={item.href}
                 onClick={() => setIsMobileMenuOpen?.(false)}
                 className={cn(
-                  "p-3 rounded-xl md:rounded-full transition-all duration-300 relative group flex items-center md:justify-center md:w-12 md:h-12 w-full",
+                  "p-2.5 md:p-0 rounded-xl md:rounded-full transition-all duration-300 relative group flex items-center md:justify-center md:w-[42px] md:h-[42px] w-full",
                   isActive 
                     ? "bg-gradient-to-b from-[#404040] to-[#111111] dark:from-[#3a414e] dark:to-[#0f172a] shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_4px_10px_rgba(0,0,0,0.3)] text-white border border-[#2a2a2a] dark:border-border" 
-                    : "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
+                    : "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50"
                 )}
               >
-                <item.icon className="h-5 w-5 shrink-0" strokeWidth={isActive ? 2 : 1.5} />
+                <item.icon className="h-[18px] w-[18px] shrink-0" strokeWidth={isActive ? 2 : 1.5} />
                 
                 <span className="md:hidden ml-3 font-medium text-sm">{item.name}</span>
 
@@ -176,12 +180,12 @@ export function Sidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: { isMobileMen
         </div>
 
         {/* Bottom Pill: Help & Logout */}
-        <div className="flex md:flex-col items-center justify-center gap-2 bg-white dark:bg-card p-2 rounded-full shadow-sm mt-auto">
+        <div className="flex md:flex-col items-center justify-center gap-1.5 bg-white dark:bg-card p-1.5 rounded-full shadow-sm mt-auto">
           <button 
             onClick={() => { setIsHelpModalOpen(true); setIsMobileMenuOpen?.(false); }}
-            className="p-3 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors group relative rounded-full"
+            className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors group relative rounded-full hover:bg-slate-50 dark:hover:bg-slate-800/50"
           >
-            <HelpCircle className="h-5 w-5" strokeWidth={1.5} />
+            <HelpCircle className="h-[18px] w-[18px]" strokeWidth={1.5} />
             {/* Tooltip */}
             <div className="hidden md:block absolute left-full ml-5 top-1/2 -translate-y-1/2 -translate-x-2 px-3 py-1.5 bg-gradient-to-b from-[#ff7a5c] to-[#ff5a36] shadow-[inset_0_1px_1px_rgba(255,255,255,0.4),0_4px_10px_rgba(255,90,54,0.4)] border border-[#e04a29] text-white text-xs font-medium rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 whitespace-nowrap z-50">
               Help
@@ -189,9 +193,9 @@ export function Sidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: { isMobileMen
           </button>
           <button 
             onClick={handleLogout}
-            className="p-3 text-slate-400 hover:text-[#ff5a36] transition-colors group relative rounded-full"
+            className="p-2 text-slate-400 hover:text-[#ff5a36] hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors group relative rounded-full"
           >
-            <LogOut className="h-5 w-5" strokeWidth={1.5} />
+            <LogOut className="h-[18px] w-[18px]" strokeWidth={1.5} />
             {/* Tooltip */}
             <div className="hidden md:block absolute left-full ml-5 top-1/2 -translate-y-1/2 -translate-x-2 px-3 py-1.5 bg-gradient-to-b from-[#ff7a5c] to-[#ff5a36] shadow-[inset_0_1px_1px_rgba(255,255,255,0.4),0_4px_10px_rgba(255,90,54,0.4)] border border-[#e04a29] text-white text-xs font-medium rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 whitespace-nowrap z-50">
               Logout

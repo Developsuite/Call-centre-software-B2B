@@ -2,7 +2,7 @@
 
 import React from "react"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
-import { HREmployee } from "@/store/AppContext"
+import { HREmployee, useAppContext } from "@/store/AppContext"
 import { 
   UserCircle, 
   Briefcase, 
@@ -22,6 +22,8 @@ interface EmployeeDetailsModalProps {
 }
 
 export function EmployeeDetailsModal({ employee, isOpen, onClose }: EmployeeDetailsModalProps) {
+  const { formatCurrency } = useAppContext()
+  
   if (!employee) return null
 
   const avatarUrlToUse = employee.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(employee.full_name || 'Employee')}&background=random&color=fff&size=150`
@@ -130,7 +132,7 @@ export function EmployeeDetailsModal({ employee, isOpen, onClose }: EmployeeDeta
                   <p className="text-[10px] text-slate-500 uppercase font-semibold">Base Salary</p>
                   <p className="text-sm font-medium text-slate-800 dark:text-slate-200 flex items-center gap-2 mt-0.5">
                     <CreditCard className="w-3.5 h-3.5 text-slate-400" />
-                    PKR {Number(employee.base_salary).toLocaleString()}
+                    PKR {formatCurrency(Number(employee.base_salary))}
                   </p>
                 </div>
                 

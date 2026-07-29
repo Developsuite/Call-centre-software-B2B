@@ -46,7 +46,7 @@ export default function NewHREmployeePage() {
     role: "Agent", // Default system role
     team: "",
     joining_date: "",
-    employment_type: "Full-Time",
+    employment_type: "Permanent",
     probation_end_date: "",
     base_salary: 30000,
     commission_per_sale: 50,
@@ -299,9 +299,11 @@ export default function NewHREmployeePage() {
                         onChange={(e) => setFormData({ ...formData, job_title: e.target.value })}
                     >
                         <option value="" disabled>Select Job Title</option>
-                        <option value="Trainer">Trainer</option>
+                        <option value="Fresher">Fresher</option>
                         <option value="Senior Sales Rep">Senior Sales Rep</option>
                         <option value="Sales Agent">Sales Agent</option>
+                        <option value="Supervisor">Supervisor</option>
+                        <option value="Processor">Processor</option>
                         <option value="Office Boy">Office Boy</option>
                     </select>
                 </div>
@@ -348,7 +350,7 @@ export default function NewHREmployeePage() {
                             value={formData.employment_type}
                             onChange={(e) => setFormData({ ...formData, employment_type: e.target.value })}
                         >
-                            <option value="Full-Time">Full-Time (Permanent)</option>
+                            <option value="Permanent">Permanent</option>
                             <option value="Part-Time">Part-Time</option>
                             <option value="Training">Training</option>
                             <option value="Probation">Probation</option>
@@ -399,16 +401,18 @@ export default function NewHREmployeePage() {
                 />
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Commission Per Connected Sale (PKR)</label>
-                <Input 
-                    type="number"
-                    placeholder="50" 
-                    className={inputClass} 
-                    value={formData.commission_per_sale}
-                    onChange={(e) => setFormData({ ...formData, commission_per_sale: Number(e.target.value) })}
-                />
-              </div>
+              {formData.job_title !== 'Office Boy' && (
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Commission Per Connected Sale (PKR)</label>
+                  <Input 
+                      type="number"
+                      placeholder="50" 
+                      className={inputClass} 
+                      value={formData.commission_per_sale}
+                      onChange={(e) => setFormData({ ...formData, commission_per_sale: Number(e.target.value) })}
+                  />
+                </div>
+              )}
 
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Employee Status</label>

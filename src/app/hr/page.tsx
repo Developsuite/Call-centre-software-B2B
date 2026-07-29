@@ -18,7 +18,7 @@ const BASE_SALARIES: Record<UserRole, number> = {
 }
 
 export default function HRDashboardPage() {
-  const { hrEmployees, currentUser, isLoaded } = useAppContext()
+  const { hrEmployees, currentUser, isLoaded, formatCurrency } = useAppContext()
 
   const tenantUsers = currentUser
     ? (currentUser.role === "SuperAdmin" 
@@ -62,17 +62,18 @@ export default function HRDashboardPage() {
   const activeEmployees = tenantUsers.filter(u => u.status === "Active").length
   const disabledEmployees = tenantUsers.filter(u => u.status === "Disabled").length
   
-  const agentsCount = tenantUsers.filter(u => u.role === "Agent").length
-  const processorsCount = tenantUsers.filter(u => u.role === "Processor").length
-  const hrCount = tenantUsers.filter(u => u.role === "HR").length
-
   const totalMonthlyPayroll = activeStaff.reduce((sum, user) => sum + Number(user.base_salary || 0) + Number(user.bonus || 0), 0);
 
-  const roleDistributionData = [
-    { name: 'Agents', value: agentsCount, color: '#ff5a36' },
-    { name: 'Processors', value: processorsCount, color: '#ff7a5c' },
-    { name: 'HR', value: hrCount, color: '#ff9a82' },
-  ];
+  const jobTitleCounts = tenantUsers.reduce((acc, user) => {
+    const title = user.job_title || 'Unassigned';
+    acc[title] = (acc[title] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const roleDistributionData = Object.entries(jobTitleCounts).map(([name, value], index) => {
+    const colors = ['#ff5a36', '#ff7a5c', '#ff9a82', '#ff8a50', '#ff6b3b', '#e65100', '#f57c00'];
+    return { name, value, color: colors[index % colors.length] };
+  });
 
   const CustomTooltipLabel = (props: any) => {
     const { x, y, value } = props;
@@ -157,7 +158,7 @@ export default function HRDashboardPage() {
             
             <div className="flex flex-col relative z-10">
               <span className="text-[10px] font-bold text-white/90 uppercase tracking-wider mb-1">Est. Monthly Payroll</span>
-              <h3 className="text-3xl font-extrabold text-white drop-shadow-sm">PKR {totalMonthlyPayroll.toLocaleString()}</h3>
+              <h3 className="text-3xl font-extrabold text-white drop-shadow-sm">PKR {formatCurrency(totalMonthlyPayroll)}</h3>
             </div>
           </Card>
         </div>
@@ -236,7 +237,7 @@ export default function HRDashboardPage() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-extrabold text-emerald-600 drop-shadow-sm">PKR {user.totalCompensation.toLocaleString()}</p>
+                      <p className="text-sm font-extrabold text-emerald-600 drop-shadow-sm">PKR {formatCurrency(user.totalCompensation)}</p>
                     </div>
                   </div>
                 ))}

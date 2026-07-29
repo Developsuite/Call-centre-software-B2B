@@ -8,7 +8,7 @@ import { Settings, User, Building2, Save, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function SettingsPage() {
-  const { currentUser, updateUser, tenants, updateTenant } = useAppContext();
+  const { currentUser, updateUser, tenants, updateTenant, useKFormat, setUseKFormat } = useAppContext();
   const [activeTab, setActiveTab] = useState<"profile" | "organization">("profile");
 
   // Profile Form State
@@ -173,6 +173,17 @@ export default function SettingsPage() {
                         className="w-full h-10 px-4 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-[#ff5a36]/50 transition-all text-slate-800 dark:text-white"
                         placeholder="https://example.com/your-photo.jpg"
                       />
+                    </div>
+
+                    <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Display Preferences</label>
+                      <div className="flex items-center gap-3 mt-2">
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input type="checkbox" className="sr-only peer" checked={useKFormat} onChange={(e) => setUseKFormat(e.target.checked)} />
+                          <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-[#ff5a36]"></div>
+                          <span className="ml-3 text-sm font-medium text-slate-700 dark:text-slate-300">Use compact monetary format (e.g. 50K instead of 50,000)</span>
+                        </label>
+                      </div>
                     </div>
                   </div>
 

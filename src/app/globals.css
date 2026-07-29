@@ -146,3 +146,92 @@
     @apply opacity-50 cursor-not-allowed;
   }
 }
+
+/* ============================================
+   PRINT STYLES — Salary Slips (3 per A4)
+   ============================================ */
+@media print {
+  /* Reset page */
+  @page {
+    size: A4 portrait;
+    margin: 8mm 10mm;
+  }
+
+  /* Hide everything except salary slips */
+  body * {
+    visibility: hidden;
+  }
+  
+  .salary-slips-container,
+  .salary-slips-container * {
+    visibility: visible;
+  }
+  
+  .salary-slips-container {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+
+  /* Each slip sizing: ~90mm tall so 3 fit on A4 (297mm - margins) */
+  .salary-slip {
+    page-break-inside: avoid;
+    break-inside: avoid;
+    height: auto;
+    max-height: 88mm;
+    margin-bottom: 3mm !important;
+    border: 1px solid #d1d5db !important;
+    border-radius: 4px !important;
+    overflow: hidden;
+    font-size: 10px !important;
+    background: white !important;
+    color: black !important;
+  }
+
+  /* Force page break after every 3rd slip */
+  .salary-slip:nth-child(3n) {
+    page-break-after: always;
+    break-after: page;
+  }
+
+  /* Force black text everywhere in print */
+  .salary-slip * {
+    color: black !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Keep dark header background */
+  .salary-slip > div:first-child {
+    background: #1e293b !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .salary-slip > div:first-child * {
+    color: white !important;
+  }
+
+  /* Net salary bar */
+  .salary-slip .bg-gradient-to-r {
+    background: #1e293b !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .salary-slip .bg-gradient-to-r * {
+    color: white !important;
+  }
+
+  /* Hide inputs in print, show static values */
+  input[type="number"] {
+    display: none !important;
+  }
+
+  /* Remove shadows, backdrop filters */
+  .salary-slip,
+  .salary-slip * {
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+}

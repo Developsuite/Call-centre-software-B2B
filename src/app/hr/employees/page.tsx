@@ -6,16 +6,21 @@ import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useAppContext, HREmployee } from "@/store/AppContext"
-import { Search, Users, Plus, Edit, UserMinus, UserCheck, Trash2, UserCircle, LayoutGrid, List, Eye } from "lucide-react"
+import { Search, Users, Plus, Edit, UserMinus, UserCheck, Trash2, UserCircle, LayoutGrid, List, Eye, Filter } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
 import { EmployeeDetailsModal } from "@/components/hr/EmployeeDetailsModal"
 
 export default function HREmployeesPage() {
-  const { hrEmployees, currentUser, isLoaded, updateHREmployee, deleteHREmployee } = useAppContext()
+  const { hrEmployees, currentUser, isLoaded, updateHREmployee, deleteHREmployee, formatCurrency } = useAppContext()
   const [searchQuery, setSearchQuery] = useState("")
   const [viewMode, setViewMode] = useState<"list" | "card">("list")
   
+  const [showFilters, setShowFilters] = useState(false)
+  const [roleFilter, setRoleFilter] = useState("All")
+  const [statusFilter, setStatusFilter] = useState("All")
+  const [employmentTypeFilter, setEmploymentTypeFilter] = useState("All")
+
   const [selectedEmployee, setSelectedEmployee] = useState<HREmployee | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
 
@@ -39,13 +44,22 @@ export default function HREmployeesPage() {
     ? hrEmployees 
     : hrEmployees.filter(u => u.organization_id === currentUser.tenantId)
 
-  const filteredUsers = tenantUsers.filter(u => 
-    u.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    u.role.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (u.team && u.team.toLowerCase().includes(searchQuery.toLowerCase()))
-  ).sort((a, b) => a.full_name.localeCompare(b.full_name))
+  const filteredUsers = tenantUsers.filter(u => {
+    const matchesSearch = u.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          u.role.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          (u.team && u.team.toLowerCase().includes(searchQuery.toLowerCase()))
+    
+    const matchesRole = roleFilter === "All" || (u.job_title || "Unassigned") === roleFilter
+    const matchesStatus = statusFilter === "All" || u.status === statusFilter
+    const matchesEmploymentType = employmentTypeFilter === "All" || (u.employment_type || "Full-Time") === employmentTypeFilter
 
+    return matchesSearch && matchesRole && matchesStatus && matchesEmploymentType
+  }).sort((a, b) => a.full_name.localeCompare(b.full_name))
 
+  // Get unique options for filters
+  const uniqueRoles = Array.from(new Set(tenantUsers.map(u => u.job_title || "Unassigned"))).sort()
+  const uniqueStatuses = Array.from(new Set(tenantUsers.map(u => u.status || "Active"))).sort()
+  const uniqueEmploymentTypes = Array.from(new Set(tenantUsers.map(u => u.employment_type || "Full-Time"))).sort()
 
   const handleToggleStatus = async (employee: HREmployee) => {
     const newStatus = employee.status === "Active" ? "Disabled" : "Active"
@@ -117,6 +131,16 @@ export default function HREmployeesPage() {
             
             <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-full">
               <button 
+                onClick={() => setShowFilters(!showFilters)}
+                className={`p-1.5 rounded-full transition-all ${showFilters ? "bg-white dark:bg-slate-700 shadow-sm text-slate-800 dark:text-white" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"}`}
+                title="Toggle Filters"
+              >
+                <Filter className="w-4 h-4" />
+              </button>
+            </div>
+            
+            <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-full">
+              <button 
                 onClick={() => setViewMode("list")}
                 className={`p-1.5 rounded-full transition-all ${viewMode === "list" ? "bg-white dark:bg-slate-700 shadow-sm text-slate-800 dark:text-white" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"}`}
               >
@@ -140,6 +164,51 @@ export default function HREmployeesPage() {
             </Link>
           </div>
         </div>
+
+        {/* Filters Panel */}
+        {showFilters && (
+          <div className="bg-white/70 dark:bg-slate-900/40 backdrop-blur-2xl border border-slate-200/30 dark:border-slate-700/50 p-4 rounded-[1.5rem] shadow-lg animate-in fade-in slide-in-from-top-4 flex flex-wrap gap-4 items-end z-20 relative">
+            <div className="flex-1 min-w-[200px]">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Role</label>
+              <select 
+                value={roleFilter}
+                onChange={(e) => setRoleFilter(e.target.value)}
+                className="w-full h-9 px-3 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-[#ff5a36]/50 transition-all text-slate-800 dark:text-white"
+              >
+                <option value="All">All Roles</option>
+                {uniqueRoles.map(role => (
+                  <option key={role} value={role}>{role}</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex-1 min-w-[200px]">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Status</label>
+              <select 
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="w-full h-9 px-3 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-[#ff5a36]/50 transition-all text-slate-800 dark:text-white"
+              >
+                <option value="All">All Statuses</option>
+                {uniqueStatuses.map(status => (
+                  <option key={status} value={status}>{status}</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex-1 min-w-[200px]">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Employment Type</label>
+              <select 
+                value={employmentTypeFilter}
+                onChange={(e) => setEmploymentTypeFilter(e.target.value)}
+                className="w-full h-9 px-3 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-[#ff5a36]/50 transition-all text-slate-800 dark:text-white"
+              >
+                <option value="All">All Types</option>
+                {uniqueEmploymentTypes.map(type => (
+                  <option key={type} value={type}>{type}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        )}
 
         {viewMode === "list" ? (
           <Card className="rounded-[1.5rem] p-0 bg-white/70 dark:bg-slate-900/40 backdrop-blur-2xl border border-slate-200/30 dark:border-slate-700/50 shadow-xl shadow-slate-200/20 dark:shadow-black/20 overflow-hidden">
@@ -324,11 +393,11 @@ export default function HREmployeesPage() {
                       <span className="text-[10px] font-extrabold text-[#ff5a36] uppercase tracking-wider">Salary</span>
                       <div className="flex flex-col gap-1">
                         <span className="text-[12px] font-bold text-slate-600 dark:text-slate-300 tracking-wide">
-                          PKR {Number(user.base_salary).toLocaleString()}
+                          PKR {formatCurrency(Number(user.base_salary))}
                         </span>
                         {Number(user.commission_per_sale) > 0 && (
                           <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 tracking-wide">
-                            +PKR {user.commission_per_sale}/s
+                            +PKR {formatCurrency(Number(user.commission_per_sale))}/s
                           </span>
                         )}
                       </div>
