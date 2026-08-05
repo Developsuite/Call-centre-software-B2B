@@ -54,7 +54,8 @@ export default function EditHREmployeePage() {
     probation_end_date: "",
     base_salary: 30000,
     commission_per_sale: 50,
-    status: "Active" as "Active" | "Disabled" | "Documents Missing"
+    status: "Active" as "Active" | "Disabled" | "Documents Missing",
+    zk_user_id: ""
   })
 
   const supabase = createClient();
@@ -116,7 +117,8 @@ export default function EditHREmployeePage() {
                 probation_end_date: emp.probation_end_date || "",
                 base_salary: Number(emp.base_salary) || 0,
                 commission_per_sale: Number(emp.commission_per_sale) || 0,
-                status: emp.status || "Active"
+                status: emp.status || "Active",
+                zk_user_id: emp.zk_user_id || ""
             })
         }
         setIsInitializing(false);
@@ -345,6 +347,16 @@ export default function EditHREmployeePage() {
                         <option value="Processor">Processor</option>
                         <option value="Office Boy">Office Boy</option>
                     </select>
+                </div>
+                
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Attendance Machine ID (zk_user_id)</label>
+                  <Input 
+                    placeholder="E.g. 15, 23, etc." 
+                    className={inputClass} 
+                    value={formData.zk_user_id || ''}
+                    onChange={(e) => setFormData({ ...formData, zk_user_id: e.target.value })}
+                  />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">

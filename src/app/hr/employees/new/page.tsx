@@ -50,7 +50,8 @@ export default function NewHREmployeePage() {
     probation_end_date: "",
     base_salary: 30000,
     commission_per_sale: 50,
-    status: "Active" as "Active" | "Disabled" | "Documents Missing"
+    status: "Active" as "Active" | "Disabled" | "Documents Missing",
+    zk_user_id: ""
   })
 
   const tenantTeams = teams.filter(t => t.organization_id === currentUser?.tenantId);
@@ -306,6 +307,16 @@ export default function NewHREmployeePage() {
                         <option value="Processor">Processor</option>
                         <option value="Office Boy">Office Boy</option>
                     </select>
+                </div>
+                
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Attendance Machine ID (zk_user_id)</label>
+                  <Input 
+                    placeholder="E.g. 15, 23, etc." 
+                    className={inputClass} 
+                    value={formData.zk_user_id || ''}
+                    onChange={(e) => setFormData({ ...formData, zk_user_id: e.target.value })}
+                  />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
