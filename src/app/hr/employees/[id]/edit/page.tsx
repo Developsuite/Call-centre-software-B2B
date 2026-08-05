@@ -54,7 +54,7 @@ export default function EditHREmployeePage() {
     probation_end_date: "",
     base_salary: 30000,
     commission_per_sale: 50,
-    status: "Active" as "Active" | "Disabled"
+    status: "Active" as "Active" | "Disabled" | "Documents Missing"
   })
 
   const supabase = createClient();
@@ -457,9 +457,10 @@ export default function EditHREmployeePage() {
                 <select 
                     className={cn(inputClass, "w-full px-3", formData.status === 'Active' ? 'text-emerald-600 font-bold' : 'text-slate-500')}
                     value={formData.status}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value as "Active" | "Disabled" })}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value as "Active" | "Disabled" | "Documents Missing" })}
                 >
                     <option value="Active">Active</option>
+                    <option value="Documents Missing">Documents Missing</option>
                     <option value="Disabled">Inactive / Disabled</option>
                 </select>
               </div>

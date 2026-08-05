@@ -4,9 +4,13 @@ import React, { useState, useMemo } from 'react'
 import { useAppContext } from "@/store/AppContext"
 import { TopBar } from "@/components/layout/topbar"
 import { Sidebar } from "@/components/layout/sidebar"
-import { Users, Clock, CalendarDays, CheckCircle, XCircle, AlertCircle, RefreshCw, Link as LinkIcon } from 'lucide-react'
+import { Users, Clock, CalendarDays, CheckCircle, XCircle, AlertCircle, RefreshCw, Link as LinkIcon, Upload } from 'lucide-react'
+import { createClient } from "@/utils/supabase/client"
 import { toast } from 'sonner'
 import { format } from 'date-fns'
+import Link from 'next/link'
+
+import { EmployeeAttendanceModal } from "@/components/hr/EmployeeAttendanceModal"
 
 export default function AttendancePage() {
   const { hrAttendance, hrEmployees, updateHREmployee, currentUser, isLoaded, fetchHRAttendance } = useAppContext()
@@ -14,68 +18,222 @@ export default function AttendancePage() {
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0])
   const [mappingId, setMappingId] = useState<string | null>(null)
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>("")
+  const [selectedDetailEmployee, setSelectedDetailEmployee] = useState<any>(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [deviceIp, setDeviceIp] = useState("192.168.18.215")
+  const supabase = createClient()
+  const fileInputRef = React.useRef<HTMLInputElement>(null)
 
   // Map attendance logs to employees
   const processedData = useMemo(() => {
-    // 1. Group punches by ZK User ID for the selected date
-    const dailyPunches = hrAttendance.filter(att => {
-      // Use date-fns format to get local date instead of UTC
-      const punchDate = format(new Date(att.timestamp), 'yyyy-MM-dd');
-      return punchDate === selectedDate;
+    // 1. Define Night Shift Window (18:00 to 09:00 next day)
+    const shiftStart = new Date(`${selectedDate}T18:00:00`);
+    const shiftEnd = new Date(shiftStart.getTime() + 15 * 60 * 60 * 1000); // +15 hours = 09:00 next day
+    
+    // 2. Filter punches for this window
+    const shiftPunches = hrAttendance.filter(att => {
+      const punchDate = new Date(att.timestamp);
+      return punchDate >= shiftStart && punchDate <= shiftEnd;
     });
 
     const grouped: Record<string, any[]> = {};
-    dailyPunches.forEach(punch => {
+    shiftPunches.forEach(punch => {
       if (!grouped[punch.zk_user_id]) grouped[punch.zk_user_id] = [];
       grouped[punch.zk_user_id].push(punch);
     });
 
-    // 2. Build rows combining Employee data and Punch data
-    const rows = [];
-    for (const [zkId, punches] of Object.entries(grouped)) {
-      // Find matching employee by zk_user_id
-      const employee = hrEmployees.find(e => e.zk_user_id === zkId);
+    // 3. Build rows for ALL known employees (Present or Absent)
+    const rows: any[] = [];
+    const processedZkIds = new Set<string>();
+
+    hrEmployees.forEach(employee => {
+      const zkId = employee.zk_user_id;
+      const punches = zkId && grouped[zkId] ? grouped[zkId] : [];
       
-      // Sort punches chronologically
-      punches.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+      if (zkId) processedZkIds.add(zkId);
       
-      const firstPunch = punches[0];
-      const lastPunch = punches[punches.length - 1];
-      
-      // Calculate work hours if they checked in and out
-      let workedHours = "-";
-      if (punches.length > 1) {
-        const diffMs = new Date(lastPunch.timestamp).getTime() - new Date(firstPunch.timestamp).getTime();
-        const hrs = Math.floor(diffMs / (1000 * 60 * 60));
-        const mins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-        workedHours = `${hrs}h ${mins}m`;
+      if (punches.length === 0) {
+        // Absent
+        rows.push({
+          zk_user_id: zkId || null,
+          employee: employee,
+          firstPunch: null,
+          lastPunch: null,
+          totalPunches: 0,
+          workedHours: "-",
+          status: 'Absent'
+        });
+      } else {
+        // Present / Late
+        punches.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+        const firstPunch = punches[0];
+        const lastPunch = punches[punches.length - 1];
+        
+        let workedHours = "-";
+        if (punches.length > 1) {
+          const diffMs = new Date(lastPunch.timestamp).getTime() - new Date(firstPunch.timestamp).getTime();
+          const hrs = Math.floor(diffMs / (1000 * 60 * 60));
+          const mins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+          workedHours = `${hrs}h ${mins}m`;
+        }
+        
+        // Late logic: Night shift check-in is 20:00, grace 10 min -> 20:10
+        const firstPunchDate = new Date(firstPunch.timestamp);
+        const lateThreshold = new Date(shiftStart.getTime() + 2 * 60 * 60 * 1000 + 10 * 60 * 1000); // 18:00 + 2h 10m = 20:10
+        const isLate = firstPunchDate > lateThreshold;
+        
+        rows.push({
+          zk_user_id: zkId,
+          employee: employee,
+          firstPunch: firstPunch.timestamp,
+          lastPunch: punches.length > 1 ? lastPunch.timestamp : null,
+          totalPunches: punches.length,
+          workedHours,
+          status: isLate ? 'Late' : 'On Time'
+        });
       }
+    });
 
-      // Late calculation (Assuming 09:15 AM is late threshold for now)
-      const firstPunchDate = new Date(firstPunch.timestamp);
-      const isLate = firstPunchDate.getHours() > 9 || (firstPunchDate.getHours() === 9 && firstPunchDate.getMinutes() > 15);
+    // 4. Add any unmapped ZK IDs (Unknown Users)
+    for (const [zkId, punches] of Object.entries(grouped)) {
+      if (!processedZkIds.has(zkId)) {
+        punches.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+        const firstPunch = punches[0];
+        const lastPunch = punches[punches.length - 1];
+        
+        let workedHours = "-";
+        if (punches.length > 1) {
+          const diffMs = new Date(lastPunch.timestamp).getTime() - new Date(firstPunch.timestamp).getTime();
+          const hrs = Math.floor(diffMs / (1000 * 60 * 60));
+          const mins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+          workedHours = `${hrs}h ${mins}m`;
+        }
+        
+        const firstPunchDate = new Date(firstPunch.timestamp);
+        const lateThreshold = new Date(shiftStart.getTime() + 2 * 60 * 60 * 1000 + 10 * 60 * 1000); 
+        const isLate = firstPunchDate > lateThreshold;
 
-      rows.push({
-        zk_user_id: zkId,
-        employee: employee,
-        firstPunch: firstPunch.timestamp,
-        lastPunch: punches.length > 1 ? lastPunch.timestamp : null,
-        totalPunches: punches.length,
-        workedHours,
-        status: isLate ? 'Late' : 'On Time'
-      });
+        rows.push({
+          zk_user_id: zkId,
+          employee: null,
+          firstPunch: firstPunch.timestamp,
+          lastPunch: punches.length > 1 ? lastPunch.timestamp : null,
+          totalPunches: punches.length,
+          workedHours,
+          status: isLate ? 'Late' : 'On Time'
+        });
+      }
     }
 
-    // Sort by Late first, then on time
-    return rows.sort((a, b) => a.status === 'Late' ? -1 : 1);
+    // 5. Sort: Late first, then On Time, then Absent
+    return rows.sort((a, b) => {
+      if (a.status === b.status) return 0;
+      if (a.status === 'Absent') return 1;
+      if (b.status === 'Absent') return -1;
+      if (a.status === 'Late') return -1;
+      if (b.status === 'Late') return 1;
+      return 0;
+    });
   }, [hrAttendance, hrEmployees, selectedDate]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    await fetchHRAttendance();
-    toast.success("Attendance logs synchronized!");
-    setIsRefreshing(false);
+    try {
+      if (!currentUser?.organization_id) {
+        throw new Error("Organization ID not found");
+      }
+      
+      const res = await fetch('/api/attendance/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ organization_id: currentUser.organization_id })
+      });
+      
+      const data = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to sync device");
+      }
+      
+      await fetchHRAttendance();
+      toast.success(data.message || "Attendance logs synchronized!");
+    } catch (error: any) {
+      toast.error(error.message || "An error occurred during sync");
+    } finally {
+      setIsRefreshing(false);
+    }
+  }
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = async (event) => {
+      try {
+        if (!currentUser?.organization_id) throw new Error("Organization ID not found")
+        
+        const csvData = event.target?.result as string
+        const lines = csvData.split('\n')
+        const recordsToInsert = []
+        
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i].trim()
+          if (!line) continue
+          
+          const cols = line.split(',')
+          if (cols.length < 5) continue
+          
+          const empId = cols[0].trim()
+          // Check if it's a valid ID and skip header rows
+          if (isNaN(Number(empId)) || empId === "") continue 
+          
+          const timeStr = cols[3].trim()
+          const dateStr = cols[4].trim()
+          
+          const punchDate = new Date(`${dateStr} ${timeStr}`)
+          if (isNaN(punchDate.getTime())) continue
+          
+          recordsToInsert.push({
+            organization_id: currentUser.organization_id,
+            zk_user_id: empId,
+            timestamp: punchDate.toISOString(),
+            status: 0,
+            verify_mode: 0
+          })
+        }
+        
+        if (recordsToInsert.length === 0) {
+          toast.error("No valid records found in CSV")
+          return
+        }
+        
+        setIsRefreshing(true)
+        
+        for (let i = 0; i < recordsToInsert.length; i += 1000) {
+          const chunk = recordsToInsert.slice(i, i + 1000)
+          const { error } = await supabase
+            .from('hr_attendance')
+            .upsert(chunk, { 
+              onConflict: 'organization_id,zk_user_id,timestamp',
+              ignoreDuplicates: true
+            })
+            
+          if (error) throw error
+        }
+        
+        toast.success(`Successfully imported ${recordsToInsert.length} records!`)
+        await fetchHRAttendance()
+        
+      } catch (err: any) {
+        toast.error(err.message || "Failed to process CSV")
+      } finally {
+        setIsRefreshing(false)
+        if (fileInputRef.current) fileInputRef.current.value = ""
+      }
+    }
+    
+    reader.readAsText(file)
   }
 
   const handleSaveMapping = async () => {
@@ -106,6 +264,16 @@ export default function AttendancePage() {
           
           <div className="max-w-7xl mx-auto space-y-6">
             
+            {/* Tabs */}
+            <div className="flex space-x-1 bg-slate-200/50 dark:bg-gray-800 p-1 rounded-xl w-fit border border-slate-200 dark:border-gray-700/50">
+              <Link href="/hr/attendance" className="px-6 py-2.5 rounded-lg text-sm font-medium bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-400 shadow-sm transition-all">
+                Daily View
+              </Link>
+              <Link href="/hr/attendance/reports" className="px-6 py-2.5 rounded-lg text-sm font-medium text-slate-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-gray-700/50 transition-all">
+                Monthly Reports
+              </Link>
+            </div>
+            
             {/* Header Section */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-gray-800/40 p-6 rounded-2xl border border-slate-200 dark:border-gray-700/50 shadow-sm dark:shadow-none backdrop-blur-sm">
               <div>
@@ -113,7 +281,15 @@ export default function AttendancePage() {
                 <p className="text-slate-500 dark:text-gray-400 text-sm mt-1">Monitor real-time machine fingerprints and check-ins.</p>
               </div>
               
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-wrap">
+                <input 
+                  type="text" 
+                  value={deviceIp}
+                  onChange={(e) => setDeviceIp(e.target.value)}
+                  placeholder="Device IP"
+                  className="bg-white dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-slate-800 dark:text-white w-36"
+                  title="Biometric Device IP Address"
+                />
                 <input 
                   type="date" 
                   value={selectedDate}
@@ -127,6 +303,21 @@ export default function AttendancePage() {
                 >
                   <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
                   Sync Latest
+                </button>
+                <input 
+                  type="file" 
+                  accept=".csv"
+                  className="hidden" 
+                  ref={fileInputRef}
+                  onChange={handleFileUpload}
+                />
+                <button 
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isRefreshing}
+                  className="flex items-center gap-2 bg-white dark:bg-gray-800 border border-slate-300 dark:border-gray-700 hover:bg-slate-50 dark:hover:bg-gray-700 text-slate-700 dark:text-slate-200 px-4 py-2.5 rounded-xl text-sm font-medium transition-all shadow-sm disabled:opacity-50"
+                >
+                  <Upload className="w-4 h-4" />
+                  Upload CSV
                 </button>
               </div>
             </div>
@@ -227,11 +418,15 @@ export default function AttendancePage() {
                           <td className="px-6 py-4">
                             {row.status === 'On Time' ? (
                               <span className="px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-xs font-medium border border-emerald-200 dark:border-emerald-500/20">
-                                On Time
+                                Present
                               </span>
-                            ) : (
+                            ) : row.status === 'Late' ? (
                               <span className="px-3 py-1 rounded-full bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs font-medium border border-amber-200 dark:border-amber-500/20">
                                 Late
+                              </span>
+                            ) : (
+                              <span className="px-3 py-1 rounded-full bg-rose-100 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 text-xs font-medium border border-rose-200 dark:border-rose-500/20">
+                                Absent
                               </span>
                             )}
                           </td>
@@ -273,6 +468,15 @@ export default function AttendancePage() {
                                 </button>
                               </div>
                             )}
+
+                            {row.employee && mappingId !== row.zk_user_id && (
+                              <button 
+                                onClick={() => setSelectedDetailEmployee(row.employee)}
+                                className="flex items-center gap-2 text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors text-sm ml-auto bg-slate-100 dark:bg-gray-700 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-gray-600"
+                              >
+                                View Details
+                              </button>
+                            )}
                           </td>
                         </tr>
                       ))
@@ -285,6 +489,13 @@ export default function AttendancePage() {
           </div>
         </main>
       </div>
+
+      {selectedDetailEmployee && (
+        <EmployeeAttendanceModal 
+          employee={selectedDetailEmployee} 
+          onClose={() => setSelectedDetailEmployee(null)} 
+        />
+      )}
     </div>
   )
 }

@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -28,6 +28,38 @@ export default function HREmployeesPage() {
     setSelectedEmployee(employee)
     setIsModalOpen(true)
   }
+
+  // Auto-check and update probations
+  useEffect(() => {
+    if (!isLoaded || !currentUser) return
+    
+    const checkProbations = async () => {
+      const today = new Date().toISOString().split('T')[0]
+      const tenantUsers = currentUser.role === "SuperAdmin" 
+        ? hrEmployees 
+        : hrEmployees.filter(u => u.organization_id === currentUser.tenantId)
+        
+      const passedProbation = tenantUsers.filter(u => 
+        u.employment_type === "Probation" && 
+        u.probation_end_date && 
+        u.probation_end_date <= today
+      )
+      
+      for (const emp of passedProbation) {
+        try {
+          await updateHREmployee(emp.id, { 
+            employment_type: "Permanent", 
+            probation_end_date: null as any 
+          })
+          toast.success(`🎉 ${emp.full_name}'s probation has ended. They are now a Permanent employee!`)
+        } catch (err) {
+          console.error("Failed to auto-update probation", err)
+        }
+      }
+    }
+    
+    checkProbations()
+  }, [isLoaded]) // Intentionally relying mostly on isLoaded so it runs on mount when data is ready
 
   if (!isLoaded || !currentUser) {
     return (
@@ -99,13 +131,8 @@ export default function HREmployeesPage() {
   return (
     <DashboardLayout title="Employee Management">
       <div className="relative flex flex-col gap-5 font-sans max-w-[1200px] mx-auto w-full pb-10 min-h-screen overflow-x-hidden px-4 md:px-0">
-        
-        {/* Decorative Background Elements for Glassmorphism */}
-        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-gradient-to-br from-[#ff5a36]/20 to-purple-500/20 rounded-full blur-[100px] pointer-events-none -z-10" />
-        <div className="absolute bottom-[10%] right-[-10%] w-[40%] h-[40%] bg-gradient-to-br from-blue-500/20 to-emerald-500/20 rounded-full blur-[120px] pointer-events-none -z-10" />
-        <div className="absolute top-[30%] left-[30%] w-[30%] h-[30%] bg-gradient-to-tr from-amber-400/20 to-[#ff5a36]/20 rounded-full blur-[100px] pointer-events-none -z-10" />
 
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 bg-gradient-to-br from-white/90 to-white/50 dark:from-slate-900/60 dark:to-slate-900/20 p-6 rounded-[1.5rem] border border-white/60 dark:border-slate-700/50 shadow-2xl shadow-[#ff5a36]/5 backdrop-blur-2xl relative overflow-hidden group transition-all duration-500 hover:shadow-[#ff5a36]/10">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 bg-gradient-to-br from-white/90 to-white/50 dark:from-slate-900/60 dark:to-slate-900/20 p-6 rounded-[1.5rem] border border-white/60 dark:border-slate-700/50 shadow-none backdrop-blur-2xl relative overflow-hidden group transition-all duration-300">
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full duration-1000 transition-transform pointer-events-none" />
           <div className="relative z-10">
             <div className="flex items-center gap-3 mb-1">
@@ -125,14 +152,14 @@ export default function HREmployeesPage() {
                 placeholder="Search employees..." 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-full h-9 text-sm w-full sm:w-64 shadow-sm focus-visible:ring-1 focus-visible:ring-[#ff5a36]" 
+                className="pl-9 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-full h-9 text-sm w-full sm:w-64 shadow-none focus-visible:ring-1 focus-visible:ring-[#ff5a36]" 
               />
             </div>
             
             <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-full">
               <button 
                 onClick={() => setShowFilters(!showFilters)}
-                className={`p-1.5 rounded-full transition-all ${showFilters ? "bg-white dark:bg-slate-700 shadow-sm text-slate-800 dark:text-white" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"}`}
+                className={`p-1.5 rounded-full transition-all ${showFilters ? "bg-white dark:bg-slate-700 shadow-none text-slate-800 dark:text-white" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"}`}
                 title="Toggle Filters"
               >
                 <Filter className="w-4 h-4" />
@@ -142,13 +169,13 @@ export default function HREmployeesPage() {
             <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-full">
               <button 
                 onClick={() => setViewMode("list")}
-                className={`p-1.5 rounded-full transition-all ${viewMode === "list" ? "bg-white dark:bg-slate-700 shadow-sm text-slate-800 dark:text-white" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"}`}
+                className={`p-1.5 rounded-full transition-all ${viewMode === "list" ? "bg-white dark:bg-slate-700 shadow-none text-slate-800 dark:text-white" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"}`}
               >
                 <List className="w-4 h-4" />
               </button>
               <button 
                 onClick={() => setViewMode("card")}
-                className={`p-1.5 rounded-full transition-all ${viewMode === "card" ? "bg-white dark:bg-slate-700 shadow-sm text-slate-800 dark:text-white" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"}`}
+                className={`p-1.5 rounded-full transition-all ${viewMode === "card" ? "bg-white dark:bg-slate-700 shadow-none text-slate-800 dark:text-white" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"}`}
               >
                 <LayoutGrid className="w-4 h-4" />
               </button>
@@ -156,7 +183,7 @@ export default function HREmployeesPage() {
 
             <Link href="/hr/employees/new" className="w-full sm:w-auto">
               <Button 
-                className="bg-[#ff5a36] hover:bg-[#e04a29] text-white rounded-full h-9 px-4 shadow-[0_4px_10px_rgba(255,90,54,0.3)] w-full transition-all"
+                className="bg-[#ff5a36] hover:bg-[#e04a29] text-white rounded-full h-9 px-4 shadow-none w-full transition-all"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Add Employee
@@ -167,7 +194,7 @@ export default function HREmployeesPage() {
 
         {/* Filters Panel */}
         {showFilters && (
-          <div className="bg-white/70 dark:bg-slate-900/40 backdrop-blur-2xl border border-slate-200/30 dark:border-slate-700/50 p-4 rounded-[1.5rem] shadow-lg animate-in fade-in slide-in-from-top-4 flex flex-wrap gap-4 items-end z-20 relative">
+          <div className="bg-white/70 dark:bg-slate-900/40 backdrop-blur-2xl border border-slate-200/30 dark:border-slate-700/50 p-4 rounded-[1.5rem] shadow-none animate-in fade-in slide-in-from-top-4 flex flex-wrap gap-4 items-end z-20 relative">
             <div className="flex-1 min-w-[200px]">
               <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Role</label>
               <select 
@@ -211,7 +238,7 @@ export default function HREmployeesPage() {
         )}
 
         {viewMode === "list" ? (
-          <Card className="rounded-[1.5rem] p-0 bg-white/70 dark:bg-slate-900/40 backdrop-blur-2xl border border-slate-200/30 dark:border-slate-700/50 shadow-xl shadow-slate-200/20 dark:shadow-black/20 overflow-hidden">
+          <Card className="rounded-[1.5rem] p-0 bg-white/70 dark:bg-slate-900/40 backdrop-blur-2xl border border-slate-200/50 dark:border-slate-700/50 shadow-none overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-left">
                 <thead className="bg-white/30 dark:bg-slate-800/30 backdrop-blur-md border-b border-slate-200/70 dark:border-slate-700/50">
@@ -219,6 +246,7 @@ export default function HREmployeesPage() {
                     <th className="py-4 px-6 font-bold">Employee</th>
                     <th className="py-4 px-6 font-bold">Role</th>
                     <th className="py-4 px-6 font-bold">Type</th>
+                    <th className="py-4 px-6 font-bold">Basic Salary</th>
                     <th className="py-4 px-6 font-bold">Joined</th>
                     <th className="py-4 px-6 font-bold text-center">Status</th>
                     <th className="py-4 px-6 text-right font-bold">Actions</th>
@@ -263,6 +291,18 @@ export default function HREmployeesPage() {
                           )}
                         </td>
                         <td className="py-3 px-6">
+                          <div className="flex flex-col">
+                            <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                              PKR {formatCurrency(Number(user.base_salary || 0))}
+                            </span>
+                            {Number(user.commission_per_sale) > 0 && (
+                              <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
+                                +PKR {formatCurrency(Number(user.commission_per_sale))}/sale
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="py-3 px-6">
                           <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
                             {user.joining_date ? new Date(user.joining_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'}
                           </span>
@@ -271,13 +311,15 @@ export default function HREmployeesPage() {
                           <button 
                             onClick={() => handleToggleStatus(user)}
                             className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold transition-colors ${
-                              isActive 
+                              user.status === 'Active'
                                 ? "bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:hover:bg-emerald-500/20" 
+                                : user.status === 'Documents Missing'
+                                ? "bg-amber-50 text-amber-600 hover:bg-amber-100 dark:bg-amber-500/10 dark:text-amber-400 dark:hover:bg-amber-500/20"
                                 : "bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700"
                             }`}
                           >
-                            {isActive ? <UserCheck className="w-3 h-3" /> : <UserMinus className="w-3 h-3" />}
-                            {isActive ? "Active" : "Disabled"}
+                            {user.status === 'Active' ? <UserCheck className="w-3 h-3" /> : <UserMinus className="w-3 h-3" />}
+                            {user.status || "Active"}
                           </button>
                         </td>
                         <td className="py-3 px-6 text-right">
@@ -320,7 +362,7 @@ export default function HREmployeesPage() {
                   })}
                   {filteredUsers.length === 0 && (
                     <tr>
-                      <td colSpan={4} className="py-10 text-center text-slate-500">
+                      <td colSpan={7} className="py-10 text-center text-slate-500">
                         No employees found matching your search.
                       </td>
                     </tr>
@@ -338,7 +380,7 @@ export default function HREmployeesPage() {
               return (
                 <div 
                   key={user.id} 
-                  className="group relative rounded-[1.5rem] bg-white/70 dark:bg-slate-900/40 backdrop-blur-2xl border border-slate-200/30 dark:border-slate-700/50 p-6 flex flex-col transition-all hover:bg-white/90 dark:hover:bg-slate-800/60 hover:-translate-y-1 hover:shadow-2xl shadow-xl shadow-slate-200/20 dark:shadow-black/20 duration-300"
+                  className="group relative rounded-[1.5rem] bg-white/70 dark:bg-slate-900/40 backdrop-blur-2xl border border-slate-200/60 dark:border-slate-700/50 p-6 flex flex-col transition-all hover:bg-white/90 dark:hover:bg-slate-800/60 shadow-none duration-300"
                 >
                   {/* Top Right Action Buttons */}
                   <div className="absolute top-4 right-4 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -370,7 +412,7 @@ export default function HREmployeesPage() {
                   <img 
                       src={avatarUrlToUse} 
                       alt={user.full_name} 
-                      className="w-12 h-12 rounded-full object-cover shadow-sm bg-slate-100"
+                      className="w-12 h-12 rounded-full object-cover bg-slate-100"
                   />
 
                   {/* Name & Title */}
@@ -405,9 +447,9 @@ export default function HREmployeesPage() {
 
                     {/* Status Indicator */}
                     <div className="flex flex-col gap-2 items-end">
-                      <span className={`text-[10px] font-bold flex items-center gap-1.5 ${isActive ? "text-emerald-500 dark:text-emerald-400" : "text-slate-500 dark:text-slate-400"}`}>
-                        {isActive ? <UserCheck className="w-3.5 h-3.5" /> : <UserMinus className="w-3.5 h-3.5" />}
-                        {isActive ? "Active" : "Disabled"}
+                      <span className={`text-[10px] font-bold flex items-center gap-1.5 ${user.status === 'Active' ? "text-emerald-500 dark:text-emerald-400" : user.status === 'Documents Missing' ? "text-amber-500 dark:text-amber-400" : "text-slate-500 dark:text-slate-400"}`}>
+                        {user.status === 'Active' ? <UserCheck className="w-3.5 h-3.5" /> : <UserMinus className="w-3.5 h-3.5" />}
+                        {user.status || "Active"}
                       </span>
                       <div className="px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800/80 rounded-full flex gap-1 items-center">
                         <div className={`w-2 h-2 rounded-full ${isActive ? 'bg-rose-400' : 'bg-slate-300 dark:bg-slate-600'}`} />

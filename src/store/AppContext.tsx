@@ -105,7 +105,7 @@ export interface HREmployee {
   team: string
   base_salary: number
   bonus: number
-  status: "Active" | "Disabled"
+  status: "Active" | "Disabled" | "Documents Missing"
   created_at: string
   avatar_url?: string
   father_name?: string
@@ -141,6 +141,36 @@ export interface HRLeave {
   reason?: string
   is_paid: boolean
   created_at: string
+}
+
+export interface HRSalaryRecord {
+  id: string
+  organization_id: string
+  employee_id: string
+  month: string
+  base_salary: number
+  commission_earned: number
+  absence_deduction: number
+  loan_deduction: number
+  gross_salary: number
+  net_salary: number
+  created_at: string
+}
+
+export interface HRCandidate {
+  id: string
+  organization_id: string
+  full_name: string
+  role_applied: string
+  status: string
+  english_level?: string
+  phone?: string
+  email?: string
+  notes?: string
+  salary_pitch?: string
+  commission_pitch?: string
+  created_at: string
+  updated_at: string
 }
 
 interface AppContextType {
@@ -198,6 +228,17 @@ interface AppContextType {
   hrLeaves: HRLeave[]
   addHRLeave: (data: Partial<HRLeave>) => Promise<void>
   deleteHRLeave: (id: string) => Promise<void>
+  
+  // HR Candidates
+  hrCandidates: HRCandidate[]
+  addHRCandidate: (data: Partial<HRCandidate>) => Promise<void>
+  updateHRCandidate: (id: string, updates: Partial<HRCandidate>) => Promise<void>
+  deleteHRCandidate: (id: string) => Promise<void>
+
+  // HR Salary Records
+  hrSalaryRecords: HRSalaryRecord[]
+  fetchHRSalaryRecords: () => Promise<void>
+  saveSalaryRecords: (records: Partial<HRSalaryRecord>[]) => Promise<void>
   
   // App Settings
   useKFormat: boolean
@@ -259,6 +300,8 @@ export function AppProvider({ children, serverUserId }: { children: ReactNode, s
   const [hrEmployees, setHrEmployees] = useState<HREmployee[]>([])
   const [hrAttendance, setHrAttendance] = useState<HRAttendance[]>([])
   const [hrLeaves, setHrLeaves] = useState<HRLeave[]>([])
+  const [hrCandidates, setHrCandidates] = useState<HRCandidate[]>([])
+  const [hrSalaryRecords, setHrSalaryRecords] = useState<HRSalaryRecord[]>([])
   const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [isLoaded, setIsLoaded] = useState(false)
   const [useKFormatState, setUseKFormatState] = useState(false)
@@ -332,7 +375,7 @@ export function AppProvider({ children, serverUserId }: { children: ReactNode, s
         hrQuery = hrQuery.eq('organization_id', orgId);
       }
 
-      const [orgsRes, usersRes, salesRes, notifRes, ticketsRes, teamsRes, hrRes, attRes, leavesRes] = await Promise.all([
+      const [orgsRes, usersRes, salesRes, notifRes, ticketsRes, teamsRes, hrRes, attRes, leavesRes, candidatesRes, salaryRes] = await Promise.all([
         orgsQuery,
         usersQuery,
         supabase.from('sales').select('*').order('created_at', { ascending: false }).limit(500),
@@ -341,7 +384,9 @@ export function AppProvider({ children, serverUserId }: { children: ReactNode, s
         teamsQuery,
         hrQuery,
         orgId ? supabase.from('hr_attendance').select('*').eq('organization_id', orgId).order('timestamp', { ascending: false }).limit(2000) : Promise.resolve({ data: [] }),
-        orgId ? supabase.from('hr_leaves').select('*').eq('organization_id', orgId).order('leave_date', { ascending: false }) : Promise.resolve({ data: [] })
+        orgId ? supabase.from('hr_leaves').select('*').eq('organization_id', orgId).order('leave_date', { ascending: false }) : Promise.resolve({ data: [] }),
+        orgId ? supabase.from('hr_candidates').select('*').eq('organization_id', orgId).order('created_at', { ascending: false }) : Promise.resolve({ data: [] }),
+        orgId ? supabase.from('hr_salary_records').select('*').eq('organization_id', orgId) : Promise.resolve({ data: [] })
       ])
 
       if (!mounted) return;
@@ -352,6 +397,8 @@ export function AppProvider({ children, serverUserId }: { children: ReactNode, s
       if (hrRes.data) setHrEmployees(hrRes.data)
       if (attRes.data) setHrAttendance(attRes.data)
       if (leavesRes.data) setHrLeaves(leavesRes.data)
+      if (candidatesRes.data) setHrCandidates(candidatesRes.data)
+      if (salaryRes.data) setHrSalaryRecords(salaryRes.data)
       if (salesRes.data) setSales(salesRes.data.map(mapDbSaleToSale))
       if (notifRes.data) setNotifications(notifRes.data.map(mapDbNotifToNotif))
       if (ticketsRes.data) setTickets(ticketsRes.data)
@@ -917,6 +964,102 @@ export function AppProvider({ children, serverUserId }: { children: ReactNode, s
     }
   }
 
+  const addHRCandidate = async (data: Partial<HRCandidate>) => {
+    if (!currentUser?.tenantId && currentUser?.role !== 'SuperAdmin') return;
+    const orgId = data.organization_id || currentUser?.tenantId;
+    
+    let { data: inserted, error } = await supabase.from('hr_candidates').insert({
+      ...data,
+      organization_id: orgId
+    }).select().single()
+    
+    // Graceful fallback if english_level column hasn't been added to Postgres table yet
+    if (error && error.message && (error.message.includes('english_level') || error.code === 'PGRST204')) {
+      const { english_level, ...rest } = data as any;
+      const res = await supabase.from('hr_candidates').insert({
+        ...rest,
+        organization_id: orgId
+      }).select().single()
+      
+      inserted = res.data ? { ...res.data, english_level } : null;
+      error = res.error;
+    }
+    
+    if (error) {
+      toast.error(error.message);
+      throw error;
+    }
+    if (inserted) {
+      setHrCandidates(prev => [inserted, ...prev])
+      toast.success("Candidate added successfully!");
+    }
+  }
+
+  const updateHRCandidate = async (id: string, updates: Partial<HRCandidate>) => {
+    let { data: updated, error } = await supabase.from('hr_candidates').update(updates).eq('id', id).select().single()
+    
+    // Graceful fallback if english_level column hasn't been added to Postgres table yet
+    if (error && error.message && (error.message.includes('english_level') || error.code === 'PGRST204')) {
+      const { english_level, ...rest } = updates as any;
+      const res = await supabase.from('hr_candidates').update(rest).eq('id', id).select().single()
+      updated = res.data ? { ...res.data, english_level } : null;
+      error = res.error;
+    }
+
+    if (error) {
+      toast.error(error.message);
+      throw error;
+    }
+    if (updated) {
+      setHrCandidates(prev => prev.map(c => c.id === id ? { ...c, ...updated } : c))
+      toast.success("Candidate updated successfully!");
+    }
+  }
+
+  const deleteHRCandidate = async (id: string) => {
+    const { error } = await supabase.from('hr_candidates').delete().eq('id', id)
+    if (error) {
+      toast.error("Failed to delete candidate: " + error.message)
+    } else {
+      setHrCandidates(prev => prev.filter(c => c.id !== id))
+      toast.success("Candidate deleted")
+    }
+  }
+
+  const fetchHRSalaryRecords = async () => {
+    if (!currentUser?.tenantId && currentUser?.role !== 'SuperAdmin') return;
+    const orgId = currentUser?.tenantId;
+    if (orgId) {
+      const { data } = await supabase.from('hr_salary_records').select('*').eq('organization_id', orgId)
+      if (data) setHrSalaryRecords(data)
+    }
+  }
+
+  const saveSalaryRecords = async (records: Partial<HRSalaryRecord>[]) => {
+    if (!currentUser) return;
+    
+    // Add organization_id if missing
+    const recordsToUpsert = records.map(r => ({
+      ...r,
+      organization_id: r.organization_id || currentUser.tenantId,
+      created_at: new Date().toISOString()
+    }));
+
+    const { data, error } = await supabase.from('hr_salary_records')
+      .upsert(recordsToUpsert, { onConflict: 'employee_id,month,organization_id' })
+      .select();
+
+    if (error) {
+      toast.error(error.message);
+      throw error;
+    }
+    
+    if (data) {
+      // Refresh local state or manually upsert
+      await fetchHRSalaryRecords();
+    }
+  }
+
   return (
     <AppContext.Provider value={{
       sales,
@@ -956,6 +1099,13 @@ export function AppProvider({ children, serverUserId }: { children: ReactNode, s
       hrLeaves,
       addHRLeave,
       deleteHRLeave,
+      hrCandidates,
+      addHRCandidate,
+      updateHRCandidate,
+      deleteHRCandidate,
+      hrSalaryRecords,
+      fetchHRSalaryRecords,
+      saveSalaryRecords,
       useKFormat: useKFormatState,
       setUseKFormat,
       formatCurrency

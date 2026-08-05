@@ -24,7 +24,9 @@ import {
   Banknote,
   Clock,
   CalendarOff,
-  FileText
+  FileText,
+  UserPlus,
+  Archive
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -91,6 +93,8 @@ export function Sidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: { isMobileMen
     { name: "Payroll", href: "/hr/payroll", icon: Banknote, roles: ["HR", "Admin"] },
     { name: "Leave Mgmt", href: "/hr/leaves", icon: CalendarOff, roles: ["HR", "Admin"] },
     { name: "Salary Slips", href: "/hr/salary-slips", icon: FileText, roles: ["HR", "Admin"] },
+    { name: "Salary Records", href: "/hr/salary-records", icon: Archive, roles: ["HR", "Admin"] },
+    { name: "Recruitment", href: "/hr/recruitment", icon: UserPlus, roles: ["HR", "Admin"] },
     { name: "Agent Dashboard", href: "/", icon: LayoutDashboard, roles: ["Agent"] },
     { name: "My Sales", href: "/sales", icon: ListChecks, roles: ["Agent"] },
     { name: "Processor Dashboard", href: "/processor/queue", icon: Briefcase, roles: ["Processor"] },
