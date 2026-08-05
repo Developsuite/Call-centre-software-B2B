@@ -239,6 +239,8 @@ interface AppContextType {
   hrSalaryRecords: HRSalaryRecord[]
   fetchHRSalaryRecords: () => Promise<void>
   saveSalaryRecords: (records: Partial<HRSalaryRecord>[]) => Promise<void>
+  deleteSalaryRecord: (id: string) => Promise<void>
+  deleteSalaryRecordsByMonth: (month: string) => Promise<void>
   
   // App Settings
   useKFormat: boolean
@@ -1060,6 +1062,19 @@ export function AppProvider({ children, serverUserId }: { children: ReactNode, s
     }
   }
 
+  const deleteSalaryRecord = async (id: string) => {
+    setHrSalaryRecords(prev => prev.filter(r => r.id !== id))
+    await supabase.from('hr_salary_records').delete().eq('id', id)
+  }
+
+  const deleteSalaryRecordsByMonth = async (month: string) => {
+    setHrSalaryRecords(prev => prev.filter(r => r.month !== month))
+    const orgId = currentUser?.tenantId
+    if (orgId) {
+      await supabase.from('hr_salary_records').delete().eq('month', month).eq('organization_id', orgId)
+    }
+  }
+
   return (
     <AppContext.Provider value={{
       sales,
@@ -1106,6 +1121,8 @@ export function AppProvider({ children, serverUserId }: { children: ReactNode, s
       hrSalaryRecords,
       fetchHRSalaryRecords,
       saveSalaryRecords,
+      deleteSalaryRecord,
+      deleteSalaryRecordsByMonth,
       useKFormat: useKFormatState,
       setUseKFormat,
       formatCurrency

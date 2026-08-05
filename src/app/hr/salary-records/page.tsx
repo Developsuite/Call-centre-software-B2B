@@ -3,12 +3,13 @@
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { Card } from "@/components/ui/card"
 import { useAppContext } from "@/store/AppContext"
-import { Building2, Search, FileText } from "lucide-react"
+import { Building2, Search, FileText, Trash2 } from "lucide-react"
 import { useState, useMemo } from "react"
 import { HRSalaryRecord } from "@/store/AppContext"
+import { toast } from "sonner"
 
 export default function SalaryRecordsPage() {
-  const { hrSalaryRecords, hrEmployees, tenants, currentUser, isLoaded, formatCurrency } = useAppContext()
+  const { hrSalaryRecords, hrEmployees, tenants, currentUser, isLoaded, formatCurrency, deleteSalaryRecord, deleteSalaryRecordsByMonth } = useAppContext()
 
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedMonth, setSelectedMonth] = useState('All')
@@ -50,6 +51,26 @@ export default function SalaryRecordsPage() {
     })
     return groups
   }, [filteredRecords])
+
+  const handleDeleteRecord = async (id: string, name: string) => {
+    if (!window.confirm(`Are you sure you want to delete the salary record for ${name}?`)) return
+    try {
+      await deleteSalaryRecord(id)
+      toast.success('Record deleted successfully')
+    } catch (e: any) {
+      toast.error('Failed to delete record')
+    }
+  }
+
+  const handleDeleteMonth = async (month: string) => {
+    if (!window.confirm(`Are you sure you want to delete ALL salary records for ${month}? This cannot be undone.`)) return
+    try {
+      await deleteSalaryRecordsByMonth(month)
+      toast.success(`All records for ${month} deleted`)
+    } catch (e: any) {
+      toast.error('Failed to delete month records')
+    }
+  }
 
   if (!isLoaded) {
     return (
@@ -124,8 +145,17 @@ export default function SalaryRecordsPage() {
                   <h3 className="font-bold text-lg text-slate-800 dark:text-white flex items-center gap-2">
                     <Building2 className="w-5 h-5 text-indigo-500" /> {month}
                   </h3>
-                  <div className="text-sm font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 px-3 py-1 rounded-full">
-                    Total: PKR {formatCurrency(totalNet)}
+                  <div className="flex items-center gap-3">
+                    <div className="text-sm font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 px-3 py-1 rounded-full">
+                      Total: PKR {formatCurrency(totalNet)}
+                    </div>
+                    <button 
+                      onClick={() => handleDeleteMonth(month)}
+                      className="p-1.5 text-rose-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-full transition-colors"
+                      title={`Delete all records for ${month}`}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
                 <div className="overflow-x-auto">
@@ -137,6 +167,7 @@ export default function SalaryRecordsPage() {
                         <th className="px-6 py-3 font-bold">Commissions</th>
                         <th className="px-6 py-3 font-bold text-rose-500">Deductions</th>
                         <th className="px-6 py-3 font-bold text-right text-emerald-500">Net Salary</th>
+                        <th className="px-6 py-3 w-10"></th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -154,6 +185,15 @@ export default function SalaryRecordsPage() {
                             <td className="px-6 py-3 text-rose-500">-PKR {formatCurrency(totalDeductions)}</td>
                             <td className="px-6 py-3 text-right font-bold text-slate-900 dark:text-white">
                               PKR {formatCurrency(record.net_salary)}
+                            </td>
+                            <td className="px-6 py-3 text-right">
+                              <button 
+                                onClick={() => handleDeleteRecord(record.id, employee?.full_name || 'Unknown Employee')}
+                                className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-md transition-colors"
+                                title="Delete record"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
                             </td>
                           </tr>
                         )
