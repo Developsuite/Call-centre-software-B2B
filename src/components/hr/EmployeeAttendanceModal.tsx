@@ -10,7 +10,7 @@ export function EmployeeAttendanceModal({ employee, onClose }: { employee: any, 
   const [toDate, setToDate] = useState<string>(endOfMonth(new Date()).toISOString().split('T')[0])
 
   const reportData = useMemo(() => {
-    if (!employee || !employee.zk_user_id) return []
+    if (!employee) return []
     
     // Generate all dates in the range
     const start = new Date(fromDate)
@@ -21,11 +21,36 @@ export function EmployeeAttendanceModal({ employee, onClose }: { employee: any, 
     
     return days.map(day => {
       const dayStr = format(day, 'yyyy-MM-dd')
+      
+      // Look for manual record first
+      const manualRecord = hrAttendance.find(att => {
+        const isEmp = (att.employee_id && att.employee_id === employee.id) || (employee.zk_user_id && att.zk_user_id === employee.zk_user_id)
+        return isEmp && (att.timestamp.startsWith(dayStr) || att.timestamp.substring(0, 10) === dayStr)
+      })
+
+      if (manualRecord) {
+        let st = 'Present'
+        if (manualRecord.status === 0) st = 'Present'
+        else if (manualRecord.status === 1) st = 'Late'
+        else if (manualRecord.status === 2) st = 'Half Day'
+        else if (manualRecord.status === 3) st = 'Absent'
+        else if (manualRecord.status === 4) st = 'Leave'
+        else if (manualRecord.status === 5) st = 'Off'
+
+        return {
+          date: dayStr,
+          firstPunch: manualRecord.timestamp,
+          lastPunch: null,
+          workedHours: st === 'Present' ? '8h 00m' : st === 'Half Day' ? '4h 00m' : '-',
+          status: st
+        }
+      }
+
       const shiftStart = new Date(`${dayStr}T18:00:00`)
       const shiftEnd = new Date(shiftStart.getTime() + 15 * 60 * 60 * 1000)
       
       const punches = hrAttendance.filter(att => {
-        if (att.zk_user_id !== employee.zk_user_id) return false
+        if (!employee.zk_user_id || att.zk_user_id !== employee.zk_user_id) return false
         const pDate = new Date(att.timestamp)
         return pDate >= shiftStart && pDate <= shiftEnd
       }).sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())

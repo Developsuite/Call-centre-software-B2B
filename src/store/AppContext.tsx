@@ -223,6 +223,8 @@ interface AppContextType {
   
   hrAttendance: HRAttendance[]
   fetchHRAttendance: () => Promise<void>
+  markHRAttendance: (employeeId: string, zkUserId: string | null, dateStr: string, status: number | null) => Promise<void>
+  bulkMarkHRAttendance: (records: { employeeId: string, zkUserId: string | null, dateStr: string, status: number }[]) => Promise<void>
   
   // HR Leaves
   hrLeaves: HRLeave[]
@@ -333,134 +335,162 @@ export function AppProvider({ children, serverUserId }: { children: ReactNode, s
     setIsLoaded(false);
     
     async function loadData() {
-      // 1. Get Session
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) {
-        if (mounted) {
-          setCurrentUser(null)
-          setSales([])
-          setTenants([])
-          setUsers([])
-          setNotifications([])
-          setIsLoaded(true)
+      try {
+        // 1. Get Session
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        if (sessionError || !session) {
+          if (mounted) {
+            setCurrentUser(null)
+            setSales([])
+            setTenants([])
+            setUsers([])
+            setNotifications([])
+            setIsLoaded(true)
+          }
+          return
         }
-        return
-      }
 
-      // 2. Get Current User Profile
-      const { data: profile, error: profileError } = await supabase.from('profiles').select('*').eq('id', session.user.id).single()
-      
-      if (profileError) {
-        console.error("Failed to load profile:", profileError.message, profileError.details, profileError.hint)
-      }
-
-      let orgId = null;
-      let currentUserRole = null;
-      if (profile) {
-        const user = mapProfileToUser(profile)
-        if (mounted) setCurrentUser(user)
-        orgId = user.tenantId
-        currentUserRole = user.role
-      }
-
-      // 3. Fetch Data based on Role/Org
-      let orgsQuery = supabase.from('organizations').select('*');
-      let usersQuery = supabase.from('profiles').select('*');
-      let teamsQuery = supabase.from('teams').select('*');
-      
-      let hrQuery = supabase.from('hr_employees').select('*');
-      
-      if (profile && profile.role !== 'SuperAdmin' && orgId) {
-        orgsQuery = orgsQuery.eq('id', orgId);
-        usersQuery = usersQuery.eq('organization_id', orgId);
-        teamsQuery = teamsQuery.eq('organization_id', orgId);
-        hrQuery = hrQuery.eq('organization_id', orgId);
-      }
-
-      const [orgsRes, usersRes, salesRes, notifRes, ticketsRes, teamsRes, hrRes, attRes, leavesRes, candidatesRes, salaryRes] = await Promise.all([
-        orgsQuery,
-        usersQuery,
-        supabase.from('sales').select('*').order('created_at', { ascending: false }).limit(500),
-        supabase.from('notifications').select('*').eq('user_id', session.user.id).order('created_at', { ascending: false }).limit(100),
-        supabase.from('support_tickets').select('*').order('created_at', { ascending: false }).limit(100),
-        teamsQuery,
-        hrQuery,
-        orgId ? supabase.from('hr_attendance').select('*').eq('organization_id', orgId).order('timestamp', { ascending: false }).limit(2000) : Promise.resolve({ data: [] }),
-        orgId ? supabase.from('hr_leaves').select('*').eq('organization_id', orgId).order('leave_date', { ascending: false }) : Promise.resolve({ data: [] }),
-        orgId ? supabase.from('hr_candidates').select('*').eq('organization_id', orgId).order('created_at', { ascending: false }) : Promise.resolve({ data: [] }),
-        orgId ? supabase.from('hr_salary_records').select('*').eq('organization_id', orgId) : Promise.resolve({ data: [] })
-      ])
-
-      if (!mounted) return;
-
-      if (orgsRes.data) setTenants(orgsRes.data.map(mapDbTenantToTenant))
-      if (usersRes.data) setUsers(usersRes.data.map(mapProfileToUser))
-      if (teamsRes.data) setTeams(teamsRes.data)
-      if (hrRes.data) setHrEmployees(hrRes.data)
-      if (attRes.data) setHrAttendance(attRes.data)
-      if (leavesRes.data) setHrLeaves(leavesRes.data)
-      if (candidatesRes.data) setHrCandidates(candidatesRes.data)
-      if (salaryRes.data) setHrSalaryRecords(salaryRes.data)
-      if (salesRes.data) setSales(salesRes.data.map(mapDbSaleToSale))
-      if (notifRes.data) setNotifications(notifRes.data.map(mapDbNotifToNotif))
-      if (ticketsRes.data) setTickets(ticketsRes.data)
-      setIsLoaded(true)
-
-      // 4. Setup Realtime Subscriptions (only if still mounted)
-      const salesSub = supabase.channel(`sales-changes-${session.user.id}`)
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'sales' }, (payload) => {
-          console.log("Realtime Sales Event:", payload.eventType, (payload as any).new?.id || (payload as any).old?.id);
-          if (payload.eventType === 'INSERT') {
-            setSales(prev => {
-              // Prevent duplicates from optimistic updates
-              if (prev.some(s => s.id === payload.new.id)) return prev;
-              return [mapDbSaleToSale(payload.new), ...prev];
-            });
-          } else if (payload.eventType === 'UPDATE') {
-            setSales(prev => prev.map(s => s.id === payload.new.id ? mapDbSaleToSale(payload.new) : s))
-          } else if (payload.eventType === 'DELETE') {
-            setSales(prev => prev.filter(s => s.id !== payload.old.id))
+        // 2. Get Current User Profile
+        let profile = null
+        try {
+          const { data, error: profileError } = await supabase.from('profiles').select('*').eq('id', session.user.id).single()
+          if (profileError) {
+            console.warn("Profile fetch warning:", profileError.message)
           }
-        })
-        .subscribe()
+          profile = data
+        } catch (err: any) {
+          console.warn("Failed to fetch profile:", err?.message || err)
+        }
 
-      const notifSub = supabase.channel(`notif-changes-${session.user.id}`)
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications', filter: `user_id=eq.${session.user.id}` }, (payload) => {
-          if (payload.eventType === 'INSERT') {
-            setNotifications(prev => [mapDbNotifToNotif(payload.new), ...prev])
-            toast.info(payload.new.title, {
-              description: payload.new.message,
+        let orgId = null;
+        let currentUserRole = null;
+        if (profile) {
+          const user = mapProfileToUser(profile)
+          if (mounted) setCurrentUser(user)
+          orgId = user.tenantId
+          currentUserRole = user.role
+        }
+
+        // 3. Fetch Data based on Role/Org
+        let orgsQuery = supabase.from('organizations').select('*');
+        let usersQuery = supabase.from('profiles').select('*');
+        let teamsQuery = supabase.from('teams').select('*');
+        let hrQuery = supabase.from('hr_employees').select('*');
+        
+        if (profile && profile.role !== 'SuperAdmin' && orgId) {
+          orgsQuery = orgsQuery.eq('id', orgId);
+          usersQuery = usersQuery.eq('organization_id', orgId);
+          teamsQuery = teamsQuery.eq('organization_id', orgId);
+          hrQuery = hrQuery.eq('organization_id', orgId);
+        }
+
+        // Safe query runner helper
+        const safeQuery = async (queryPromise: any) => {
+          try {
+            return await queryPromise
+          } catch (e: any) {
+            return { data: null, error: e }
+          }
+        }
+
+        try {
+          const [orgsRes, usersRes, salesRes, notifRes, ticketsRes, teamsRes, hrRes, attRes, leavesRes, candidatesRes, salaryRes] = await Promise.all([
+            safeQuery(orgsQuery),
+            safeQuery(usersQuery),
+            safeQuery(supabase.from('sales').select('*').order('created_at', { ascending: false }).limit(500)),
+            safeQuery(supabase.from('notifications').select('*').eq('user_id', session.user.id).order('created_at', { ascending: false }).limit(100)),
+            safeQuery(supabase.from('support_tickets').select('*').order('created_at', { ascending: false }).limit(100)),
+            safeQuery(teamsQuery),
+            safeQuery(hrQuery),
+            orgId ? safeQuery(supabase.from('hr_attendance').select('*').eq('organization_id', orgId).order('timestamp', { ascending: false }).limit(2000)) : Promise.resolve({ data: [] }),
+            orgId ? safeQuery(supabase.from('hr_leaves').select('*').eq('organization_id', orgId).order('leave_date', { ascending: false })) : Promise.resolve({ data: [] }),
+            orgId ? safeQuery(supabase.from('hr_candidates').select('*').eq('organization_id', orgId).order('created_at', { ascending: false })) : Promise.resolve({ data: [] }),
+            orgId ? safeQuery(supabase.from('hr_salary_records').select('*').eq('organization_id', orgId)) : Promise.resolve({ data: [] })
+          ])
+
+          if (!mounted) return;
+
+          if (orgsRes?.data) setTenants(orgsRes.data.map(mapDbTenantToTenant))
+          if (usersRes?.data) setUsers(usersRes.data.map(mapProfileToUser))
+          if (teamsRes?.data) setTeams(teamsRes.data)
+          if (hrRes?.data) setHrEmployees(hrRes.data)
+          if (attRes?.data) setHrAttendance(attRes.data)
+          if (leavesRes?.data) setHrLeaves(leavesRes.data)
+          if (candidatesRes?.data) setHrCandidates(candidatesRes.data)
+          if (salaryRes?.data) setHrSalaryRecords(salaryRes.data)
+          if (salesRes?.data) setSales(salesRes.data.map(mapDbSaleToSale))
+          if (notifRes?.data) setNotifications(notifRes.data.map(mapDbNotifToNotif))
+          if (ticketsRes?.data) setTickets(ticketsRes.data)
+        } catch (fetchErr: any) {
+          console.warn("Error fetching tenant/app data:", fetchErr?.message || fetchErr)
+        }
+
+        if (!mounted) return;
+        setIsLoaded(true)
+
+        // 4. Setup Realtime Subscriptions (only if still mounted)
+        try {
+          const salesSub = supabase.channel(`sales-changes-${session.user.id}`)
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'sales' }, (payload) => {
+              console.log("Realtime Sales Event:", payload.eventType, (payload as any).new?.id || (payload as any).old?.id);
+              if (payload.eventType === 'INSERT') {
+                setSales(prev => {
+                  // Prevent duplicates from optimistic updates
+                  if (prev.some(s => s.id === payload.new.id)) return prev;
+                  return [mapDbSaleToSale(payload.new), ...prev];
+                });
+              } else if (payload.eventType === 'UPDATE') {
+                setSales(prev => prev.map(s => s.id === payload.new.id ? mapDbSaleToSale(payload.new) : s))
+              } else if (payload.eventType === 'DELETE') {
+                setSales(prev => prev.filter(s => s.id !== payload.old.id))
+              }
             })
-          } else if (payload.eventType === 'UPDATE') {
-            setNotifications(prev => prev.map(n => n.id === payload.new.id ? mapDbNotifToNotif(payload.new) : n))
-          }
-        })
-        .subscribe()
+            .subscribe()
 
-      const ticketSub = supabase.channel(`ticket-changes-${session.user.id}`)
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'support_tickets' }, (payload) => {
-          if (payload.eventType === 'INSERT') {
-            setTickets(prev => [payload.new as SupportTicket, ...prev])
-            if (currentUserRole === "SuperAdmin") {
-              toast.info(`New Support Ticket`, { description: payload.new.subject })
-            }
-          } else if (payload.eventType === 'UPDATE') {
-            setTickets(prev => prev.map(t => t.id === payload.new.id ? payload.new as SupportTicket : t))
-          }
-        })
-        .subscribe()
+          const notifSub = supabase.channel(`notif-changes-${session.user.id}`)
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications', filter: `user_id=eq.${session.user.id}` }, (payload) => {
+              if (payload.eventType === 'INSERT') {
+                setNotifications(prev => [mapDbNotifToNotif(payload.new), ...prev])
+                toast.info(payload.new.title, {
+                  description: payload.new.message,
+                })
+              } else if (payload.eventType === 'UPDATE') {
+                setNotifications(prev => prev.map(n => n.id === payload.new.id ? mapDbNotifToNotif(payload.new) : n))
+              }
+            })
+            .subscribe()
 
-      const teamSub = supabase.channel(`team-changes-${session.user.id}`)
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'teams' }, (payload) => {
-          if (payload.eventType === 'INSERT') {
-            setTeams(prev => [payload.new as Team, ...prev])
-          } else if (payload.eventType === 'UPDATE') {
-            setTeams(prev => prev.map(t => t.id === payload.new.id ? payload.new as Team : t))
-          } else if (payload.eventType === 'DELETE') {
-            setTeams(prev => prev.filter(t => t.id !== payload.old.id))
-          }
-        })
-        .subscribe()
+          const ticketSub = supabase.channel(`ticket-changes-${session.user.id}`)
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'support_tickets' }, (payload) => {
+              if (payload.eventType === 'INSERT') {
+                setTickets(prev => [payload.new as SupportTicket, ...prev])
+                if (currentUserRole === "SuperAdmin") {
+                  toast.info(`New Support Ticket`, { description: payload.new.subject })
+                }
+              } else if (payload.eventType === 'UPDATE') {
+                setTickets(prev => prev.map(t => t.id === payload.new.id ? payload.new as SupportTicket : t))
+              }
+            })
+            .subscribe()
+
+          const teamSub = supabase.channel(`team-changes-${session.user.id}`)
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'teams' }, (payload) => {
+              if (payload.eventType === 'INSERT') {
+                setTeams(prev => [payload.new as Team, ...prev])
+              } else if (payload.eventType === 'UPDATE') {
+                setTeams(prev => prev.map(t => t.id === payload.new.id ? payload.new as Team : t))
+              } else if (payload.eventType === 'DELETE') {
+                setTeams(prev => prev.filter(t => t.id !== payload.old.id))
+              }
+            })
+            .subscribe()
+        } catch (subErr) {
+          console.warn("Realtime subscription warning:", subErr)
+        }
+      } catch (err: any) {
+        console.error("Global loadData error:", err)
+        if (mounted) setIsLoaded(true)
+      }
     }
 
     loadData()
@@ -930,10 +960,115 @@ export function AppProvider({ children, serverUserId }: { children: ReactNode, s
     const orgId = currentUser?.tenantId;
     
     if (orgId) {
-      const { data, error } = await supabase.from('hr_attendance').select('*').eq('organization_id', orgId).order('timestamp', { ascending: false }).limit(2000);
+      const { data, error } = await supabase.from('hr_attendance').select('*').eq('organization_id', orgId).order('timestamp', { ascending: false }).limit(5000);
       if (data) {
         setHrAttendance(data);
       }
+    }
+  }
+
+  const markHRAttendance = async (employeeId: string, zkUserId: string | null, dateStr: string, status: number | null) => {
+    if (!currentUser?.tenantId && currentUser?.role !== 'SuperAdmin') return;
+    const orgId = currentUser?.tenantId;
+    if (!orgId) return;
+
+    const startOfDay = `${dateStr}T00:00:00.000Z`;
+    const endOfDay = `${dateStr}T23:59:59.999Z`;
+    const matchZk = zkUserId || employeeId;
+
+    try {
+      // 1. Delete existing punch/status for this employee on this date
+      await supabase
+        .from('hr_attendance')
+        .delete()
+        .eq('organization_id', orgId)
+        .or(`employee_id.eq.${employeeId},zk_user_id.eq.${matchZk}`)
+        .gte('timestamp', startOfDay)
+        .lte('timestamp', endOfDay);
+
+      if (status !== null) {
+        const newRecord = {
+          organization_id: orgId,
+          employee_id: employeeId,
+          zk_user_id: matchZk,
+          timestamp: `${dateStr}T12:00:00.000Z`,
+          status: status,
+          verify_mode: 99
+        };
+
+        const { data: inserted, error } = await supabase
+          .from('hr_attendance')
+          .insert(newRecord)
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        // Update local state instantaneously
+        setHrAttendance(prev => {
+          const filtered = prev.filter(att => {
+            const isSameDay = att.timestamp >= startOfDay && att.timestamp <= endOfDay;
+            const isSameEmp = (att.employee_id && att.employee_id === employeeId) || (att.zk_user_id && att.zk_user_id === matchZk);
+            return !(isSameDay && isSameEmp);
+          });
+          return inserted ? [inserted, ...filtered] : filtered;
+        });
+      } else {
+        // Cleared
+        setHrAttendance(prev => prev.filter(att => {
+          const isSameDay = att.timestamp >= startOfDay && att.timestamp <= endOfDay;
+          const isSameEmp = (att.employee_id && att.employee_id === employeeId) || (att.zk_user_id && att.zk_user_id === matchZk);
+          return !(isSameDay && isSameEmp);
+        }));
+      }
+    } catch (err: any) {
+      console.error("Failed to mark attendance:", err);
+      toast.error(err.message || "Failed to update attendance");
+      throw err;
+    }
+  }
+
+  const bulkMarkHRAttendance = async (records: { employeeId: string, zkUserId: string | null, dateStr: string, status: number }[]) => {
+    if (!currentUser?.tenantId && currentUser?.role !== 'SuperAdmin') return;
+    const orgId = currentUser?.tenantId;
+    if (!orgId || records.length === 0) return;
+
+    try {
+      const rowsToInsert = records.map(r => ({
+        organization_id: orgId,
+        employee_id: r.employeeId,
+        zk_user_id: r.zkUserId || r.employeeId,
+        timestamp: `${r.dateStr}T12:00:00.000Z`,
+        status: r.status,
+        verify_mode: 99
+      }));
+
+      // Delete existing records for these dates/employees in range
+      for (const r of records) {
+        const startOfDay = `${r.dateStr}T00:00:00.000Z`;
+        const endOfDay = `${r.dateStr}T23:59:59.999Z`;
+        const matchZk = r.zkUserId || r.employeeId;
+        await supabase
+          .from('hr_attendance')
+          .delete()
+          .eq('organization_id', orgId)
+          .or(`employee_id.eq.${r.employeeId},zk_user_id.eq.${matchZk}`)
+          .gte('timestamp', startOfDay)
+          .lte('timestamp', endOfDay);
+      }
+
+      // Insert all new records in batches
+      for (let i = 0; i < rowsToInsert.length; i += 200) {
+        const batch = rowsToInsert.slice(i, i + 200);
+        const { error } = await supabase.from('hr_attendance').insert(batch);
+        if (error) console.warn("Insert batch warning:", error);
+      }
+
+      await fetchHRAttendance();
+      toast.success(`Marked attendance for ${records.length} records!`);
+    } catch (err: any) {
+      console.error("Bulk mark attendance error:", err);
+      toast.error(err.message || "Bulk marking failed");
     }
   }
 
@@ -1111,6 +1246,8 @@ export function AppProvider({ children, serverUserId }: { children: ReactNode, s
       deleteHREmployee,
       hrAttendance,
       fetchHRAttendance,
+      markHRAttendance,
+      bulkMarkHRAttendance,
       hrLeaves,
       addHRLeave,
       deleteHRLeave,

@@ -12,7 +12,8 @@ import {
   MapPin, 
   FileText,
   CalendarDays,
-  Hash
+  Hash,
+  Fingerprint
 } from "lucide-react"
 
 interface EmployeeDetailsModalProps {
@@ -128,6 +129,12 @@ export function EmployeeDetailsModal({ employee, isOpen, onClose }: EmployeeDeta
                     </p>
                   </div>
                 )}
+                <div>
+                  <p className="text-[10px] text-slate-500 uppercase font-semibold">Attendance Machine ID</p>
+                  <p className="text-sm font-mono font-medium text-slate-800 dark:text-slate-200 mt-0.5">
+                    {employee.zk_user_id ? `#${employee.zk_user_id}` : "-"}
+                  </p>
+                </div>
                 <div>
                   <p className="text-[10px] text-slate-500 uppercase font-semibold">Base Salary</p>
                   <p className="text-sm font-medium text-slate-800 dark:text-slate-200 flex items-center gap-2 mt-0.5">

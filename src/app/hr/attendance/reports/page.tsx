@@ -34,9 +34,32 @@ export default function AttendanceReportsPage() {
       let totalAbsent = 0
       let totalMsWorked = 0
 
-      if (employee.zk_user_id) {
-        days.forEach(day => {
-          const dayStr = format(day, 'yyyy-MM-dd')
+      days.forEach(day => {
+        const dayStr = format(day, 'yyyy-MM-dd')
+        
+        // Manual record lookup
+        const manualRecord = hrAttendance.find(att => {
+          const isEmp = (att.employee_id && att.employee_id === employee.id) || (employee.zk_user_id && att.zk_user_id === employee.zk_user_id)
+          return isEmp && (att.timestamp.startsWith(dayStr) || att.timestamp.substring(0, 10) === dayStr)
+        })
+
+        if (manualRecord) {
+          if (manualRecord.status === 0) {
+            totalPresent++
+            totalMsWorked += 8 * 60 * 60 * 1000
+          } else if (manualRecord.status === 1) {
+            totalLate++
+            totalMsWorked += 8 * 60 * 60 * 1000
+          } else if (manualRecord.status === 2) {
+            totalPresent++
+            totalMsWorked += 4 * 60 * 60 * 1000
+          } else if (manualRecord.status === 3) {
+            totalAbsent++
+          }
+          return
+        }
+
+        if (employee.zk_user_id) {
           const shiftStart = new Date(`${dayStr}T18:00:00`)
           const shiftEnd = new Date(shiftStart.getTime() + 15 * 60 * 60 * 1000)
 
@@ -64,11 +87,10 @@ export default function AttendanceReportsPage() {
               totalMsWorked += new Date(lastPunch.timestamp).getTime() - new Date(firstPunch.timestamp).getTime()
             }
           }
-        })
-      } else {
-        // Not linked = Absent for all days in range
-        totalAbsent = days.length
-      }
+        } else {
+          totalAbsent++
+        }
+      })
 
       const hrs = Math.floor(totalMsWorked / (1000 * 60 * 60))
       const mins = Math.floor((totalMsWorked % (1000 * 60 * 60)) / (1000 * 60))

@@ -6,10 +6,25 @@ export async function updateSession(request: NextRequest) {
     request,
   })
 
+  const allCookies = request.cookies.getAll()
+  const hasAuthCookies = allCookies.some(c => c.name.startsWith('sb-') || c.name.includes('auth-token'))
+  const isAuthRoute = request.nextUrl.pathname.startsWith('/login')
+  const isHealthCheck = request.nextUrl.pathname.startsWith('/api/health')
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      global: {
+        fetch: (url, options) => {
+          const controller = new AbortController()
+          const timeoutId = setTimeout(() => controller.abort(), 3000)
+          return fetch(url, {
+            ...options,
+            signal: options?.signal || controller.signal,
+          }).finally(() => clearTimeout(timeoutId))
+        }
+      },
       cookies: {
         getAll() {
           return request.cookies.getAll()
@@ -27,21 +42,16 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
-  // IMPORTANT: Avoid writing any logic between createServerClient and
-  // supabase.auth.getUser(). A simple mistake could make it very hard to debug
-  // issues with users being randomly logged out.
   let user = null;
-  try {
-    const { data } = await supabase.auth.getUser()
-    user = data.user;
-  } catch (error) {
-    console.error("Middleware Supabase connection error:", error);
-    // If Supabase is unreachable (timeout/DNS issue), assume unauthenticated
+  if (hasAuthCookies) {
+    try {
+      const { data } = await supabase.auth.getUser()
+      user = data?.user || null;
+    } catch (error: any) {
+      console.warn("Middleware Supabase connection unavailable:", error?.message || error);
+    }
   }
 
-  const isAuthRoute = request.nextUrl.pathname.startsWith('/login')
-  const isHealthCheck = request.nextUrl.pathname.startsWith('/api/health')
-  
   // If user is NOT logged in and trying to access a protected route
   // Redirect to login
   if (!user && !isAuthRoute && !isHealthCheck) {
@@ -56,8 +66,8 @@ export async function updateSession(request: NextRequest) {
     try {
       const { data } = await supabase.from('profiles').select('role').eq('id', user.id).single();
       profile = data;
-    } catch (error) {
-      console.error("Middleware profile fetch error:", error);
+    } catch (error: any) {
+      console.warn("Middleware profile fetch unavailable:", error?.message || error);
     }
 
     const pathname = request.nextUrl.pathname;
