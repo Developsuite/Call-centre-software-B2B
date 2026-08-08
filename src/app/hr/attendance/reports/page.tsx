@@ -9,20 +9,17 @@ import {
   Printer, 
   CalendarDays, 
   Search, 
-  TrendingUp, 
   CheckCircle2, 
   AlertTriangle, 
   XCircle, 
   Clock, 
   ChevronRight,
   Filter,
-  Layers,
-  Sparkles
+  BarChart3
 } from 'lucide-react'
 import { startOfMonth, endOfMonth, eachDayOfInterval, format, subMonths, isSunday, startOfWeek, endOfWeek, subDays } from 'date-fns'
 import Link from 'next/link'
 import { EmployeeAttendanceModal } from "@/components/hr/EmployeeAttendanceModal"
-import { Card } from "@/components/ui/card"
 
 export default function AttendanceReportsPage() {
   const { hrAttendance, hrLeaves, hrEmployees, currentUser, isLoaded, tenants } = useAppContext()
@@ -152,7 +149,7 @@ export default function AttendanceReportsPage() {
         } else if (isSun) {
           off++
         } else {
-          // Unmarked past working day defaults as unmarked/working day
+          // Unmarked working day
           workingDays++
         }
       })
@@ -160,7 +157,7 @@ export default function AttendanceReportsPage() {
       const totalAttended = present + (halfDay * 0.5)
       const attendanceRate = workingDays > 0 ? Math.min(100, Math.round((totalAttended / workingDays) * 100)) : 0
       const totalHours = (present * 8) + (halfDay * 4) + (leave * 8)
-      const totalHoursStr = `${totalHours}h 00m`
+      const totalHoursStr = `${totalHours} hrs`
 
       return {
         employee,
@@ -271,11 +268,6 @@ export default function AttendanceReportsPage() {
     document.body.removeChild(link)
   }
 
-  // Print Handler
-  const handlePrint = () => {
-    window.print()
-  }
-
   // Month options for dropdown
   const monthOptions = useMemo(() => {
     const opts = []
@@ -306,7 +298,7 @@ export default function AttendanceReportsPage() {
     return (
       <DashboardLayout title="Attendance Reports">
         <div className="flex items-center justify-center h-[50vh]">
-          <div className="w-6 h-6 border-2 border-[#ff5a36] border-t-transparent rounded-full animate-spin"></div>
+          <div className="w-6 h-6 border-2 border-slate-900 border-t-transparent rounded-full animate-spin"></div>
         </div>
       </DashboardLayout>
     )
@@ -314,58 +306,47 @@ export default function AttendanceReportsPage() {
 
   return (
     <DashboardLayout title="Attendance Reports">
-      <div className="relative flex flex-col gap-6 font-sans max-w-[1240px] mx-auto w-full pb-12 min-h-screen overflow-x-hidden px-4 md:px-0">
-        
-        {/* Background Glows */}
-        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-gradient-to-br from-[#ff5a36]/10 to-indigo-500/10 rounded-full blur-[100px] pointer-events-none -z-10 print:hidden" />
-        <div className="absolute bottom-[10%] right-[-10%] w-[40%] h-[40%] bg-gradient-to-br from-emerald-500/10 to-blue-500/10 rounded-full blur-[120px] pointer-events-none -z-10 print:hidden" />
+      <div className="flex flex-col gap-5 max-w-[1240px] mx-auto w-full pb-12 px-4 md:px-0 font-sans text-slate-800 dark:text-slate-100">
 
-        {/* Navigation Tabs */}
-        <div className="flex items-center gap-1.5 bg-slate-200/60 dark:bg-slate-800/80 p-1.5 rounded-2xl w-fit border border-slate-200 dark:border-slate-700/60 backdrop-blur-md print:hidden">
+        {/* Top Segmented Navigation Tabs */}
+        <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl w-fit border border-slate-200 dark:border-slate-700 print:hidden">
           <Link 
             href="/hr/attendance" 
-            className="px-5 py-2 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all flex items-center gap-2"
+            className="px-4 py-2 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors flex items-center gap-2"
           >
-            <CalendarDays className="w-4 h-4" /> Daily Sheet View
+            <CalendarDays className="w-4 h-4" /> Daily Sheet
           </Link>
           <Link 
             href="/hr/attendance/reports" 
-            className="px-5 py-2 rounded-xl text-xs font-bold bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm border border-slate-200/80 dark:border-slate-700 transition-all flex items-center gap-2"
+            className="px-4 py-2 rounded-lg text-xs font-semibold bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm border border-slate-200 dark:border-slate-700 transition-colors flex items-center gap-2"
           >
-            <Layers className="w-4 h-4 text-[#ff5a36]" /> Aggregated Reports
+            <BarChart3 className="w-4 h-4" /> Monthly Reports
           </Link>
         </div>
 
-        {/* Header & Controls Bar */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 bg-gradient-to-br from-white/90 to-white/50 dark:from-slate-900/70 dark:to-slate-900/30 p-6 rounded-[1.8rem] border border-white/60 dark:border-slate-800 shadow-2xl shadow-slate-900/5 backdrop-blur-2xl relative overflow-hidden group print:hidden">
+        {/* Page Title & Actions */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm print:hidden">
           <div>
-            <div className="flex items-center gap-3 mb-1">
-              <div className="bg-[#ff5a36]/10 p-2.5 rounded-2xl text-[#ff5a36]">
-                <TrendingUp className="w-5 h-5" />
-              </div>
-              <div>
-                <h1 className="text-2xl md:text-3xl font-extrabold text-slate-800 dark:text-white tracking-tight">
-                  Employee Attendance Report
-                </h1>
-                <p className="text-xs text-slate-500 font-medium mt-0.5">
-                  Comprehensive presence, late arrivals, absences, and score breakdown for all active personnel.
-                </p>
-              </div>
-            </div>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+              Attendance Reports
+            </h1>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              Monthly and custom range attendance statistics for active personnel.
+            </p>
           </div>
           
-          <div className="flex items-center gap-2.5 flex-wrap justify-end">
+          <div className="flex items-center gap-2.5 flex-wrap">
             <button
               onClick={exportToCSV}
-              className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl h-9 px-4 transition-all text-xs font-bold shadow-sm cursor-pointer"
+              className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-lg h-9 px-4 transition-colors text-xs font-semibold cursor-pointer"
             >
               <FileDown className="w-3.5 h-3.5" />
               <span>Export CSV</span>
             </button>
 
             <button
-              onClick={handlePrint}
-              className="flex items-center gap-2 bg-slate-900 hover:bg-black dark:bg-slate-800 dark:hover:bg-slate-700 text-white rounded-xl h-9 px-4 transition-all text-xs font-bold shadow-sm cursor-pointer"
+              onClick={() => window.print()}
+              className="flex items-center gap-2 bg-slate-900 hover:bg-black dark:bg-slate-100 dark:hover:bg-white text-white dark:text-slate-900 rounded-lg h-9 px-4 transition-colors text-xs font-semibold cursor-pointer"
             >
               <Printer className="w-3.5 h-3.5" />
               <span>Print Report</span>
@@ -373,60 +354,60 @@ export default function AttendanceReportsPage() {
           </div>
         </div>
 
-        {/* Date Filter & Preset Controls */}
-        <div className="bg-white/80 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800 p-4 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 print:hidden">
+        {/* Filters & Range Toolbar */}
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-xl shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4 print:hidden">
           {/* Quick Presets */}
           <div className="flex items-center gap-1.5 flex-wrap">
             <button
               onClick={handleSetThisMonth}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
                 !customRangeMode && selectedMonth === `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`
-                  ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-sm'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                  ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
               }`}
             >
               This Month
             </button>
             <button
               onClick={handleSetLastMonth}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
                 !customRangeMode && selectedMonth === `${subMonths(new Date(), 1).getFullYear()}-${String(subMonths(new Date(), 1).getMonth() + 1).padStart(2, '0')}`
-                  ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-sm'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                  ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
               }`}
             >
               Last Month
             </button>
             <button
               onClick={handleSetLast30Days}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
                 customRangeMode
-                  ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-sm'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                  ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
               }`}
             >
               Last 30 Days
             </button>
             <button
               onClick={handleSetThisWeek}
-              className="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all cursor-pointer"
+              className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
             >
               This Week
             </button>
           </div>
 
-          {/* Month / Custom Range Selector */}
-          <div className="flex items-center gap-2.5 flex-wrap w-full md:w-auto justify-end">
+          {/* Month / Range Select */}
+          <div className="flex items-center gap-2 flex-wrap w-full md:w-auto justify-end">
             {!customRangeMode ? (
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-slate-400">Month:</span>
+                <span className="text-xs text-slate-500 font-medium">Month:</span>
                 <select
                   value={selectedMonth}
                   onChange={(e) => {
                     setCustomRangeMode(false)
                     setSelectedMonth(e.target.value)
                   }}
-                  className="h-9 px-3.5 text-xs font-bold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-[#ff5a36]/50 transition-all text-slate-800 dark:text-white shadow-sm cursor-pointer"
+                  className="h-8.5 px-3 text-xs font-medium bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:ring-1 focus:ring-slate-400 text-slate-800 dark:text-white cursor-pointer"
                 >
                   {monthOptions.map(opt => (
                     <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -434,7 +415,7 @@ export default function AttendanceReportsPage() {
                 </select>
                 <button
                   onClick={() => setCustomRangeMode(true)}
-                  className="text-xs font-bold text-[#ff5a36] hover:underline px-2 cursor-pointer"
+                  className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline px-1 cursor-pointer"
                 >
                   Custom Range
                 </button>
@@ -445,18 +426,18 @@ export default function AttendanceReportsPage() {
                   type="date"
                   value={fromDate}
                   onChange={(e) => setFromDate(e.target.value)}
-                  className="h-9 px-2.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-800 dark:text-white font-medium"
+                  className="h-8.5 px-2.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none text-slate-800 dark:text-white"
                 />
-                <span className="text-xs text-slate-400 font-bold">to</span>
+                <span className="text-xs text-slate-400 font-medium">to</span>
                 <input
                   type="date"
                   value={toDate}
                   onChange={(e) => setToDate(e.target.value)}
-                  className="h-9 px-2.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-800 dark:text-white font-medium"
+                  className="h-8.5 px-2.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none text-slate-800 dark:text-white"
                 />
                 <button
                   onClick={() => setCustomRangeMode(false)}
-                  className="text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-white px-1.5 cursor-pointer"
+                  className="text-xs font-medium text-slate-500 hover:text-slate-800 dark:hover:text-white px-1 cursor-pointer"
                 >
                   Monthly View
                 </button>
@@ -465,86 +446,75 @@ export default function AttendanceReportsPage() {
           </div>
         </div>
 
-        {/* Overall KPI Metrics Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-3.5 print:hidden">
+        {/* Clean Metrics Cards */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 print:hidden">
           {/* Average Attendance Rate */}
-          <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl p-4 text-white shadow-lg shadow-indigo-500/10 flex flex-col justify-between col-span-2 md:col-span-1">
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-indigo-100">Avg Attendance</span>
-            <div className="my-1">
-              <h3 className="text-2xl font-black">{overallStats.avgRate}%</h3>
-              <p className="text-[10px] text-indigo-100 font-medium">Overall Team Score</p>
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-sm">
+            <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 block">Avg Attendance</span>
+            <div className="mt-1">
+              <span className="text-2xl font-bold text-slate-900 dark:text-white">{overallStats.avgRate}%</span>
             </div>
-            <div className="w-full bg-white/20 rounded-full h-1.5 overflow-hidden">
-              <div className="bg-white h-full rounded-full" style={{ width: `${overallStats.avgRate}%` }}></div>
-            </div>
+            <span className="text-[10px] text-slate-400 mt-1 block">Team score</span>
           </div>
 
           {/* Active Staff */}
-          <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-sm flex flex-col justify-between">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Staff</span>
-            <div>
-              <h3 className="text-2xl font-black text-slate-800 dark:text-white">{reportData.length}</h3>
-              <p className="text-[10px] text-slate-400 font-medium">{nonOfficeBoyCount} Agents + {officeBoyCount} Boys</p>
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-sm">
+            <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 block">Total Staff</span>
+            <div className="mt-1">
+              <span className="text-2xl font-bold text-slate-900 dark:text-white">{reportData.length}</span>
             </div>
+            <span className="text-[10px] text-slate-400 mt-1 block">{nonOfficeBoyCount} Staff, {officeBoyCount} Boys</span>
           </div>
 
           {/* Total Present */}
-          <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-sm flex flex-col justify-between">
-            <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider flex items-center gap-1">
-              <CheckCircle2 className="w-3 h-3" /> Present
-            </span>
-            <div>
-              <h3 className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{overallStats.totalPresent}</h3>
-              <p className="text-[10px] text-slate-400 font-medium">Logged on time</p>
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-sm">
+            <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 block">Present Days</span>
+            <div className="mt-1">
+              <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{overallStats.totalPresent}</span>
             </div>
+            <span className="text-[10px] text-slate-400 mt-1 block">On time</span>
           </div>
 
           {/* Total Late */}
-          <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-sm flex flex-col justify-between">
-            <span className="text-[10px] font-bold text-amber-600 uppercase tracking-wider flex items-center gap-1">
-              <AlertTriangle className="w-3 h-3" /> Late
-            </span>
-            <div>
-              <h3 className="text-2xl font-black text-amber-600 dark:text-amber-400">{overallStats.totalLate}</h3>
-              <p className="text-[10px] text-slate-400 font-medium">Late arrivals</p>
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-sm">
+            <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 block">Late Arrivals</span>
+            <div className="mt-1">
+              <span className="text-2xl font-bold text-amber-600 dark:text-amber-400">{overallStats.totalLate}</span>
             </div>
+            <span className="text-[10px] text-slate-400 mt-1 block">Marked late</span>
           </div>
 
           {/* Total Absent */}
-          <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-sm flex flex-col justify-between">
-            <span className="text-[10px] font-bold text-rose-600 uppercase tracking-wider flex items-center gap-1">
-              <XCircle className="w-3 h-3" /> Absences
-            </span>
-            <div>
-              <h3 className="text-2xl font-black text-rose-600 dark:text-rose-400">{overallStats.totalAbsent}</h3>
-              <p className="text-[10px] text-slate-400 font-medium">Unpaid absence days</p>
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-sm">
+            <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 block">Absences</span>
+            <div className="mt-1">
+              <span className="text-2xl font-bold text-rose-600 dark:text-rose-400">{overallStats.totalAbsent}</span>
             </div>
+            <span className="text-[10px] text-slate-400 mt-1 block">Unpaid</span>
           </div>
 
           {/* Total Leaves */}
-          <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-sm flex flex-col justify-between">
-            <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider flex items-center gap-1">
-              <Sparkles className="w-3 h-3" /> Leaves
-            </span>
-            <div>
-              <h3 className="text-2xl font-black text-indigo-600 dark:text-indigo-400">{overallStats.totalLeave}</h3>
-              <p className="text-[10px] text-slate-400 font-medium">Approved leaves</p>
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-sm">
+            <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 block">Leaves</span>
+            <div className="mt-1">
+              <span className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{overallStats.totalLeave}</span>
             </div>
+            <span className="text-[10px] text-slate-400 mt-1 block">Approved</span>
           </div>
         </div>
 
-        {/* Filter & Search Bar */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-3.5 rounded-2xl flex items-center justify-between gap-3 flex-wrap print:hidden">
+        {/* Search & Role Filter Bar */}
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 rounded-xl shadow-sm flex items-center justify-between gap-3 flex-wrap print:hidden">
           <div className="flex items-center gap-3 flex-wrap flex-1">
             {/* Search Input */}
             <div className="relative flex-1 min-w-[200px] max-w-xs">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input 
                 type="text" 
-                placeholder="Search staff..." 
+                placeholder="Search by name..." 
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="h-9 pl-9 pr-4 w-full text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-[#ff5a36]/50 transition-all text-slate-800 dark:text-white"
+                className="h-8.5 pl-9 pr-3 w-full text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:ring-1 focus:ring-slate-400 text-slate-800 dark:text-white"
               />
             </div>
 
@@ -552,9 +522,9 @@ export default function AttendanceReportsPage() {
             <select
               value={roleFilter}
               onChange={e => setRoleFilter(e.target.value)}
-              className="h-9 px-3.5 text-xs font-semibold bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-[#ff5a36]/50 transition-all text-slate-800 dark:text-white cursor-pointer"
+              className="h-8.5 px-3 text-xs font-medium bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:ring-1 focus:ring-slate-400 text-slate-800 dark:text-white cursor-pointer"
             >
-              <option value="All">All Staff ({tenantEmployees.length})</option>
+              <option value="All">All Roles ({tenantEmployees.length})</option>
               <option value="ALL_EMPLOYEES_EXCLUDE_OFFICE">Agents & Staff ({nonOfficeBoyCount})</option>
               <option value="OFFICE_BOYS_ONLY">Office Boys ({officeBoyCount})</option>
               <optgroup label="── Specific Roles ──">
@@ -565,17 +535,17 @@ export default function AttendanceReportsPage() {
             </select>
           </div>
 
-          <div className="text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-2">
-            <span>Period: <strong className="text-slate-800 dark:text-white">{currentPeriodLabel}</strong></span>
+          <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+            Period: <span className="font-semibold text-slate-800 dark:text-white">{currentPeriodLabel}</span>
           </div>
         </div>
 
         {/* Print Header */}
-        <div className="hidden print:block mb-6 border-b border-slate-300 pb-4">
+        <div className="hidden print:block mb-6 border-b border-slate-300 pb-3">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-2xl font-black text-slate-900">{orgName}</h1>
-              <h2 className="text-sm font-bold text-slate-600">Monthly Attendance Report</h2>
+              <h1 className="text-xl font-bold text-slate-900">{orgName}</h1>
+              <h2 className="text-xs text-slate-600">Monthly Attendance Report</h2>
             </div>
             <div className="text-right text-xs text-slate-600">
               <p>Period: <strong>{currentPeriodLabel}</strong></p>
@@ -584,137 +554,124 @@ export default function AttendanceReportsPage() {
           </div>
         </div>
 
-        {/* Detailed Attendance Report Table */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-[1.5rem] overflow-hidden shadow-sm print:border-none print:shadow-none">
+        {/* Enterprise Data Table */}
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm print:border-none print:shadow-none">
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="bg-slate-50/80 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-slate-400 text-[10px] uppercase font-extrabold tracking-wider print:bg-slate-100 print:text-black">
-                  <th className="px-5 py-4">Employee</th>
-                  <th className="px-4 py-4 text-center">Working Days</th>
-                  <th className="px-4 py-4 text-center">Present (P)</th>
-                  <th className="px-4 py-4 text-center">Late (L)</th>
-                  <th className="px-4 py-4 text-center">Half Day (HD)</th>
-                  <th className="px-4 py-4 text-center">Absent (A)</th>
-                  <th className="px-4 py-4 text-center">Leave (LV)</th>
-                  <th className="px-4 py-4 text-center">Score %</th>
-                  <th className="px-4 py-4 text-right">Work Hours</th>
-                  <th className="px-5 py-4 text-right print:hidden">Action</th>
+                <tr className="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-semibold print:bg-slate-100 print:text-black">
+                  <th className="px-4 py-3">Employee</th>
+                  <th className="px-3 py-3 text-center">Working Days</th>
+                  <th className="px-3 py-3 text-center">Present</th>
+                  <th className="px-3 py-3 text-center">Late</th>
+                  <th className="px-3 py-3 text-center">Half Day</th>
+                  <th className="px-3 py-3 text-center">Absent</th>
+                  <th className="px-3 py-3 text-center">Leave</th>
+                  <th className="px-3 py-3 text-center">Attendance %</th>
+                  <th className="px-4 py-3 text-right">Hours</th>
+                  <th className="px-4 py-3 text-right print:hidden">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-xs">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {reportData.length === 0 ? (
                   <tr>
-                    <td colSpan={10} className="px-6 py-14 text-center text-slate-400 font-medium">
-                      No staff members match the selected filters or interval.
+                    <td colSpan={10} className="px-6 py-12 text-center text-slate-400">
+                      No staff members match the selected filters.
                     </td>
                   </tr>
                 ) : (
-                  reportData.map((row) => {
-                    const isHigh = row.attendanceRate >= 90
-                    const isMid = row.attendanceRate >= 75 && row.attendanceRate < 90
-
-                    return (
-                      <tr key={row.employee.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
-                        {/* Employee Details */}
-                        <td className="px-5 py-3.5">
-                          <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#ff5a36] to-purple-600 flex items-center justify-center text-white font-bold text-xs shadow-sm print:hidden">
-                              {row.employee.avatar_url ? (
-                                <img src={row.employee.avatar_url} className="w-full h-full rounded-xl object-cover" alt={row.employee.full_name} />
-                              ) : (
-                                row.employee.full_name.charAt(0)
+                  reportData.map((row) => (
+                    <tr key={row.employee.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors">
+                      {/* Employee Info */}
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-7 h-7 rounded-lg bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-200 font-bold text-xs print:hidden">
+                            {row.employee.avatar_url ? (
+                              <img src={row.employee.avatar_url} className="w-full h-full rounded-lg object-cover" alt={row.employee.full_name} />
+                            ) : (
+                              row.employee.full_name.charAt(0)
+                            )}
+                          </div>
+                          <div>
+                            <div className="font-semibold text-slate-900 dark:text-white print:text-black flex items-center gap-1.5">
+                              <span>{row.employee.full_name}</span>
+                              {row.employee.status === "Documents Missing" && (
+                                <span className="text-[9px] font-medium px-1.5 py-0.2 rounded bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200 dark:border-amber-800 print:hidden">
+                                  Missing Docs
+                                </span>
                               )}
                             </div>
-                            <div>
-                              <div className="font-bold text-slate-800 dark:text-slate-200 print:text-black flex items-center gap-1.5">
-                                <span>{row.employee.full_name}</span>
-                                {row.employee.status === "Documents Missing" && (
-                                  <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-amber-100 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 print:hidden">
-                                    Docs Missing
-                                  </span>
-                                )}
-                              </div>
-                              <div className="text-[11px] text-slate-400 font-medium print:text-slate-600">
-                                {row.employee.job_title || 'Unassigned'}
-                              </div>
+                            <div className="text-[11px] text-slate-500 dark:text-slate-400 print:text-slate-600">
+                              {row.employee.job_title || 'Unassigned'}
                             </div>
                           </div>
-                        </td>
+                        </div>
+                      </td>
 
-                        {/* Working Days */}
-                        <td className="px-4 py-3.5 text-center font-bold text-slate-700 dark:text-slate-300 print:text-black">
-                          {row.workingDays}
-                        </td>
+                      {/* Working Days */}
+                      <td className="px-3 py-3 text-center text-slate-700 dark:text-slate-300 font-medium">
+                        {row.workingDays}
+                      </td>
 
-                        {/* Present */}
-                        <td className="px-4 py-3.5 text-center">
-                          <span className="inline-flex items-center justify-center min-w-[28px] h-6 px-2 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-extrabold text-xs border border-emerald-500/20 print:border-none print:bg-transparent print:text-black">
-                            {row.present}
-                          </span>
-                        </td>
+                      {/* Present */}
+                      <td className="px-3 py-3 text-center">
+                        <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                          {row.present}
+                        </span>
+                      </td>
 
-                        {/* Late */}
-                        <td className="px-4 py-3.5 text-center">
-                          <span className="inline-flex items-center justify-center min-w-[28px] h-6 px-2 rounded-lg bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 font-extrabold text-xs border border-amber-500/20 print:border-none print:bg-transparent print:text-black">
-                            {row.late}
-                          </span>
-                        </td>
+                      {/* Late */}
+                      <td className="px-3 py-3 text-center">
+                        <span className="font-semibold text-amber-600 dark:text-amber-400">
+                          {row.late}
+                        </span>
+                      </td>
 
-                        {/* Half Day */}
-                        <td className="px-4 py-3.5 text-center">
-                          <span className="inline-flex items-center justify-center min-w-[28px] h-6 px-2 rounded-lg bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 font-extrabold text-xs border border-purple-500/20 print:border-none print:bg-transparent print:text-black">
-                            {row.halfDay}
-                          </span>
-                        </td>
+                      {/* Half Day */}
+                      <td className="px-3 py-3 text-center">
+                        <span className="font-semibold text-purple-600 dark:text-purple-400">
+                          {row.halfDay}
+                        </span>
+                      </td>
 
-                        {/* Absent */}
-                        <td className="px-4 py-3.5 text-center">
-                          <span className="inline-flex items-center justify-center min-w-[28px] h-6 px-2 rounded-lg bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 font-extrabold text-xs border border-rose-500/20 print:border-none print:bg-transparent print:text-black">
-                            {row.absent}
-                          </span>
-                        </td>
+                      {/* Absent */}
+                      <td className="px-3 py-3 text-center">
+                        <span className="font-semibold text-rose-600 dark:text-rose-400">
+                          {row.absent}
+                        </span>
+                      </td>
 
-                        {/* Leave */}
-                        <td className="px-4 py-3.5 text-center">
-                          <span className="inline-flex items-center justify-center min-w-[28px] h-6 px-2 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-extrabold text-xs border border-indigo-500/20 print:border-none print:bg-transparent print:text-black">
-                            {row.leave}
-                          </span>
-                        </td>
+                      {/* Leave */}
+                      <td className="px-3 py-3 text-center">
+                        <span className="font-semibold text-indigo-600 dark:text-indigo-400">
+                          {row.leave}
+                        </span>
+                      </td>
 
-                        {/* Attendance Rate */}
-                        <td className="px-4 py-3.5 text-center">
-                          <div className="inline-flex flex-col items-center">
-                            <span className={`px-2 py-0.5 rounded-md text-[11px] font-extrabold border ${
-                              isHigh 
-                                ? 'bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-500/30' 
-                                : isMid
-                                ? 'bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-500/30'
-                                : 'bg-rose-100 dark:bg-rose-500/15 text-rose-700 dark:text-rose-400 border-rose-300 dark:border-rose-500/30'
-                            } print:border-none print:bg-transparent print:text-black`}>
-                              {row.attendanceRate}%
-                            </span>
-                          </div>
-                        </td>
+                      {/* Attendance % */}
+                      <td className="px-3 py-3 text-center">
+                        <span className="font-bold text-slate-800 dark:text-slate-200">
+                          {row.attendanceRate}%
+                        </span>
+                      </td>
 
-                        {/* Total Logged Hours */}
-                        <td className="px-4 py-3.5 text-right font-semibold text-slate-700 dark:text-slate-300 print:text-black">
-                          {row.totalHours}
-                        </td>
+                      {/* Total Logged Hours */}
+                      <td className="px-4 py-3 text-right text-slate-600 dark:text-slate-400 font-medium">
+                        {row.totalHours}
+                      </td>
 
-                        {/* Action */}
-                        <td className="px-5 py-3.5 text-right print:hidden">
-                          <button 
-                            onClick={() => setSelectedDetailEmployee(row.employee)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-black dark:bg-slate-800 dark:hover:bg-slate-700 text-white text-[11px] font-bold transition-all shadow-sm cursor-pointer"
-                          >
-                            <span>Daily Sheet</span>
-                            <ChevronRight className="w-3 h-3 text-slate-400" />
-                          </button>
-                        </td>
-                      </tr>
-                    )
-                  })
+                      {/* Action */}
+                      <td className="px-4 py-3 text-right print:hidden">
+                        <button 
+                          onClick={() => setSelectedDetailEmployee(row.employee)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-medium transition-colors cursor-pointer"
+                        >
+                          <span>Details</span>
+                          <ChevronRight className="w-3 h-3 text-slate-400" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))
                 )}
               </tbody>
             </table>
@@ -722,21 +679,21 @@ export default function AttendanceReportsPage() {
         </div>
 
         {/* Print Signatures */}
-        <div className="hidden print:flex justify-between items-end mt-12 pt-4 border-t border-dashed border-slate-400 text-xs text-slate-600">
-          <div>Report generated automatically from HR attendance records.</div>
+        <div className="hidden print:flex justify-between items-end mt-10 pt-4 border-t border-slate-300 text-xs text-slate-600">
+          <div>Report generated from HR attendance system.</div>
           <div className="text-center">
-            <div className="w-44 border-b border-slate-400 mb-1"></div>
-            <p>HR Manager Signature</p>
+            <div className="w-40 border-b border-slate-400 mb-1"></div>
+            <p>HR Manager</p>
           </div>
           <div className="text-center">
-            <div className="w-44 border-b border-slate-400 mb-1"></div>
-            <p>Director Signature</p>
+            <div className="w-40 border-b border-slate-400 mb-1"></div>
+            <p>Director</p>
           </div>
         </div>
 
       </div>
 
-      {/* Individual Employee Day-by-Day Sheet Modal */}
+      {/* Employee Detail Modal */}
       {selectedDetailEmployee && (
         <EmployeeAttendanceModal 
           employee={selectedDetailEmployee} 
