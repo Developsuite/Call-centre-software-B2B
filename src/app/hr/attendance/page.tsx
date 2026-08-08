@@ -87,9 +87,10 @@ export default function AttendancePage() {
   // Filtered employees
   const tenantEmployees = useMemo(() => {
     if (!currentUser) return []
-    const list = currentUser.role === "SuperAdmin"
+    const list = (currentUser.role === "SuperAdmin"
       ? hrEmployees
       : hrEmployees.filter(u => u.organization_id === currentUser.tenantId)
+    ).filter(u => u.status !== "Disabled" && u.role !== "SuperAdmin")
 
     return list
       .filter(emp => {
@@ -99,14 +100,7 @@ export default function AttendancePage() {
           (emp.zk_user_id && emp.zk_user_id.toLowerCase().includes(q)) ||
           (emp.job_title && emp.job_title.toLowerCase().includes(q))
       })
-      .sort((a, b) => {
-        const numA = a.zk_user_id ? parseInt(a.zk_user_id, 10) : NaN
-        const numB = b.zk_user_id ? parseInt(b.zk_user_id, 10) : NaN
-        if (!isNaN(numA) && !isNaN(numB)) return numA - numB
-        if (!isNaN(numA)) return -1
-        if (!isNaN(numB)) return 1
-        return a.full_name.localeCompare(b.full_name)
-      })
+      .sort((a, b) => a.full_name.localeCompare(b.full_name))
   }, [hrEmployees, currentUser, searchQuery])
 
   // Attendance lookup map
