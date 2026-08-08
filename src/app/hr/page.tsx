@@ -26,7 +26,7 @@ export default function HRDashboardPage() {
       : hrEmployees.filter(u => u.organization_id === currentUser.tenantId))
     : []
 
-  const activeStaff = tenantUsers.filter(u => u.status === "Active" && u.role !== "SuperAdmin");
+  const activeStaff = tenantUsers.filter(u => u.status !== "Disabled" && u.role !== "SuperAdmin");
 
   const payrollData = useMemo(() => {
     return activeStaff.map(user => {
@@ -59,10 +59,12 @@ export default function HRDashboardPage() {
   }
 
   const totalEmployees = tenantUsers.length
-  const activeEmployees = tenantUsers.filter(u => u.status === "Active").length
+  const totalActiveStaff = tenantUsers.filter(u => u.status !== "Disabled").length
+  const activeEmployeesCount = tenantUsers.filter(u => u.status !== "Disabled" && (!u.job_title || !u.job_title.toLowerCase().includes("office boy"))).length
+  const officeBoysCount = tenantUsers.filter(u => (u.job_title?.toLowerCase().includes("office boy")) && u.status !== "Disabled").length
   const disabledEmployees = tenantUsers.filter(u => u.status === "Disabled").length
   
-  const totalMonthlyPayroll = activeStaff.reduce((sum, user) => sum + Number(user.base_salary || 0) + Number(user.bonus || 0), 0);
+  const totalMonthlyPayroll = tenantUsers.filter(u => u.status !== "Disabled").reduce((sum, user) => sum + Number(user.base_salary || 0) + Number(user.bonus || 0), 0);
 
   const jobTitleCounts = tenantUsers.reduce((acc, user) => {
     const title = user.job_title || 'Unassigned';
@@ -120,31 +122,31 @@ export default function HRDashboardPage() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <Card className="rounded-2xl p-4 bg-white/70 dark:bg-slate-900/40 backdrop-blur-2xl border border-slate-200/60 dark:border-slate-700/50 shadow-none flex flex-row justify-between items-center transition-all hover:bg-white/90 dark:hover:bg-slate-800/60 duration-300">
             <div className="flex flex-col">
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Total Headcount</span>
-              <h3 className="text-3xl font-extrabold text-slate-800 dark:text-white">{totalEmployees}</h3>
-            </div>
-            <div className="w-20 h-20 shrink-0 transition-transform group-hover:scale-105 duration-300">
-              <img src="/images/cards_icons/5.png" alt="Total" className="w-full h-full object-contain" />
-            </div>
-          </Card>
-
-          <Card className="rounded-2xl p-4 bg-white/70 dark:bg-slate-900/40 backdrop-blur-2xl border border-slate-200/60 dark:border-slate-700/50 shadow-none flex flex-row justify-between items-center transition-all hover:bg-white/90 dark:hover:bg-slate-800/60 duration-300">
-            <div className="flex flex-col">
               <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Active Staff</span>
-              <h3 className="text-3xl font-extrabold text-slate-800 dark:text-white">{activeEmployees}</h3>
+              <h3 className="text-3xl font-extrabold text-slate-800 dark:text-white">{totalActiveStaff}</h3>
             </div>
             <div className="w-20 h-20 shrink-0 transition-transform group-hover:scale-105 duration-300">
-              <img src="/images/cards_icons/6.png" alt="Active" className="w-full h-full object-contain" />
+              <img src="/images/cards_icons/6.png" alt="Active Staff" className="w-full h-full object-contain" />
             </div>
           </Card>
 
           <Card className="rounded-2xl p-4 bg-white/70 dark:bg-slate-900/40 backdrop-blur-2xl border border-slate-200/60 dark:border-slate-700/50 shadow-none flex flex-row justify-between items-center transition-all hover:bg-white/90 dark:hover:bg-slate-800/60 duration-300">
             <div className="flex flex-col">
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Disabled</span>
-              <h3 className="text-3xl font-extrabold text-slate-800 dark:text-white">{disabledEmployees}</h3>
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Active Employees</span>
+              <h3 className="text-3xl font-extrabold text-slate-800 dark:text-white">{activeEmployeesCount}</h3>
             </div>
             <div className="w-20 h-20 shrink-0 transition-transform group-hover:scale-105 duration-300">
-              <img src="/images/cards_icons/7.png" alt="Disabled" className="w-full h-full object-contain" />
+              <img src="/images/cards_icons/5.png" alt="Active Employees" className="w-full h-full object-contain" />
+            </div>
+          </Card>
+
+          <Card className="rounded-2xl p-4 bg-white/70 dark:bg-slate-900/40 backdrop-blur-2xl border border-slate-200/60 dark:border-slate-700/50 shadow-none flex flex-row justify-between items-center transition-all hover:bg-white/90 dark:hover:bg-slate-800/60 duration-300">
+            <div className="flex flex-col">
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Office Boys</span>
+              <h3 className="text-3xl font-extrabold text-slate-800 dark:text-white">{officeBoysCount}</h3>
+            </div>
+            <div className="w-20 h-20 shrink-0 transition-transform group-hover:scale-105 duration-300">
+              <img src="/images/cards_icons/office_boy.png" alt="Office Boys" className="w-full h-full object-contain" />
             </div>
           </Card>
 

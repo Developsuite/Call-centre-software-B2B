@@ -1,10 +1,10 @@
 "use client"
 
-import React, { useState, useMemo, useRef } from "react"
+import React, { useState, useMemo, useRef, useEffect } from "react"
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { Card } from "@/components/ui/card"
 import { useAppContext } from "@/store/AppContext"
-import { FileText, Printer, ChevronDown, Building2, Search, Save } from "lucide-react"
+import { FileText, Printer, Building2, Search, Save } from "lucide-react"
 import { toast } from "sonner"
 
 export default function SalarySlipsPage() {
@@ -15,16 +15,18 @@ export default function SalarySlipsPage() {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
   })
 
-  // Manual overrides per employee: { [employeeId]: { connectedSales: number, loanDeduction: number, manualAbsences?: number } }
-  const [overrides, setOverrides] = useState<Record<string, { connectedSales: number, loanDeduction: number, manualAbsences?: number }>>({})
+  // Manual overrides per employee: { [employeeId]: { connectedSales: number, transferSales: number, loanDeduction: number, manualAbsences?: number } }
+  const [overrides, setOverrides] = useState<Record<string, { connectedSales: number, transferSales: number, loanDeduction: number, manualAbsences?: number }>>({})
 
-
+  // Multi-selection state
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [hasInitializedSelection, setHasInitializedSelection] = useState(false)
 
   const tenantEmployees = currentUser?.role === "SuperAdmin"
     ? hrEmployees
     : hrEmployees.filter(e => e.organization_id === currentUser?.tenantId)
 
-  const activeEmployees = tenantEmployees.filter(e => e.status === "Active" && e.role !== "SuperAdmin")
+  const activeEmployees = tenantEmployees.filter(e => e.status !== "Disabled" && e.role !== "SuperAdmin")
 
   const [searchQuery, setSearchQuery] = useState("")
   const [roleFilter, setRoleFilter] = useState("All")
@@ -33,17 +35,25 @@ export default function SalarySlipsPage() {
     return Array.from(new Set(activeEmployees.map(e => e.job_title || "Unassigned"))).sort()
   }, [activeEmployees])
 
+  const nonOfficeBoyCount = activeEmployees.filter(e => !(e.job_title || "").toLowerCase().includes("office boy")).length
+  const officeBoyCount = activeEmployees.filter(e => (e.job_title || "").toLowerCase().includes("office boy")).length
+
   const filteredEmployees = useMemo(() => {
     return activeEmployees.filter(e => {
       const matchesSearch = !searchQuery.trim() || e.full_name.toLowerCase().includes(searchQuery.toLowerCase())
-      const matchesRole = roleFilter === "All" || (e.job_title || "Unassigned") === roleFilter
+      const isOfficeBoy = (e.job_title || "").toLowerCase().includes("office boy")
+      const matchesRole = 
+        roleFilter === "All" ? true :
+        roleFilter === "All Employees" ? !isOfficeBoy :
+        roleFilter === "Office Boy" ? isOfficeBoy :
+        (e.job_title || "Unassigned") === roleFilter
       return matchesSearch && matchesRole
     })
   }, [activeEmployees, searchQuery, roleFilter])
 
   const [selectedYear, selectedMonthNum] = selectedMonth.split('-').map(Number)
 
-  // Calculate working days in month (exclude weekends - Sat/Sun)
+  // Calculate working days in month (exclude Sundays)
   const getWorkingDays = (year: number, month: number) => {
     const daysInMonth = new Date(year, month, 0).getDate()
     let workingDays = 0
@@ -59,8 +69,12 @@ export default function SalarySlipsPage() {
   // Build slip data for each employee
   const slipData = useMemo(() => {
     return filteredEmployees.map(emp => {
+      const isOfficeBoy = (emp.job_title || "").toLowerCase().includes("office boy") || (emp.role || "").toLowerCase().includes("office boy")
       const baseSalary = Number(emp.base_salary) || 0
-      const commissionRate = Number(emp.commission_per_sale) || 0
+      
+      // Commission rates: Connected Sales (e.g. 5,000 or custom) & Transfer Sales (2,500 / 2.5k)
+      const commissionRate = isOfficeBoy ? 0 : (Number(emp.commission_per_sale) > 0 ? Number(emp.commission_per_sale) : 5000)
+      const transferRate = isOfficeBoy ? 0 : 2500
 
       // Count leaves for this month
       const empLeaves = hrLeaves.filter(l => {
@@ -69,28 +83,40 @@ export default function SalarySlipsPage() {
       })
 
       // Get overrides or defaults
-      const override = overrides[emp.id] || { connectedSales: 0, loanDeduction: 0 }
+      const override = overrides[emp.id] || { connectedSales: 0, transferSales: 0, loanDeduction: 0 }
       
       const calcTotalAbsences = empLeaves.length
       const totalAbsences = override.manualAbsences !== undefined ? override.manualAbsences : calcTotalAbsences
       const paidLeaves = empLeaves.filter(l => l.is_paid).length
       const unpaidAbsences = override.manualAbsences !== undefined ? Math.max(0, totalAbsences - paidLeaves) : calcTotalAbsences - paidLeaves
 
-      const perDaySalary = workingDays > 0 ? baseSalary / workingDays : 0
-      const absenceDeduction = unpaidAbsences * perDaySalary
+      // Per-day calculation rounded DOWN (minimum) to minimize absence penalties for the employee
+      const perDaySalary = workingDays > 0 ? Math.floor(baseSalary / workingDays) : 0
+      const absenceDeduction = Math.floor(unpaidAbsences * perDaySalary)
 
-      const connectedSales = override.connectedSales
-      const commissionEarned = connectedSales * commissionRate
-      const loanDeduction = override.loanDeduction
+      // Earnings calculations
+      const connectedSales = override.connectedSales || 0
+      const connectedCommissionEarned = connectedSales * commissionRate
 
-      const grossSalary = baseSalary + commissionEarned
+      const transferSales = override.transferSales || 0
+      const transferCommissionEarned = transferSales * transferRate
+
+      const totalCommissionEarned = connectedCommissionEarned + transferCommissionEarned
+      const loanDeduction = override.loanDeduction || 0
+
+      const grossSalary = baseSalary + totalCommissionEarned
       const totalDeductions = absenceDeduction + loanDeduction
-      const netSalary = Math.max(0, Math.round(grossSalary - totalDeductions))
+      
+      // Net Salary rounded UP (maximum) to nearest 100 for maximum benefit to employee (no odd 2-digit decimals like 45, 63)
+      const rawNetSalary = Math.max(0, grossSalary - totalDeductions)
+      const netSalary = rawNetSalary > 0 ? Math.ceil(rawNetSalary / 100) * 100 : 0
 
       return {
         employee: emp,
+        isOfficeBoy,
         baseSalary,
         commissionRate,
+        transferRate,
         workingDays,
         totalAbsences,
         paidLeaves,
@@ -98,7 +124,10 @@ export default function SalarySlipsPage() {
         perDaySalary,
         absenceDeduction,
         connectedSales,
-        commissionEarned,
+        connectedCommissionEarned,
+        transferSales,
+        transferCommissionEarned,
+        totalCommissionEarned,
         loanDeduction,
         grossSalary,
         totalDeductions,
@@ -107,11 +136,43 @@ export default function SalarySlipsPage() {
     }).sort((a, b) => a.employee.full_name.localeCompare(b.employee.full_name))
   }, [filteredEmployees, hrLeaves, selectedYear, selectedMonthNum, workingDays, overrides])
 
-  const updateOverride = (employeeId: string, field: 'connectedSales' | 'loanDeduction' | 'manualAbsences', value: number | undefined) => {
+  // Select all slips initially once loaded
+  useEffect(() => {
+    if (slipData.length > 0 && !hasInitializedSelection) {
+      setSelectedIds(slipData.map(s => s.employee.id))
+      setHasInitializedSelection(true)
+    }
+  }, [slipData, hasInitializedSelection])
+
+  // Toggle single employee selection
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => 
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    )
+  }
+
+  // Toggle select all filtered employees
+  const isAllSelected = slipData.length > 0 && slipData.every(s => selectedIds.includes(s.employee.id))
+  const toggleSelectAll = () => {
+    if (isAllSelected) {
+      setSelectedIds([])
+    } else {
+      setSelectedIds(slipData.map(s => s.employee.id))
+    }
+  }
+
+  // Filter selected slips
+  const selectedSlips = useMemo(() => {
+    return slipData.filter(s => selectedIds.includes(s.employee.id))
+  }, [slipData, selectedIds])
+
+  const totalNetPayroll = selectedSlips.reduce((sum, s) => sum + Math.max(0, s.netSalary), 0)
+
+  const updateOverride = (employeeId: string, field: 'connectedSales' | 'transferSales' | 'loanDeduction' | 'manualAbsences', value: number | undefined) => {
     setOverrides(prev => ({
       ...prev,
       [employeeId]: {
-        ...prev[employeeId] || { connectedSales: 0, loanDeduction: 0 },
+        ...prev[employeeId] || { connectedSales: 0, transferSales: 0, loanDeduction: 0 },
         [field]: value
       }
     }))
@@ -121,20 +182,26 @@ export default function SalarySlipsPage() {
 
   const [isSaving, setIsSaving] = useState(false)
   const handleSaveRecords = async () => {
+    const slipsToSave = selectedSlips.length > 0 ? selectedSlips : slipData
+    if (slipsToSave.length === 0) {
+      toast.error("Please select at least one employee salary slip to save.")
+      return
+    }
+
     try {
       setIsSaving(true)
-      const recordsToSave = slipData.map(slip => ({
+      const recordsToSave = slipsToSave.map(slip => ({
         employee_id: slip.employee.id,
         month: selectedMonth,
         base_salary: slip.baseSalary,
-        commission_earned: slip.commissionEarned,
+        commission_earned: slip.totalCommissionEarned,
         absence_deduction: slip.absenceDeduction,
         loan_deduction: slip.loanDeduction,
         gross_salary: slip.grossSalary,
         net_salary: slip.netSalary
       }))
       await saveSalaryRecords(recordsToSave)
-      toast.success('Salary records saved successfully!')
+      toast.success(`Saved ${recordsToSave.length} salary record(s) successfully!`)
     } catch (e: any) {
       // toast is handled in AppContext
     } finally {
@@ -142,9 +209,11 @@ export default function SalarySlipsPage() {
     }
   }
 
-  const handlePrint = (slipsToPrint = slipData) => {
-    const container = slipRefs.current
-    if (!container) return
+  const handlePrint = (slipsToPrint = selectedSlips) => {
+    if (slipsToPrint.length === 0) {
+      toast.error("Please select at least one employee salary slip to print.")
+      return
+    }
 
     const printWindow = window.open('', '_blank', 'width=800,height=1100')
     if (!printWindow) {
@@ -241,27 +310,27 @@ export default function SalarySlipsPage() {
           .net-bar {
             background: #1e293b;
             color: white;
-            border-radius: 4px;
-            padding: 6px 16px;
+            padding: 8px 16px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 6px;
+            border-radius: 4px;
+            margin-bottom: 8px;
           }
-          .net-bar .label { font-size: 11px; font-weight: 700; opacity: 0.8; }
+          .net-bar .label { font-size: 11px; font-weight: 700; opacity: 0.9; }
           .net-bar .amount { font-size: 16px; font-weight: 800; }
           .sig-row {
             display: flex;
             justify-content: space-between;
             align-items: flex-end;
-            border-top: 1px dashed #cbd5e1;
-            padding-top: 8px;
             margin-top: 8px;
+            padding-top: 6px;
+            border-top: 1px dashed #cbd5e1;
+            font-size: 8px;
+            color: #64748b;
           }
-          .sig-row .date { font-size: 9px; color: #94a3b8; }
           .sig-box { text-align: center; }
-          .sig-box .line { width: 120px; border-bottom: 1px solid #94a3b8; margin-bottom: 4px; }
-          .sig-box label { font-size: 9px; color: #94a3b8; font-weight: 600; }
+          .sig-box .line { width: 120px; border-bottom: 1px solid #94a3b8; margin-bottom: 3px; }
         </style>
       </head>
       <body>
@@ -279,13 +348,14 @@ export default function SalarySlipsPage() {
                 <div><label>Employee</label><p>${slip.employee.full_name}</p></div>
                 <div><label>Job Title</label><p>${slip.employee.job_title || 'N/A'}</p></div>
                 <div><label>CNIC</label><p>${slip.employee.cnic_number || 'N/A'}</p></div>
-                <div><label>Joining Date</label><p>${slip.employee.joining_date ? new Date(slip.employee.joining_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'}</p></div>
+                <div><label>Joining Date</label><p>${slip.employee.joining_date ? new Date(slip.employee.joining_date).toLocaleDateString('en-GB') : 'N/A'}</p></div>
               </div>
               <div class="two-col">
                 <div>
                   <div class="section-title earn-title">Earnings</div>
                   <div class="row"><span>Base Salary</span><span class="val">PKR ${formatCurrency(slip.baseSalary)}</span></div>
-                  <div class="row"><span>Connected Sales ${slip.commissionRate > 0 ? `(${slip.connectedSales} × PKR ${slip.commissionRate})` : ''}</span><span class="val">${slip.commissionRate > 0 ? `PKR ${formatCurrency(Math.round(slip.commissionEarned))}` : 'N/A'}</span></div>
+                  <div class="row"><span>Connected Sales ${slip.commissionRate > 0 ? `(${slip.connectedSales} × PKR ${formatCurrency(slip.commissionRate)})` : ''}</span><span class="val">${slip.commissionRate > 0 ? `PKR ${formatCurrency(Math.round(slip.connectedCommissionEarned))}` : 'NULL'}</span></div>
+                  <div class="row"><span>Transfer Sales ${slip.transferRate > 0 ? `(${slip.transferSales} × PKR ${formatCurrency(slip.transferRate)})` : ''}</span><span class="val">${slip.transferRate > 0 ? `PKR ${formatCurrency(Math.round(slip.transferCommissionEarned))}` : 'NULL'}</span></div>
                   <div class="row border-top"><span><b>Gross Salary</b></span><span class="val">PKR ${formatCurrency(Math.round(slip.grossSalary))}</span></div>
                 </div>
                 <div>
@@ -343,8 +413,6 @@ export default function SalarySlipsPage() {
     return name === "Ali's Call Centre" ? "Dialixsale" : name
   })()
 
-  const totalNetPayroll = slipData.reduce((sum, s) => sum + Math.max(0, s.netSalary), 0)
-
   if (!isLoaded || !currentUser) {
     return (
       <DashboardLayout title="Salary Slips">
@@ -373,7 +441,7 @@ export default function SalarySlipsPage() {
               </div>
               <h1 className="text-3xl font-bold text-slate-800 dark:text-white tracking-tight">Salary Slips</h1>
             </div>
-            <p className="text-slate-500 text-sm">Generate, review, and print salary slips for all employees.</p>
+            <p className="text-slate-500 text-sm">Select, review, and print individual or batch salary slips.</p>
           </div>
           
           <div className="flex flex-col sm:flex-row items-center gap-3 relative z-10 flex-wrap justify-end mt-4 md:mt-0">
@@ -393,12 +461,16 @@ export default function SalarySlipsPage() {
             <select
               value={roleFilter}
               onChange={e => setRoleFilter(e.target.value)}
-              className="h-9 px-4 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full outline-none focus:ring-2 focus:ring-[#ff5a36]/50 transition-all text-slate-800 dark:text-white shadow-sm"
+              className="h-9 px-4 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full outline-none focus:ring-2 focus:ring-[#ff5a36]/50 transition-all text-slate-800 dark:text-white shadow-sm cursor-pointer"
             >
-              <option value="All">All Roles</option>
-              {uniqueRoles.map(role => (
-                <option key={role} value={role}>{role}</option>
-              ))}
+              <option value="All">All Roles ({activeEmployees.length})</option>
+              <option value="All Employees">All Employees ({nonOfficeBoyCount})</option>
+              <option value="Office Boy">Office Boys ({officeBoyCount})</option>
+              <optgroup label="── Specific Roles ──">
+                {uniqueRoles.filter(r => !r.toLowerCase().includes("office boy")).map(role => (
+                  <option key={role} value={role}>{role}</option>
+                ))}
+              </optgroup>
             </select>
 
             <select
@@ -410,216 +482,315 @@ export default function SalarySlipsPage() {
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
             </select>
+          </div>
+        </div>
 
-            <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full h-9 px-4 flex items-center text-sm font-bold text-emerald-600">
-              Total: PKR {formatCurrency(totalNetPayroll)}
+        {/* Selection & Action Toolbar Bar */}
+        <div className="bg-white/80 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200/80 dark:border-slate-700/80 p-3.5 rounded-2xl flex items-center justify-between gap-3 flex-wrap print:hidden">
+          <div className="flex items-center gap-4">
+            {/* Standard Clean Select All Checkbox */}
+            <label className="flex items-center gap-2.5 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={isAllSelected}
+                onChange={toggleSelectAll}
+                className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-slate-900 accent-slate-900 dark:accent-indigo-600 cursor-pointer"
+              />
+              <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                Select All
+              </span>
+            </label>
+
+            {/* Selection Counter */}
+            <div className="text-xs font-medium text-slate-500 dark:text-slate-400 flex items-center gap-1">
+              <span>(<strong>{selectedSlips.length}</strong> of {slipData.length} selected)</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2.5 flex-wrap">
+            {/* Total Selected Payroll Amount */}
+            <div className="bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-500/20 rounded-xl h-9 px-3.5 flex items-center text-xs font-bold text-emerald-600 dark:text-emerald-400">
+              Selected Net: PKR {formatCurrency(totalNetPayroll)}
             </div>
 
+            {/* Print Selected */}
             <button
-              onClick={() => handlePrint(slipData)}
-              className="flex items-center gap-2 bg-slate-800 hover:bg-slate-900 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white rounded-full h-9 px-4 shadow-lg transition-all text-sm font-bold"
+              onClick={() => handlePrint(selectedSlips)}
+              disabled={selectedSlips.length === 0}
+              className="flex items-center gap-2 bg-slate-900 hover:bg-black dark:bg-slate-800 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl h-9 px-4 transition-all text-xs font-bold cursor-pointer"
             >
-              <Printer className="w-4 h-4" /> Print {slipData.length > 0 ? slipData.length : ''} Slips
+              <Printer className="w-3.5 h-3.5" />
+              <span>Print ({selectedSlips.length}) Slips</span>
             </button>
 
+            {/* Save Selected */}
             <button
               onClick={handleSaveRecords}
-              disabled={isSaving || slipData.length === 0}
-              className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-600/50 text-white rounded-full h-9 px-4 shadow-lg transition-all text-sm font-bold"
+              disabled={isSaving || selectedSlips.length === 0}
+              className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl h-9 px-4 transition-all text-xs font-bold cursor-pointer"
             >
-              <Save className="w-4 h-4" /> {isSaving ? 'Saving...' : 'Save Records'}
+              <Save className="w-3.5 h-3.5" />
+              <span>{isSaving ? "Saving..." : `Save (${selectedSlips.length}) Records`}</span>
             </button>
           </div>
         </div>
 
         {/* Slips Container */}
         <div ref={slipRefs} className="salary-slips-container space-y-4 print:space-y-0">
-          {slipData.map((slip, idx) => (
-            <div
-              key={slip.employee.id}
-              className="salary-slip bg-white dark:bg-slate-900 rounded-[1.5rem] print:rounded-none border border-slate-200 dark:border-slate-700 shadow-lg print:shadow-none overflow-hidden print:border print:border-slate-300 print:break-inside-avoid print:mb-8"
-            >
-              {/* Slip Header */}
-              <div className="bg-gradient-to-r from-slate-800 to-slate-900 dark:from-slate-700 dark:to-slate-800 text-white px-5 py-3 flex items-center justify-between print:bg-slate-800 print:py-2">
-                <div className="flex items-center gap-3">
-                  <Building2 className="w-4 h-4 text-slate-400 print:text-slate-300" />
-                  <div>
-                    <h3 className="font-bold text-sm print:text-xs">{orgName}</h3>
-                    <p className="text-[10px] text-slate-400 print:text-slate-300">Salary Slip — {monthLabel}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4 text-right">
-                  <p className="text-[10px] text-slate-400 print:text-slate-300">Slip #{idx + 1}</p>
-                  <button 
-                    onClick={() => handlePrint([slip])} 
-                    className="flex items-center gap-1.5 bg-indigo-500 hover:bg-indigo-600 text-white rounded-md px-2 py-1 text-[10px] font-bold transition-all print:hidden"
-                  >
-                    <Printer className="w-3 h-3" /> Print
-                  </button>
-                </div>
-              </div>
+          {slipData.map((slip, idx) => {
+            const isSelected = selectedIds.includes(slip.employee.id)
 
-              {/* Slip Body */}
-              <div className="p-5 print:p-3 print:text-[11px]">
-                {/* Employee Info Row */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4 print:mb-2 pb-3 print:pb-2 border-b border-slate-100 dark:border-slate-800 print:border-slate-300">
-                  <div>
-                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Employee</p>
-                    <p className="text-sm font-bold text-slate-800 dark:text-white print:text-xs print:text-black">{slip.employee.full_name}</p>
-                  </div>
-                  <div>
-                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Job Title</p>
-                    <p className="text-sm font-medium text-slate-600 dark:text-slate-300 print:text-xs print:text-black">{slip.employee.job_title || "N/A"}</p>
-                  </div>
-                  <div>
-                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">CNIC</p>
-                    <p className="text-sm font-medium text-slate-600 dark:text-slate-300 print:text-xs print:text-black">{slip.employee.cnic_number || "N/A"}</p>
-                  </div>
-                  <div>
-                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Joining Date</p>
-                    <p className="text-sm font-medium text-slate-600 dark:text-slate-300 print:text-xs print:text-black">
-                      {slip.employee.joining_date ? new Date(slip.employee.joining_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'}
-                    </p>
-                  </div>
-                </div>
+            return (
+              <div
+                key={slip.employee.id}
+                className={`salary-slip bg-white dark:bg-slate-900 rounded-[1.5rem] print:rounded-none border shadow-md print:shadow-none overflow-hidden print:border print:border-slate-300 print:break-inside-avoid print:mb-8 transition-all duration-200 ${
+                  isSelected 
+                    ? "border-slate-300 dark:border-slate-700" 
+                    : "border-slate-200 dark:border-slate-800 opacity-60 hover:opacity-90"
+                }`}
+              >
+                {/* Slip Header */}
+                <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white px-5 py-3 flex items-center justify-between">
+                  <div className="flex items-center gap-3.5">
+                    {/* Clean Checkbox for this slip */}
+                    <label className="flex items-center gap-2 cursor-pointer select-none print:hidden" title="Include/Exclude this slip">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleSelect(slip.employee.id)}
+                        className="w-4 h-4 rounded border-slate-400 text-slate-900 accent-slate-900 cursor-pointer"
+                      />
+                      <span className="text-xs font-semibold text-slate-200">
+                        {isSelected ? "Selected" : "Exclude"}
+                      </span>
+                    </label>
 
-                {/* Earnings & Deductions side by side */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 print:gap-2 mb-4 print:mb-2">
-                  {/* Earnings */}
-                  <div>
-                    <h4 className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider mb-2 print:mb-1">Earnings</h4>
-                    <div className="space-y-1.5 print:space-y-0.5">
-                      <div className="flex justify-between text-sm print:text-[11px]">
-                        <span className="text-slate-500 dark:text-slate-400 print:text-black">Base Salary</span>
-                        <span className="font-bold text-slate-800 dark:text-white print:text-black">PKR {formatCurrency(slip.baseSalary)}</span>
-                      </div>
-                      <div className="flex justify-between items-center text-sm print:text-[11px]">
-                        <span className="text-slate-500 dark:text-slate-400 print:text-black">
-                          Connected Sales
-                          {slip.commissionRate > 0 && <span className="text-[10px] text-slate-400 print:text-slate-600"> (×PKR {slip.commissionRate})</span>}
-                        </span>
-                        <div className="flex items-center gap-2">
-                          {slip.commissionRate > 0 ? (
-                            <>
-                              <input
-                                type="number"
-                                min={0}
-                                placeholder="0"
-                                value={slip.connectedSales === 0 ? '' : slip.connectedSales}
-                                onChange={(e) => {
-                                  const val = e.target.value;
-                                  updateOverride(slip.employee.id, 'connectedSales', val === '' ? 0 : Number(val))
-                                }}
-                                className="w-14 h-7 text-center text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:ring-1 focus:ring-indigo-500 font-bold print:hidden"
-                              />
-                              <span className="hidden print:inline font-bold text-black">{slip.connectedSales}</span>
-                              <span className="font-bold text-emerald-600 print:text-black min-w-[80px] text-right">PKR {formatCurrency(Math.round(slip.commissionEarned))}</span>
-                            </>
-                          ) : (
-                            <span className="font-bold text-slate-400 dark:text-slate-500 print:text-slate-400 min-w-[80px] text-right uppercase text-xs">null</span>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex justify-between text-sm print:text-[11px] pt-1.5 print:pt-0.5 border-t border-slate-100 dark:border-slate-800 print:border-slate-300 font-bold">
-                        <span className="text-slate-700 dark:text-slate-200 print:text-black">Gross Salary</span>
-                        <span className="text-slate-800 dark:text-white print:text-black">PKR {formatCurrency(Math.round(slip.grossSalary))}</span>
+                    <div className="h-4 w-[1px] bg-white/20 print:hidden" />
+
+                    <div className="flex items-center gap-2.5">
+                      <Building2 className="w-4 h-4 text-slate-400 print:text-slate-300" />
+                      <div>
+                        <h3 className="font-bold text-sm print:text-xs">{orgName}</h3>
+                        <p className="text-[10px] text-slate-400 print:text-slate-300">Salary Slip — {monthLabel}</p>
                       </div>
                     </div>
                   </div>
 
-                  {/* Deductions */}
-                  <div>
-                    <h4 className="text-[10px] font-bold text-rose-600 uppercase tracking-wider mb-2 print:mb-1">Deductions</h4>
-                    <div className="space-y-1.5 print:space-y-0.5">
-                      <div className="flex justify-between items-center text-sm print:text-[11px]">
-                        <span className="text-slate-500 dark:text-slate-400 print:text-black">
-                          Absences
-                          <span className="text-[10px] text-slate-400 print:text-slate-600 ml-1">({slip.unpaidAbsences} unpaid of {slip.totalAbsences})</span>
-                        </span>
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="number"
-                            min={0}
-                            placeholder={slip.totalAbsences.toString()}
-                            value={overrides[slip.employee.id]?.manualAbsences ?? ''}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              updateOverride(slip.employee.id, 'manualAbsences', val === '' ? undefined : Number(val))
-                            }}
-                            className="w-14 h-7 text-center text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:ring-1 focus:ring-rose-500 font-bold print:hidden"
-                          />
-                          <span className="hidden print:inline font-bold text-black">-PKR {formatCurrency(Math.round(slip.absenceDeduction))}</span>
-                          <span className="font-bold text-rose-600 print:hidden min-w-[80px] text-right">-PKR {formatCurrency(Math.round(slip.absenceDeduction))}</span>
+                  <div className="flex items-center gap-3 text-right">
+                    <span className="text-[10px] text-slate-400 print:text-slate-300 font-mono">#{idx + 1}</span>
+                    <button 
+                      onClick={() => handlePrint([slip])} 
+                      className="flex items-center gap-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded-lg px-2.5 py-1 text-[11px] font-bold transition-all print:hidden cursor-pointer"
+                      title="Print only this slip"
+                    >
+                      <Printer className="w-3 h-3" /> Print Slip
+                    </button>
+                  </div>
+                </div>
+
+                {/* Slip Body */}
+                <div className="p-5 print:p-3 print:text-[11px]">
+                  {/* Employee Info Row */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4 print:mb-2 pb-3 print:pb-2 border-b border-slate-100 dark:border-slate-800 print:border-slate-300">
+                    <div>
+                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Employee</p>
+                      <p className="text-sm font-bold text-slate-800 dark:text-white print:text-xs print:text-black flex items-center gap-2">
+                        {slip.employee.full_name}
+                        {slip.employee.status === "Documents Missing" && (
+                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 print:hidden">
+                            Docs Missing
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Job Title</p>
+                      <p className="text-sm font-medium text-slate-600 dark:text-slate-300 print:text-xs print:text-black">{slip.employee.job_title || "N/A"}</p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">CNIC</p>
+                      <p className="text-sm font-medium text-slate-600 dark:text-slate-300 print:text-xs print:text-black">{slip.employee.cnic_number || "N/A"}</p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Joining Date</p>
+                      <p className="text-sm font-medium text-slate-600 dark:text-slate-300 print:text-xs print:text-black">
+                        {slip.employee.joining_date ? new Date(slip.employee.joining_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Earnings & Deductions side by side */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 print:gap-2 mb-4 print:mb-2">
+                    {/* Earnings */}
+                    <div>
+                      <h4 className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider mb-2 print:mb-1">Earnings</h4>
+                      <div className="space-y-1.5 print:space-y-0.5">
+                        {/* Base Salary */}
+                        <div className="flex justify-between text-sm print:text-[11px]">
+                          <span className="text-slate-500 dark:text-slate-400 print:text-black">Base Salary</span>
+                          <span className="font-bold text-slate-800 dark:text-white print:text-black">PKR {formatCurrency(slip.baseSalary)}</span>
+                        </div>
+                        
+                        {/* Connected Sales Commission */}
+                        <div className="flex justify-between items-center text-sm print:text-[11px]">
+                          <span className="text-slate-500 dark:text-slate-400 print:text-black">
+                            Connected Sales
+                            {slip.commissionRate > 0 && <span className="text-[10px] text-slate-400 print:text-slate-600"> (×PKR {formatCurrency(slip.commissionRate)})</span>}
+                          </span>
+                          <div className="flex items-center gap-2">
+                            {slip.commissionRate > 0 ? (
+                              <>
+                                <input
+                                  type="number"
+                                  min={0}
+                                  placeholder="0"
+                                  value={slip.connectedSales === 0 ? '' : slip.connectedSales}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    updateOverride(slip.employee.id, 'connectedSales', val === '' ? 0 : Number(val))
+                                  }}
+                                  className="w-14 h-7 text-center text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:ring-1 focus:ring-indigo-500 font-bold print:hidden"
+                                />
+                                <span className="hidden print:inline font-bold text-black">{slip.connectedSales}</span>
+                                <span className="font-bold text-emerald-600 print:text-black min-w-[80px] text-right">PKR {formatCurrency(Math.round(slip.connectedCommissionEarned))}</span>
+                              </>
+                            ) : (
+                              <span className="font-bold text-slate-400 dark:text-slate-500 print:text-slate-400 min-w-[80px] text-right uppercase text-xs">null</span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Transfer Sales Commission (2.5k / sale) */}
+                        <div className="flex justify-between items-center text-sm print:text-[11px]">
+                          <span className="text-slate-500 dark:text-slate-400 print:text-black">
+                            Transfer Sales
+                            {slip.transferRate > 0 && <span className="text-[10px] text-slate-400 print:text-slate-600"> (×PKR {formatCurrency(slip.transferRate)})</span>}
+                          </span>
+                          <div className="flex items-center gap-2">
+                            {slip.transferRate > 0 ? (
+                              <>
+                                <input
+                                  type="number"
+                                  min={0}
+                                  placeholder="0"
+                                  value={slip.transferSales === 0 ? '' : slip.transferSales}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    updateOverride(slip.employee.id, 'transferSales', val === '' ? 0 : Number(val))
+                                  }}
+                                  className="w-14 h-7 text-center text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:ring-1 focus:ring-indigo-500 font-bold print:hidden"
+                                />
+                                <span className="hidden print:inline font-bold text-black">{slip.transferSales}</span>
+                                <span className="font-bold text-emerald-600 print:text-black min-w-[80px] text-right">PKR {formatCurrency(Math.round(slip.transferCommissionEarned))}</span>
+                              </>
+                            ) : (
+                              <span className="font-bold text-slate-400 dark:text-slate-500 print:text-slate-400 min-w-[80px] text-right uppercase text-xs">null</span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Gross Salary */}
+                        <div className="flex justify-between text-sm print:text-[11px] pt-1.5 print:pt-0.5 border-t border-slate-100 dark:border-slate-800 print:border-slate-300 font-bold">
+                          <span className="text-slate-700 dark:text-slate-200 print:text-black">Gross Salary</span>
+                          <span className="text-slate-800 dark:text-white print:text-black">PKR {formatCurrency(Math.round(slip.grossSalary))}</span>
                         </div>
                       </div>
-                      <div className="flex justify-between items-center text-sm print:text-[11px]">
-                        <span className="text-slate-500 dark:text-slate-400 print:text-black">Loan / Advance / Penalty</span>
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="number"
-                            min={0}
-                            placeholder="0"
-                            value={slip.loanDeduction === 0 ? '' : slip.loanDeduction}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              updateOverride(slip.employee.id, 'loanDeduction', val === '' ? 0 : Number(val))
-                            }}
-                            className="w-20 h-7 text-center text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:ring-1 focus:ring-rose-500 font-bold print:hidden"
-                          />
-                          <span className="hidden print:inline font-bold text-black">-PKR {formatCurrency(Math.round(slip.loanDeduction))}</span>
+                    </div>
+
+                    {/* Deductions */}
+                    <div>
+                      <h4 className="text-[10px] font-bold text-rose-600 uppercase tracking-wider mb-2 print:mb-1">Deductions</h4>
+                      <div className="space-y-1.5 print:space-y-0.5">
+                        <div className="flex justify-between items-center text-sm print:text-[11px]">
+                          <span className="text-slate-500 dark:text-slate-400 print:text-black">
+                            Absences
+                            <span className="text-[10px] text-slate-400 print:text-slate-600 ml-1">({slip.unpaidAbsences} unpaid of {slip.totalAbsences})</span>
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="number"
+                              min={0}
+                              placeholder={slip.totalAbsences.toString()}
+                              value={overrides[slip.employee.id]?.manualAbsences ?? ''}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                updateOverride(slip.employee.id, 'manualAbsences', val === '' ? undefined : Number(val))
+                              }}
+                              className="w-14 h-7 text-center text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:ring-1 focus:ring-rose-500 font-bold print:hidden"
+                            />
+                            <span className="hidden print:inline font-bold text-black">-PKR {formatCurrency(Math.round(slip.absenceDeduction))}</span>
+                            <span className="font-bold text-rose-600 print:hidden min-w-[80px] text-right">-PKR {formatCurrency(Math.round(slip.absenceDeduction))}</span>
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex justify-between text-sm print:text-[11px] pt-1.5 print:pt-0.5 border-t border-slate-100 dark:border-slate-800 print:border-slate-300 font-bold">
-                        <span className="text-slate-700 dark:text-slate-200 print:text-black">Total Deductions</span>
-                        <span className="text-rose-600 print:text-black">-PKR {formatCurrency(Math.round(slip.totalDeductions))}</span>
+                        <div className="flex justify-between items-center text-sm print:text-[11px]">
+                          <span className="text-slate-500 dark:text-slate-400 print:text-black">Loan / Advance / Penalty</span>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="number"
+                              min={0}
+                              placeholder="0"
+                              value={slip.loanDeduction === 0 ? '' : slip.loanDeduction}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                updateOverride(slip.employee.id, 'loanDeduction', val === '' ? 0 : Number(val))
+                              }}
+                              className="w-20 h-7 text-center text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:ring-1 focus:ring-rose-500 font-bold print:hidden"
+                            />
+                            <span className="hidden print:inline font-bold text-black">-PKR {formatCurrency(Math.round(slip.loanDeduction))}</span>
+                          </div>
+                        </div>
+                        <div className="flex justify-between text-sm print:text-[11px] pt-1.5 print:pt-0.5 border-t border-slate-100 dark:border-slate-800 print:border-slate-300 font-bold">
+                          <span className="text-slate-700 dark:text-slate-200 print:text-black">Total Deductions</span>
+                          <span className="text-rose-600 print:text-black">-PKR {formatCurrency(Math.round(slip.totalDeductions))}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Attendance Summary Row */}
-                <div className="grid grid-cols-4 gap-2 mb-4 print:mb-2">
-                  <div className="bg-slate-50 dark:bg-slate-800/50 print:bg-white print:border print:border-slate-300 rounded-xl print:rounded-md p-2 text-center">
-                    <p className="text-[9px] font-bold text-slate-400 uppercase">Working Days</p>
-                    <p className="text-lg print:text-sm font-extrabold text-slate-800 dark:text-white print:text-black">{slip.workingDays}</p>
+                  {/* Attendance Summary Row */}
+                  <div className="grid grid-cols-4 gap-2 mb-4 print:mb-2">
+                    <div className="bg-slate-50 dark:bg-slate-800/50 print:bg-white print:border print:border-slate-300 rounded-xl print:rounded-md p-2 text-center">
+                      <p className="text-[9px] font-bold text-slate-400 uppercase">Working Days</p>
+                      <p className="text-lg print:text-sm font-extrabold text-slate-800 dark:text-white print:text-black">{slip.workingDays}</p>
+                    </div>
+                    <div className="bg-slate-50 dark:bg-slate-800/50 print:bg-white print:border print:border-slate-300 rounded-xl print:rounded-md p-2 text-center">
+                      <p className="text-[9px] font-bold text-slate-400 uppercase">Total Absences</p>
+                      <p className="text-lg print:text-sm font-extrabold text-amber-600 print:text-black">{slip.totalAbsences}</p>
+                    </div>
+                    <div className="bg-emerald-50 dark:bg-emerald-500/5 print:bg-white print:border print:border-slate-300 rounded-xl print:rounded-md p-2 text-center">
+                      <p className="text-[9px] font-bold text-slate-400 uppercase">Paid Leave</p>
+                      <p className="text-lg print:text-sm font-extrabold text-emerald-600 print:text-black">{slip.paidLeaves}</p>
+                    </div>
+                    <div className="bg-rose-50 dark:bg-rose-500/5 print:bg-white print:border print:border-slate-300 rounded-xl print:rounded-md p-2 text-center">
+                      <p className="text-[9px] font-bold text-slate-400 uppercase">Per Day</p>
+                      <p className="text-lg print:text-sm font-extrabold text-slate-800 dark:text-white print:text-black">PKR {formatCurrency(Math.round(slip.perDaySalary))}</p>
+                    </div>
                   </div>
-                  <div className="bg-slate-50 dark:bg-slate-800/50 print:bg-white print:border print:border-slate-300 rounded-xl print:rounded-md p-2 text-center">
-                    <p className="text-[9px] font-bold text-slate-400 uppercase">Total Absences</p>
-                    <p className="text-lg print:text-sm font-extrabold text-amber-600 print:text-black">{slip.totalAbsences}</p>
-                  </div>
-                  <div className="bg-emerald-50 dark:bg-emerald-500/5 print:bg-white print:border print:border-slate-300 rounded-xl print:rounded-md p-2 text-center">
-                    <p className="text-[9px] font-bold text-slate-400 uppercase">Paid Leave</p>
-                    <p className="text-lg print:text-sm font-extrabold text-emerald-600 print:text-black">{slip.paidLeaves}</p>
-                  </div>
-                  <div className="bg-rose-50 dark:bg-rose-500/5 print:bg-white print:border print:border-slate-300 rounded-xl print:rounded-md p-2 text-center">
-                    <p className="text-[9px] font-bold text-slate-400 uppercase">Per Day</p>
-                    <p className="text-lg print:text-sm font-extrabold text-slate-800 dark:text-white print:text-black">PKR {formatCurrency(Math.round(slip.perDaySalary))}</p>
-                  </div>
-                </div>
 
-                {/* Net Salary */}
-                <div className="bg-gradient-to-r from-slate-800 to-slate-900 dark:from-indigo-900/50 dark:to-slate-800/50 print:bg-slate-800 rounded-xl print:rounded-md px-5 py-3 print:px-3 print:py-2 flex items-center justify-between print:color-adjust-exact text-white">
-                  <span className="text-white/70 text-sm font-bold print:text-xs print:text-white">NET SALARY</span>
-                  <span className="text-white text-2xl print:text-lg font-extrabold">PKR {formatCurrency(slip.netSalary)}</span>
-                </div>
+                  {/* Net Salary */}
+                  <div className="bg-gradient-to-r from-slate-800 to-slate-900 dark:from-indigo-900/50 dark:to-slate-800/50 print:bg-slate-800 rounded-xl print:rounded-md px-5 py-3 print:px-3 print:py-2 flex items-center justify-between print:color-adjust-exact text-white">
+                    <span className="text-white/70 text-sm font-bold print:text-xs print:text-white">NET SALARY</span>
+                    <span className="text-white text-2xl print:text-lg font-extrabold">PKR {formatCurrency(slip.netSalary)}</span>
+                  </div>
 
-                {/* Signature Line - print only */}
-                <div className="hidden print:flex justify-between items-end mt-4 pt-3 border-t border-dashed border-slate-300">
-                  <div>
-                    <p className="text-[9px] text-slate-400">Generated: {new Date().toLocaleDateString('en-GB')}</p>
-                  </div>
-                  <div className="text-center">
-                    <div className="w-40 border-b border-slate-400 mb-1"></div>
-                    <p className="text-[9px] text-slate-400">Employee Signature</p>
-                  </div>
-                  <div className="text-center">
-                    <div className="w-40 border-b border-slate-400 mb-1"></div>
-                    <p className="text-[9px] text-slate-400">HR Signature</p>
+                  {/* Signature Line - print only */}
+                  <div className="hidden print:flex justify-between items-end mt-4 pt-3 border-t border-dashed border-slate-300">
+                    <div>
+                      <p className="text-[9px] text-slate-400">Generated: {new Date().toLocaleDateString('en-GB')}</p>
+                    </div>
+                    <div className="text-center">
+                      <div className="w-40 border-b border-slate-400 mb-1"></div>
+                      <p className="text-[9px] text-slate-400">Employee Signature</p>
+                    </div>
+                    <div className="text-center">
+                      <div className="w-40 border-b border-slate-400 mb-1"></div>
+                      <p className="text-[9px] text-slate-400">HR Signature</p>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
 
           {slipData.length === 0 && (
             <Card className="rounded-[1.5rem] border-none shadow-lg p-16 bg-white dark:bg-slate-900 text-center print:hidden">

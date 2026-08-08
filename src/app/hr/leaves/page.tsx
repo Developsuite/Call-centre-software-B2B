@@ -31,7 +31,7 @@ export default function LeaveManagementPage() {
     ? hrEmployees
     : hrEmployees.filter(e => e.organization_id === currentUser?.tenantId)
 
-  const activeEmployees = tenantEmployees.filter(e => e.status === "Active")
+  const activeEmployees = tenantEmployees.filter(e => e.status !== "Disabled")
 
   const [selectedYear, selectedMonthNum] = selectedMonth.split('-').map(Number)
 
