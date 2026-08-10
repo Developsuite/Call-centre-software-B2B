@@ -168,23 +168,40 @@ export default function LeaveManagementPage() {
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <Card className="rounded-[1.5rem] border-none shadow-lg p-5 bg-gradient-to-br from-slate-800 to-slate-900 text-white relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-white/10 to-transparent rounded-full -translate-y-8 translate-x-8" />
-            <p className="text-[10px] font-bold text-white/70 uppercase tracking-wider mb-1">Total Leaves</p>
-            <h3 className="text-3xl font-extrabold">{totalLeaves}</h3>
-            <p className="text-xs text-white/50 mt-1">{new Date(selectedYear, selectedMonthNum - 1).toLocaleString('default', { month: 'long', year: 'numeric' })}</p>
+          <Card className="rounded-[1.25rem] border-none bg-card p-5 flex flex-col justify-between relative overflow-hidden group shadow-sm hover:shadow-md transition-all">
+            <div className="absolute inset-0 bg-gradient-to-br from-slate-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="flex justify-between items-start">
+              <span className="text-sm font-medium text-slate-500 dark:text-slate-400">Total Leaves</span>
+              <CalendarDays className="w-5 h-5 text-slate-500" strokeWidth={1.5} />
+            </div>
+            <div className="mt-4">
+              <h3 className="text-3xl font-bold text-slate-800 dark:text-white">{totalLeaves}</h3>
+              <p className="text-xs text-slate-400 mt-1">{new Date(selectedYear, selectedMonthNum - 1).toLocaleString('default', { month: 'long', year: 'numeric' })}</p>
+            </div>
           </Card>
-          <Card className="rounded-[1.5rem] border-none shadow-lg p-5 bg-gradient-to-br from-emerald-500 to-emerald-600 text-white relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-white/10 to-transparent rounded-full -translate-y-8 translate-x-8" />
-            <p className="text-[10px] font-bold text-white/70 uppercase tracking-wider mb-1">Paid Leaves</p>
-            <h3 className="text-3xl font-extrabold">{paidLeaves}</h3>
-            <p className="text-xs text-white/50 mt-1">1 allowed per employee</p>
+
+          <Card className="rounded-[1.25rem] border-none bg-card p-5 flex flex-col justify-between relative overflow-hidden group shadow-sm hover:shadow-md transition-all">
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="flex justify-between items-start">
+              <span className="text-sm font-medium text-slate-500 dark:text-slate-400">Paid Leaves</span>
+              <ShieldCheck className="w-5 h-5 text-emerald-500" strokeWidth={1.5} />
+            </div>
+            <div className="mt-4">
+              <h3 className="text-3xl font-bold text-slate-800 dark:text-white">{paidLeaves}</h3>
+              <p className="text-xs text-slate-400 mt-1">1 allowed per employee</p>
+            </div>
           </Card>
-          <Card className="rounded-[1.5rem] border-none shadow-lg p-5 bg-gradient-to-br from-rose-500 to-rose-600 text-white relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-white/10 to-transparent rounded-full -translate-y-8 translate-x-8" />
-            <p className="text-[10px] font-bold text-white/70 uppercase tracking-wider mb-1">Unpaid Leaves</p>
-            <h3 className="text-3xl font-extrabold">{unpaidLeaves}</h3>
-            <p className="text-xs text-white/50 mt-1">Salary deducted</p>
+
+          <Card className="rounded-[1.25rem] border-none bg-card p-5 flex flex-col justify-between relative overflow-hidden group shadow-sm hover:shadow-md transition-all">
+            <div className="absolute inset-0 bg-gradient-to-br from-rose-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="flex justify-between items-start">
+              <span className="text-sm font-medium text-slate-500 dark:text-slate-400">Unpaid Leaves</span>
+              <ShieldX className="w-5 h-5 text-rose-500" strokeWidth={1.5} />
+            </div>
+            <div className="mt-4">
+              <h3 className="text-3xl font-bold text-slate-800 dark:text-white">{unpaidLeaves}</h3>
+              <p className="text-xs text-rose-500 mt-1">Salary deducted</p>
+            </div>
           </Card>
         </div>
 

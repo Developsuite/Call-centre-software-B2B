@@ -719,7 +719,7 @@ export default function HREmployeesPage() {
                             <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
                               PKR {formatCurrency(Number(user.base_salary || 0))}
                             </span>
-                            {Number(user.commission_per_sale) > 0 && (
+                            {Number(user.commission_per_sale) > 0 && !((user.job_title || "").toLowerCase().includes("office boy") || (user.role || "").toLowerCase().includes("office boy")) && (
                               <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
                                 +PKR {formatCurrency(Number(user.commission_per_sale))}/sale
                               </span>

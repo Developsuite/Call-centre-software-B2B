@@ -125,8 +125,8 @@ export function Sidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: { isMobileMen
       )}
 
       <div className={cn(
-        "flex flex-col gap-3 z-[101] md:z-50 transition-transform duration-300",
-        "fixed md:sticky top-0 md:top-4 left-0 h-screen md:h-[calc(100vh-2rem)]",
+        "flex flex-col gap-3 z-[101] md:z-50 transition-transform duration-300 shrink-0",
+        "fixed md:sticky top-0 md:top-4 left-0 md:left-auto h-screen md:h-[calc(100vh-2rem)]",
         "w-64 md:w-[64px] bg-[#f3f4f6] md:bg-transparent dark:bg-background md:dark:bg-transparent p-4 md:p-0 border-r border-slate-200 md:border-none dark:border-slate-800",
         isMobileMenuOpen ? "translate-x-0 shadow-2xl md:shadow-none" : "-translate-x-full md:translate-x-0"
       )}>

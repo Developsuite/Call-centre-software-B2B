@@ -75,7 +75,8 @@ export default function HRPayrollPage() {
   const filteredStaff = useMemo(() => {
     return activeStaff.map(user => {
       const baseSalary = Number(user.base_salary) || 0
-      const commissionRate = Number(user.commission_per_sale) || 0
+      const isOfficeBoy = (user.job_title || "").toLowerCase().includes("office boy") || (user.role || "").toLowerCase().includes("office boy")
+      const commissionRate = isOfficeBoy ? 0 : (Number(user.commission_per_sale) || 0)
       const totalCompensation = baseSalary // Base run estimation
 
       return {

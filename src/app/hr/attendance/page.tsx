@@ -332,7 +332,7 @@ export default function AttendancePage() {
 
   return (
     <div className="flex h-screen bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200 overflow-hidden">
-      <div className="print:hidden"><Sidebar /></div>
+      <div className="print:hidden md:p-4"><Sidebar /></div>
       
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <div className="print:hidden"><TopBar title="Attendance" /></div>
@@ -760,19 +760,19 @@ export default function AttendancePage() {
                     {/* Status buttons */}
                     <div className="flex items-center gap-1 ml-7">
                       {[
-                        { code: 3 as AttendanceStatusCode, label: "Absent", bg: "bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800", activeBg: "bg-red-500 text-white border-red-500" },
-                        { code: 1 as AttendanceStatusCode, label: "Late", bg: "bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-800", activeBg: "bg-orange-500 text-white border-orange-500" },
-                        { code: 2 as AttendanceStatusCode, label: "Half Day", bg: "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800", activeBg: "bg-blue-500 text-white border-blue-500" },
-                        { code: 4 as AttendanceStatusCode, label: "Leave", bg: "bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300 border-violet-200 dark:border-violet-800", activeBg: "bg-violet-500 text-white border-violet-500" },
-                        { code: 5 as AttendanceStatusCode, label: "OFF", bg: "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700", activeBg: "bg-slate-600 text-white border-slate-600 dark:bg-slate-500" },
+                        { code: 3 as AttendanceStatusCode, label: "Absent", bg: "bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20", activeBg: "bg-red-500 text-white" },
+                        { code: 1 as AttendanceStatusCode, label: "Late", bg: "bg-orange-50 text-orange-600 dark:bg-orange-500/10 dark:text-orange-400 hover:bg-orange-100 dark:hover:bg-orange-500/20", activeBg: "bg-orange-500 text-white" },
+                        { code: 2 as AttendanceStatusCode, label: "Half Day", bg: "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-500/20", activeBg: "bg-blue-500 text-white" },
+                        { code: 4 as AttendanceStatusCode, label: "Leave", bg: "bg-violet-50 text-violet-600 dark:bg-violet-500/10 dark:text-violet-400 hover:bg-violet-100 dark:hover:bg-violet-500/20", activeBg: "bg-violet-500 text-white" },
+                        { code: 5 as AttendanceStatusCode, label: "OFF", bg: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700", activeBg: "bg-slate-600 text-white dark:bg-slate-500" },
                       ].map(opt => {
                         const isActive = mark === opt.code
                         return (
                           <button
                             key={opt.code}
                             onClick={() => toggleDailyMark(emp.id, opt.code)}
-                            className={`px-2 py-0.5 text-[10px] font-semibold rounded border transition-all ${
-                              isActive ? opt.activeBg : `${opt.bg} hover:opacity-80`
+                            className={`px-2.5 py-1 text-[10px] font-semibold rounded-md transition-colors ${
+                              isActive ? opt.activeBg : opt.bg
                             }`}
                           >
                             {opt.label}

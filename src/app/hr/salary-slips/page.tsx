@@ -8,15 +8,15 @@ import { FileText, Printer, Building2, Search, Save } from "lucide-react"
 import { toast } from "sonner"
 
 export default function SalarySlipsPage() {
-  const { hrEmployees, hrLeaves, currentUser, isLoaded, tenants, formatCurrency, saveSalaryRecords } = useAppContext()
+  const { hrEmployees, hrLeaves, hrAttendance, currentUser, isLoaded, tenants, formatCurrency, saveSalaryRecords } = useAppContext()
 
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date()
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
   })
 
-  // Manual overrides per employee: { [employeeId]: { connectedSales: number, transferSales: number, loanDeduction: number, manualAbsences?: number } }
-  const [overrides, setOverrides] = useState<Record<string, { connectedSales: number, transferSales: number, loanDeduction: number, manualAbsences?: number }>>({})
+  // Manual overrides per employee: { [employeeId]: { connectedSales: number, transferSales: number, teamSales?: number, loanDeduction: number, manualAbsences?: number } }
+  const [overrides, setOverrides] = useState<Record<string, { connectedSales: number, transferSales: number, teamSales?: number, loanDeduction: number, manualAbsences?: number }>>({})
 
   // Multi-selection state
   const [selectedIds, setSelectedIds] = useState<string[]>([])
@@ -70,25 +70,43 @@ export default function SalarySlipsPage() {
   const slipData = useMemo(() => {
     return filteredEmployees.map(emp => {
       const isOfficeBoy = (emp.job_title || "").toLowerCase().includes("office boy") || (emp.role || "").toLowerCase().includes("office boy")
+      const isSupervisor = (emp.job_title || "").toLowerCase().includes("supervisor") || (emp.role || "").toLowerCase().includes("supervisor")
       const baseSalary = Number(emp.base_salary) || 0
       
       // Commission rates: Connected Sales (e.g. 5,000 or custom) & Transfer Sales (2,500 / 2.5k)
       const commissionRate = isOfficeBoy ? 0 : (Number(emp.commission_per_sale) > 0 ? Number(emp.commission_per_sale) : 5000)
       const transferRate = isOfficeBoy ? 0 : 2500
 
+      // Find attendance records for this month
+      const empAttendance = (hrAttendance || []).filter(a => {
+        const d = new Date(a.timestamp)
+        return (a.employee_id === emp.id || (emp.zk_user_id && a.zk_user_id === emp.zk_user_id)) && 
+               d.getFullYear() === selectedYear && (d.getMonth() + 1) === selectedMonthNum
+      })
+
+      // Count actual absences (status 3) and lates (status 1)
+      const actualAbsences = empAttendance.filter(a => a.status === 3).length
+      const totalLates = empAttendance.filter(a => a.status === 1).length
+
+      // Rule: Every 4 lates = 1 absent
+      const derivedAbsences = Math.floor(totalLates / 4)
+      const rawTotalAbsences = actualAbsences + derivedAbsences
+      
+      // Rule: 1 absent is forgiven by the company
+      const calculatedPenalizedAbsences = Math.max(0, rawTotalAbsences - 1)
+
       // Count leaves for this month
       const empLeaves = hrLeaves.filter(l => {
         const d = new Date(l.leave_date)
-        return l.employee_id === emp.id && d.getFullYear() === selectedYear && d.getMonth() + 1 === selectedMonthNum
+        return l.employee_id === emp.id && d.getFullYear() === selectedYear && (d.getMonth() + 1) === selectedMonthNum
       })
 
       // Get overrides or defaults
-      const override = overrides[emp.id] || { connectedSales: 0, transferSales: 0, loanDeduction: 0 }
+      const override = overrides[emp.id] || { connectedSales: 0, transferSales: 0, teamSales: 0, loanDeduction: 0 }
       
-      const calcTotalAbsences = empLeaves.length
-      const totalAbsences = override.manualAbsences !== undefined ? override.manualAbsences : calcTotalAbsences
+      const totalAbsences = override.manualAbsences !== undefined ? override.manualAbsences : calculatedPenalizedAbsences
       const paidLeaves = empLeaves.filter(l => l.is_paid).length
-      const unpaidAbsences = override.manualAbsences !== undefined ? Math.max(0, totalAbsences - paidLeaves) : calcTotalAbsences - paidLeaves
+      const unpaidAbsences = Math.max(0, totalAbsences - paidLeaves)
 
       // Per-day calculation rounded DOWN (minimum) to minimize absence penalties for the employee
       const perDaySalary = workingDays > 0 ? Math.floor(baseSalary / workingDays) : 0
@@ -101,7 +119,11 @@ export default function SalarySlipsPage() {
       const transferSales = override.transferSales || 0
       const transferCommissionEarned = transferSales * transferRate
 
-      const totalCommissionEarned = connectedCommissionEarned + transferCommissionEarned
+      const teamSales = override.teamSales || 0
+      const teamCommissionRate = isSupervisor ? 5000 : 0
+      const teamCommissionEarned = teamSales * teamCommissionRate
+
+      const totalCommissionEarned = connectedCommissionEarned + transferCommissionEarned + teamCommissionEarned
       const loanDeduction = override.loanDeduction || 0
 
       const grossSalary = baseSalary + totalCommissionEarned
@@ -114,10 +136,16 @@ export default function SalarySlipsPage() {
       return {
         employee: emp,
         isOfficeBoy,
+        isSupervisor,
         baseSalary,
         commissionRate,
         transferRate,
         workingDays,
+        actualAbsences,
+        totalLates,
+        derivedAbsences,
+        rawTotalAbsences,
+        calculatedPenalizedAbsences,
         totalAbsences,
         paidLeaves,
         unpaidAbsences,
@@ -127,6 +155,9 @@ export default function SalarySlipsPage() {
         connectedCommissionEarned,
         transferSales,
         transferCommissionEarned,
+        teamSales,
+        teamCommissionRate,
+        teamCommissionEarned,
         totalCommissionEarned,
         loanDeduction,
         grossSalary,
@@ -134,7 +165,7 @@ export default function SalarySlipsPage() {
         netSalary
       }
     }).sort((a, b) => a.employee.full_name.localeCompare(b.employee.full_name))
-  }, [filteredEmployees, hrLeaves, selectedYear, selectedMonthNum, workingDays, overrides])
+  }, [filteredEmployees, hrLeaves, hrAttendance, selectedYear, selectedMonthNum, workingDays, overrides])
 
   // Select all slips initially once loaded
   useEffect(() => {
@@ -168,11 +199,11 @@ export default function SalarySlipsPage() {
 
   const totalNetPayroll = selectedSlips.reduce((sum, s) => sum + Math.max(0, s.netSalary), 0)
 
-  const updateOverride = (employeeId: string, field: 'connectedSales' | 'transferSales' | 'loanDeduction' | 'manualAbsences', value: number | undefined) => {
+  const updateOverride = (employeeId: string, field: 'connectedSales' | 'transferSales' | 'teamSales' | 'loanDeduction' | 'manualAbsences', value: number | undefined) => {
     setOverrides(prev => ({
       ...prev,
       [employeeId]: {
-        ...prev[employeeId] || { connectedSales: 0, transferSales: 0, loanDeduction: 0 },
+        ...prev[employeeId] || { connectedSales: 0, transferSales: 0, teamSales: 0, loanDeduction: 0 },
         [field]: value
       }
     }))
@@ -356,11 +387,22 @@ export default function SalarySlipsPage() {
                   <div class="row"><span>Base Salary</span><span class="val">PKR ${formatCurrency(slip.baseSalary)}</span></div>
                   <div class="row"><span>Connected Sales ${slip.commissionRate > 0 ? `(${slip.connectedSales} × PKR ${formatCurrency(slip.commissionRate)})` : ''}</span><span class="val">${slip.commissionRate > 0 ? `PKR ${formatCurrency(Math.round(slip.connectedCommissionEarned))}` : 'NULL'}</span></div>
                   <div class="row"><span>Transfer Sales ${slip.transferRate > 0 ? `(${slip.transferSales} × PKR ${formatCurrency(slip.transferRate)})` : ''}</span><span class="val">${slip.transferRate > 0 ? `PKR ${formatCurrency(Math.round(slip.transferCommissionEarned))}` : 'NULL'}</span></div>
+                  ${slip.isSupervisor ? `<div class="row"><span>Team Sales (${slip.teamSales} × PKR ${formatCurrency(slip.teamCommissionRate)})</span><span class="val">PKR ${formatCurrency(Math.round(slip.teamCommissionEarned))}</span></div>` : ''}
                   <div class="row border-top"><span><b>Gross Salary</b></span><span class="val">PKR ${formatCurrency(Math.round(slip.grossSalary))}</span></div>
                 </div>
                 <div>
                   <div class="section-title ded-title">Deductions</div>
-                  <div class="row"><span>Absences (${slip.unpaidAbsences} unpaid of ${slip.totalAbsences})</span><span class="ded">-PKR ${formatCurrency(Math.round(slip.absenceDeduction))}</span></div>
+                  <div class="row" style="flex-direction: column; align-items: stretch; gap: 2px;">
+                    <div style="display: flex; justify-content: space-between;">
+                      <span>Absences (${slip.unpaidAbsences} unpaid of ${slip.totalAbsences})</span>
+                      <span class="ded">-PKR ${formatCurrency(Math.round(slip.absenceDeduction))}</span>
+                    </div>
+                    ${overrides[slip.employee.id]?.manualAbsences === undefined ? `
+                      <div style="font-size: 7px; color: #64748b; line-height: 1.2;">
+                        [Actual: ${slip.actualAbsences}, Lates: ${slip.totalLates} (+${slip.derivedAbsences}), Forgiven: -${Math.min(1, slip.rawTotalAbsences)}]
+                      </div>
+                    ` : ''}
+                  </div>
                   <div class="row"><span>Loan / Advance / Penalty</span><span class="ded">-PKR ${formatCurrency(Math.round(slip.loanDeduction))}</span></div>
                   <div class="row border-top"><span><b>Total Deductions</b></span><span class="ded">-PKR ${formatCurrency(Math.round(slip.totalDeductions))}</span></div>
                 </div>
@@ -689,6 +731,31 @@ export default function SalarySlipsPage() {
                           </div>
                         </div>
 
+                        {/* Team Sales Commission for Supervisors */}
+                        {slip.isSupervisor && (
+                          <div className="flex justify-between items-center text-sm print:text-[11px]">
+                            <span className="text-slate-500 dark:text-slate-400 print:text-black">
+                              Team Sales
+                              <span className="text-[10px] text-slate-400 print:text-slate-600"> (×PKR {formatCurrency(slip.teamCommissionRate)})</span>
+                            </span>
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="number"
+                                min={0}
+                                placeholder="0"
+                                value={slip.teamSales === 0 ? '' : slip.teamSales}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  updateOverride(slip.employee.id, 'teamSales', val === '' ? 0 : Number(val))
+                                }}
+                                className="w-14 h-7 text-center text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:ring-1 focus:ring-indigo-500 font-bold print:hidden"
+                              />
+                              <span className="hidden print:inline font-bold text-black">{slip.teamSales}</span>
+                              <span className="font-bold text-emerald-600 print:text-black min-w-[80px] text-right">PKR {formatCurrency(Math.round(slip.teamCommissionEarned))}</span>
+                            </div>
+                          </div>
+                        )}
+
                         {/* Gross Salary */}
                         <div className="flex justify-between text-sm print:text-[11px] pt-1.5 print:pt-0.5 border-t border-slate-100 dark:border-slate-800 print:border-slate-300 font-bold">
                           <span className="text-slate-700 dark:text-slate-200 print:text-black">Gross Salary</span>
@@ -701,12 +768,19 @@ export default function SalarySlipsPage() {
                     <div>
                       <h4 className="text-[10px] font-bold text-rose-600 uppercase tracking-wider mb-2 print:mb-1">Deductions</h4>
                       <div className="space-y-1.5 print:space-y-0.5">
-                        <div className="flex justify-between items-center text-sm print:text-[11px]">
-                          <span className="text-slate-500 dark:text-slate-400 print:text-black">
-                            Absences
-                            <span className="text-[10px] text-slate-400 print:text-slate-600 ml-1">({slip.unpaidAbsences} unpaid of {slip.totalAbsences})</span>
-                          </span>
-                          <div className="flex items-center gap-2">
+                        <div className="flex justify-between items-start text-sm print:text-[11px]">
+                          <div className="flex flex-col">
+                            <span className="text-slate-500 dark:text-slate-400 print:text-black">
+                              Absences
+                              <span className="text-[10px] text-slate-400 print:text-slate-600 ml-1">({slip.unpaidAbsences} unpaid of {slip.totalAbsences})</span>
+                            </span>
+                            {overrides[slip.employee.id]?.manualAbsences === undefined && (
+                              <span className="text-[9px] text-slate-400 dark:text-slate-500 print:text-slate-500 mt-0.5 leading-tight max-w-[200px]">
+                                [Actual: {slip.actualAbsences}, Lates: {slip.totalLates} (+{slip.derivedAbsences}), Forgiven: -{Math.min(1, slip.rawTotalAbsences)}]
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 mt-0.5">
                             <input
                               type="number"
                               min={0}
@@ -753,9 +827,17 @@ export default function SalarySlipsPage() {
                       <p className="text-[9px] font-bold text-slate-400 uppercase">Working Days</p>
                       <p className="text-lg print:text-sm font-extrabold text-slate-800 dark:text-white print:text-black">{slip.workingDays}</p>
                     </div>
-                    <div className="bg-slate-50 dark:bg-slate-800/50 print:bg-white print:border print:border-slate-300 rounded-xl print:rounded-md p-2 text-center">
+                    <div className="bg-slate-50 dark:bg-slate-800/50 print:bg-white print:border print:border-slate-300 rounded-xl print:rounded-md p-2 text-center relative group">
                       <p className="text-[9px] font-bold text-slate-400 uppercase">Total Absences</p>
                       <p className="text-lg print:text-sm font-extrabold text-amber-600 print:text-black">{slip.totalAbsences}</p>
+                      {overrides[slip.employee.id]?.manualAbsences === undefined && (
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-slate-800 text-white text-[10px] rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 print:hidden text-left">
+                          <p>Actual Absences: {slip.actualAbsences}</p>
+                          <p>Lates Penalty (+): {slip.derivedAbsences} ({slip.totalLates} lates)</p>
+                          <p>Company Forgiven (-): {Math.min(1, slip.rawTotalAbsences)}</p>
+                          <p className="border-t border-slate-600 mt-1 pt-1 font-bold">Calculated: {slip.calculatedPenalizedAbsences}</p>
+                        </div>
+                      )}
                     </div>
                     <div className="bg-emerald-50 dark:bg-emerald-500/5 print:bg-white print:border print:border-slate-300 rounded-xl print:rounded-md p-2 text-center">
                       <p className="text-[9px] font-bold text-slate-400 uppercase">Paid Leave</p>
