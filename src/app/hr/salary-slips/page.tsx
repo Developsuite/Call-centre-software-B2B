@@ -64,14 +64,36 @@ export default function SalarySlipsPage() {
     return workingDays
   }
 
-  const workingDays = getWorkingDays(selectedYear, selectedMonthNum)
+  const monthWorkingDays = getWorkingDays(selectedYear, selectedMonthNum)
 
   // Build slip data for each employee
   const slipData = useMemo(() => {
     return filteredEmployees.map(emp => {
       const isOfficeBoy = (emp.job_title || "").toLowerCase().includes("office boy") || (emp.role || "").toLowerCase().includes("office boy")
       const isSupervisor = (emp.job_title || "").toLowerCase().includes("supervisor") || (emp.role || "").toLowerCase().includes("supervisor")
-      const baseSalary = Number(emp.base_salary) || 0
+      
+      let employeeWorkingDays = monthWorkingDays
+      let isFutureJoin = false
+      if (emp.joining_date) {
+        const joinDate = new Date(emp.joining_date)
+        if (joinDate.getFullYear() === selectedYear && (joinDate.getMonth() + 1) === selectedMonthNum) {
+          const daysInMonth = new Date(selectedYear, selectedMonthNum, 0).getDate()
+          const joinDay = joinDate.getDate()
+          let wDays = 0
+          for (let d = joinDay; d <= daysInMonth; d++) {
+            const day = new Date(selectedYear, selectedMonthNum - 1, d).getDay()
+            if (day !== 0) wDays++
+          }
+          employeeWorkingDays = wDays
+        } else if (joinDate.getFullYear() > selectedYear || (joinDate.getFullYear() === selectedYear && (joinDate.getMonth() + 1) > selectedMonthNum)) {
+          employeeWorkingDays = 0
+          isFutureJoin = true
+        }
+      }
+
+      const fullBaseSalary = Number(emp.base_salary) || 0
+      const perDaySalary = monthWorkingDays > 0 ? Math.floor(fullBaseSalary / monthWorkingDays) : 0
+      const baseSalary = isFutureJoin ? 0 : (employeeWorkingDays === monthWorkingDays ? fullBaseSalary : employeeWorkingDays * perDaySalary)
       
       // Commission rates: Connected Sales (e.g. 5,000 or custom) & Transfer Sales (2,500 / 2.5k)
       const commissionRate = isOfficeBoy ? 0 : (Number(emp.commission_per_sale) > 0 ? Number(emp.commission_per_sale) : 5000)
@@ -109,7 +131,6 @@ export default function SalarySlipsPage() {
       const unpaidAbsences = Math.max(0, totalAbsences - paidLeaves)
 
       // Per-day calculation rounded DOWN (minimum) to minimize absence penalties for the employee
-      const perDaySalary = workingDays > 0 ? Math.floor(baseSalary / workingDays) : 0
       const absenceDeduction = Math.floor(unpaidAbsences * perDaySalary)
 
       // Earnings calculations
@@ -140,7 +161,8 @@ export default function SalarySlipsPage() {
         baseSalary,
         commissionRate,
         transferRate,
-        workingDays,
+        workingDays: employeeWorkingDays,
+        monthWorkingDays,
         actualAbsences,
         totalLates,
         derivedAbsences,
@@ -165,7 +187,7 @@ export default function SalarySlipsPage() {
         netSalary
       }
     }).sort((a, b) => a.employee.full_name.localeCompare(b.employee.full_name))
-  }, [filteredEmployees, hrLeaves, hrAttendance, selectedYear, selectedMonthNum, workingDays, overrides])
+  }, [filteredEmployees, hrLeaves, hrAttendance, selectedYear, selectedMonthNum, monthWorkingDays, overrides])
 
   // Select all slips initially once loaded
   useEffect(() => {
@@ -384,7 +406,7 @@ export default function SalarySlipsPage() {
               <div class="two-col">
                 <div>
                   <div class="section-title earn-title">Earnings</div>
-                  <div class="row"><span>Base Salary</span><span class="val">PKR ${formatCurrency(slip.baseSalary)}</span></div>
+                  <div class="row"><span>Base Salary ${slip.workingDays < slip.monthWorkingDays ? '(Pro-rated)' : ''}</span><span class="val">PKR ${formatCurrency(slip.baseSalary)}</span></div>
                   <div class="row"><span>Connected Sales ${slip.commissionRate > 0 ? `(${slip.connectedSales} × PKR ${formatCurrency(slip.commissionRate)})` : ''}</span><span class="val">${slip.commissionRate > 0 ? `PKR ${formatCurrency(Math.round(slip.connectedCommissionEarned))}` : 'NULL'}</span></div>
                   <div class="row"><span>Transfer Sales ${slip.transferRate > 0 ? `(${slip.transferSales} × PKR ${formatCurrency(slip.transferRate)})` : ''}</span><span class="val">${slip.transferRate > 0 ? `PKR ${formatCurrency(Math.round(slip.transferCommissionEarned))}` : 'NULL'}</span></div>
                   ${slip.isSupervisor ? `<div class="row"><span>Team Sales (${slip.teamSales} × PKR ${formatCurrency(slip.teamCommissionRate)})</span><span class="val">PKR ${formatCurrency(Math.round(slip.teamCommissionEarned))}</span></div>` : ''}
@@ -669,7 +691,9 @@ export default function SalarySlipsPage() {
                       <div className="space-y-1.5 print:space-y-0.5">
                         {/* Base Salary */}
                         <div className="flex justify-between text-sm print:text-[11px]">
-                          <span className="text-slate-500 dark:text-slate-400 print:text-black">Base Salary</span>
+                          <span className="text-slate-500 dark:text-slate-400 print:text-black">
+                            Base Salary {slip.workingDays < slip.monthWorkingDays && <span className="text-[10px] text-slate-400"> (Pro-rated)</span>}
+                          </span>
                           <span className="font-bold text-slate-800 dark:text-white print:text-black">PKR {formatCurrency(slip.baseSalary)}</span>
                         </div>
                         
