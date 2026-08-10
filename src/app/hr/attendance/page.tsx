@@ -475,8 +475,9 @@ export default function AttendancePage() {
                                 ].map(opt => (
                                   <button 
                                     key={opt.code}
+                                    disabled={isProcessing}
                                     onClick={() => handleMarkAllForDate(dateStr, opt.code)}
-                                    className={`w-full px-2 py-1 text-[11px] rounded text-left hover:bg-slate-50 dark:hover:bg-slate-700 font-medium ${opt.color}`}
+                                    className={`w-full px-2 py-1 text-[11px] rounded text-left hover:bg-slate-50 dark:hover:bg-slate-700 font-medium ${opt.color} disabled:opacity-50`}
                                   >
                                     {opt.label}
                                   </button>
@@ -484,7 +485,8 @@ export default function AttendancePage() {
                                 <div className="border-t border-slate-100 dark:border-slate-700 my-0.5" />
                                 <button 
                                   onClick={() => handleClearAllForDate(dateStr)}
-                                  className="w-full px-2 py-1 text-[11px] rounded text-left hover:bg-slate-50 dark:hover:bg-slate-700 font-medium text-slate-400"
+                                  disabled={isProcessing}
+                                  className="w-full px-2 py-1 text-[11px] rounded text-left hover:bg-slate-50 dark:hover:bg-slate-700 font-medium text-slate-400 disabled:opacity-50"
                                 >
                                   Clear Day (-)
                                 </button>
@@ -818,6 +820,16 @@ export default function AttendancePage() {
           employee={selectedDetailEmployee} 
           onClose={() => setSelectedDetailEmployee(null)} 
         />
+      )}
+
+      {/* Global Processing Overlay */}
+      {isProcessing && (
+        <div className="fixed inset-0 z-[200] bg-black/20 backdrop-blur-sm flex items-center justify-center">
+          <div className="bg-white dark:bg-slate-900 rounded-xl p-5 shadow-2xl flex flex-col items-center gap-3">
+            <div className="w-6 h-6 border-2 border-slate-300 border-t-slate-800 dark:border-t-white rounded-full animate-spin" />
+            <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">Processing...</span>
+          </div>
+        </div>
       )}
     </div>
   )
