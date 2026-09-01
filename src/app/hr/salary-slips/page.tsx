@@ -152,7 +152,7 @@ export default function SalarySlipsPage() {
       const transferCommissionEarned = transferSales * transferRate
 
       const teamSales = override.teamSales || 0
-      const teamCommissionRate = isSupervisor ? 5000 : 0
+      const teamCommissionRate = isSupervisor ? 2500 : 0
       const teamCommissionEarned = teamSales * teamCommissionRate
 
       const totalCommissionEarned = connectedCommissionEarned + transferCommissionEarned + teamCommissionEarned
