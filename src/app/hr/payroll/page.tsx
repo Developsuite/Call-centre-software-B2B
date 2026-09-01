@@ -37,6 +37,7 @@ export default function HRPayrollPage() {
 
   const [searchQuery, setSearchQuery] = useState("")
   const [roleFilter, setRoleFilter] = useState("All")
+  const [statusFilter, setStatusFilter] = useState("Active")
   const [sortOption, setSortOption] = useState<string>("salary_desc")
   const [showFilters, setShowFilters] = useState(true)
 
@@ -67,7 +68,18 @@ export default function HRPayrollPage() {
     : hrEmployees.filter(u => u.organization_id === currentUser?.tenantId)
 
   // Filter out disabled or SuperAdmins from payroll (Active staff including Documents Missing)
-  let activeStaff = tenantUsers.filter(u => u.status !== "Disabled" && u.role !== "SuperAdmin")
+  let activeStaff = tenantUsers.filter(u => {
+    if (u.role === "SuperAdmin") return false;
+    if (u.status === "Disabled") return false;
+    
+    if (statusFilter === "Active") {
+      return u.status === "Active" || u.status === "Documents Missing";
+    }
+    if (statusFilter === "Resigned/Left") {
+      return u.status === "Resigned" || u.status === "Left";
+    }
+    return true; // "All"
+  })
 
   // Apply team filter if present
   if (teamFilter) {
@@ -380,6 +392,22 @@ export default function HRPayrollPage() {
               {teams.map(t => (
                 <option key={t.id} value={t.id}>{t.name}</option>
               ))}
+            </select>
+
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="h-9 px-3 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full outline-none focus:ring-1 focus:ring-[#ff5a36] text-slate-700 dark:text-slate-200 cursor-pointer shadow-none appearance-none font-semibold shrink-0"
+              style={{
+                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8' stroke-width='2.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'right 8px center',
+                paddingRight: '28px'
+              }}
+            >
+              <option value="Active">Active Only</option>
+              <option value="Resigned/Left">Resigned / Left</option>
+              <option value="All">All Statuses</option>
             </select>
 
             {/* Search Input */}

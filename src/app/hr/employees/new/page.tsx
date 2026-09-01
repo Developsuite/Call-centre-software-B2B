@@ -50,7 +50,7 @@ export default function NewHREmployeePage() {
     probation_end_date: "",
     base_salary: 30000,
     commission_per_sale: 50,
-    status: "Active" as "Active" | "Disabled" | "Documents Missing",
+    status: "Active" as "Active" | "Disabled" | "Documents Missing" | "Resigned" | "Left",
     zk_user_id: ""
   })
 
@@ -430,10 +430,12 @@ export default function NewHREmployeePage() {
                 <select 
                     className={cn(inputClass, "w-full px-3", formData.status === 'Active' ? 'text-emerald-600 font-bold' : 'text-slate-500')}
                     value={formData.status}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value as "Active" | "Disabled" | "Documents Missing" })}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value as "Active" | "Disabled" | "Documents Missing" | "Resigned" | "Left" })}
                 >
                     <option value="Active">Active</option>
                     <option value="Documents Missing">Documents Missing</option>
+                    <option value="Resigned">Resigned</option>
+                    <option value="Left">Left / Terminated</option>
                     <option value="Disabled">Inactive / Disabled</option>
                 </select>
               </div>

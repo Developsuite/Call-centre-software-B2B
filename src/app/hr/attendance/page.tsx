@@ -53,6 +53,7 @@ export default function AttendancePage() {
 
   const [currentDate, setCurrentDate] = useState<Date>(new Date())
   const [searchQuery, setSearchQuery] = useState("")
+  const [statusFilter, setStatusFilter] = useState("Active")
   const [selectedDetailEmployee, setSelectedDetailEmployee] = useState<HREmployee | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
 
@@ -97,7 +98,18 @@ export default function AttendancePage() {
     let list = (currentUser.role === "SuperAdmin"
       ? hrEmployees
       : hrEmployees.filter(u => u.organization_id === currentUser.tenantId)
-    ).filter(u => u.status !== "Disabled" && u.role !== "SuperAdmin")
+    ).filter(u => {
+      if (u.role === "SuperAdmin") return false;
+      if (u.status === "Disabled") return false;
+      
+      if (statusFilter === "Active") {
+        return u.status === "Active" || u.status === "Documents Missing";
+      }
+      if (statusFilter === "Resigned/Left") {
+        return u.status === "Resigned" || u.status === "Left";
+      }
+      return true; // "All"
+    })
 
     // Apply team filter if present
     if (teamFilter) {
@@ -409,6 +421,16 @@ export default function AttendancePage() {
               </div>
 
               <div className="flex items-center gap-2 flex-wrap">
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="h-7 px-2 text-[11px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:border-slate-400 text-slate-700 dark:text-slate-200"
+                >
+                  <option value="Active">Active Only</option>
+                  <option value="Resigned/Left">Resigned / Left</option>
+                  <option value="All">All Statuses</option>
+                </select>
+
                 <div className="relative">
                   <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input

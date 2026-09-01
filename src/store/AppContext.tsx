@@ -105,7 +105,7 @@ export interface HREmployee {
   team: string
   base_salary: number
   bonus: number
-  status: "Active" | "Disabled" | "Documents Missing"
+  status: "Active" | "Disabled" | "Documents Missing" | "Resigned" | "Left"
   created_at: string
   avatar_url?: string
   father_name?: string
