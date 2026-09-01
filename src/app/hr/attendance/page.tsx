@@ -377,7 +377,7 @@ export default function AttendancePage() {
                       router.push(`/hr/attendance`)
                     }
                   }}
-                  className="h-7 pl-1 pr-6 text-sm font-semibold text-slate-700 dark:text-slate-200 bg-transparent border-none outline-none focus:ring-0 cursor-pointer appearance-none"
+                  className="h-9 pl-1 pr-6 text-sm font-semibold text-slate-700 dark:text-slate-200 bg-transparent border-none outline-none focus:ring-0 cursor-pointer appearance-none"
                   style={{
                     backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8' stroke-width='2.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
                     backgroundRepeat: 'no-repeat',
