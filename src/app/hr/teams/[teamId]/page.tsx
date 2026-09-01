@@ -6,9 +6,9 @@ import { Card } from "@/components/ui/card"
 import { useAppContext, HREmployee } from "@/store/AppContext"
 import {
   ArrowLeft,
-  ClipboardList,
-  Banknote,
-  FileText,
+  UserCheck,
+  WalletCards,
+  ReceiptText,
   Users,
   Network,
   ChevronRight,
@@ -80,7 +80,7 @@ export default function TeamHubPage() {
     {
       title: "Attendance",
       description: "Mark & view daily attendance for this team",
-      icon: ClipboardList,
+      icon: UserCheck,
       href: `/hr/attendance?team=${teamId}`,
       color: "from-blue-500/10 to-cyan-500/10 dark:from-blue-500/20 dark:to-cyan-500/20",
       iconColor: "text-blue-600 dark:text-blue-400",
@@ -91,24 +91,24 @@ export default function TeamHubPage() {
     {
       title: "Payroll",
       description: "View salary distribution & compensation for this team",
-      icon: Banknote,
+      icon: WalletCards,
       href: `/hr/payroll?team=${teamId}`,
       color: "from-emerald-500/10 to-teal-500/10 dark:from-emerald-500/20 dark:to-teal-500/20",
       iconColor: "text-emerald-600 dark:text-emerald-400",
       borderColor: "hover:border-emerald-500/30 dark:hover:border-emerald-500/20",
       stat: `PKR ${formatCurrency(totalPayroll)}`,
-      statIcon: Banknote
+      statIcon: WalletCards
     },
     {
       title: "Salary Slips",
       description: "Generate & print salary slips for this team",
-      icon: FileText,
+      icon: ReceiptText,
       href: `/hr/salary-slips?team=${teamId}`,
       color: "from-violet-500/10 to-purple-500/10 dark:from-violet-500/20 dark:to-purple-500/20",
       iconColor: "text-violet-600 dark:text-violet-400",
       borderColor: "hover:border-violet-500/30 dark:hover:border-violet-500/20",
       stat: `${members.length} slips`,
-      statIcon: FileText
+      statIcon: ReceiptText
     }
   ]
 

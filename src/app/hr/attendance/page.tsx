@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useEffect, useRef } from "react"
 import { useAppContext, HREmployee, HRAttendance } from "@/store/AppContext"
-import { useSearchParams } from "next/navigation"
+import { useSearchParams, useRouter } from "next/navigation"
 import { TopBar } from "@/components/layout/topbar"
 import { Sidebar } from "@/components/layout/sidebar"
 import { 
@@ -47,6 +47,7 @@ export default function AttendancePage() {
   } = useAppContext()
 
   const searchParams = useSearchParams()
+  const router = useRouter()
   const teamFilter = searchParams.get('team')
   const teamObj = teamFilter ? teams.find(t => t.id === teamFilter) : null
 
@@ -367,7 +368,27 @@ export default function AttendancePage() {
               
               <div className="flex items-center gap-2 flex-wrap">
                 <CalendarDays className="w-4 h-4 text-slate-400" />
-                <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">{teamObj ? `${teamObj.name} — Attendance` : 'Attendance'}</span>
+                <select
+                  value={teamFilter || ""}
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      router.push(`/hr/attendance?team=${e.target.value}`)
+                    } else {
+                      router.push(`/hr/attendance`)
+                    }
+                  }}
+                  className="h-7 pl-1 pr-6 text-sm font-semibold text-slate-700 dark:text-slate-200 bg-transparent border-none outline-none focus:ring-0 cursor-pointer appearance-none"
+                  style={{
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8' stroke-width='2.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'right 4px center'
+                  }}
+                >
+                  <option value="" className="text-slate-800">All Teams — Attendance</option>
+                  {teams.map(t => (
+                    <option key={t.id} value={t.id} className="text-slate-800">{t.name} — Attendance</option>
+                  ))}
+                </select>
                 <span className="text-slate-300 dark:text-slate-600">|</span>
                 
                 <div className="flex items-center border border-slate-200 dark:border-slate-700 rounded-lg">

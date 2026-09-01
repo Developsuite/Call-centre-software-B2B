@@ -56,7 +56,6 @@ export function TopBar({ title, onMenuToggle }: { title?: string, onMenuToggle?:
     { name: "HR Dashboard", href: "/hr", roles: ["HR", "Admin"] },
     { name: "Employees", href: "/hr/employees", roles: ["HR", "Admin"] },
     { name: "Payroll", href: "/hr/payroll", roles: ["HR", "Admin"] },
-    { name: "Leaves", href: "/hr/leaves", roles: ["HR", "Admin"] },
     { name: "Salary Slips", href: "/hr/salary-slips", roles: ["HR", "Admin"] },
     { name: "Agent Dashboard", href: "/", roles: ["Agent"] },
     { name: "My Sales", href: "/sales", roles: ["Agent"] },

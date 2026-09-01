@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useAppContext, HREmployee } from "@/store/AppContext"
-import { useSearchParams } from "next/navigation"
+import { useSearchParams, useRouter } from "next/navigation"
 import { 
   Search, 
   Banknote, 
@@ -31,6 +31,7 @@ export default function HRPayrollPage() {
   const { hrEmployees, currentUser, isLoaded, formatCurrency, teams } = useAppContext()
 
   const searchParams = useSearchParams()
+  const router = useRouter()
   const teamFilter = searchParams.get('team')
   const teamObj = teamFilter ? teams.find(t => t.id === teamFilter) : null
 
@@ -358,6 +359,29 @@ export default function HRPayrollPage() {
           </div>
           
           <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap relative z-40">
+            {/* Team Dropdown */}
+            <select
+              value={teamFilter || ""}
+              onChange={(e) => {
+                if (e.target.value) {
+                  router.push(`/hr/payroll?team=${e.target.value}`)
+                } else {
+                  router.push(`/hr/payroll`)
+                }
+              }}
+              className="h-9 pl-3 pr-8 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full text-xs font-medium text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#ff5a36] appearance-none cursor-pointer"
+              style={{
+                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8' stroke-width='2.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'right 10px center'
+              }}
+            >
+              <option value="">All Teams</option>
+              {teams.map(t => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))}
+            </select>
+
             {/* Search Input */}
             <div className="relative w-full sm:w-60">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
