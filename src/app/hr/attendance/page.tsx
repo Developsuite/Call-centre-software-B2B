@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo, useEffect, useRef } from "react"
 import { useAppContext, HREmployee, HRAttendance } from "@/store/AppContext"
+import { useSearchParams } from "next/navigation"
 import { TopBar } from "@/components/layout/topbar"
 import { Sidebar } from "@/components/layout/sidebar"
 import { 
@@ -41,8 +42,13 @@ export default function AttendancePage() {
     isLoaded, 
     fetchHRAttendance,
     markHRAttendance,
-    bulkMarkHRAttendance
+    bulkMarkHRAttendance,
+    teams
   } = useAppContext()
+
+  const searchParams = useSearchParams()
+  const teamFilter = searchParams.get('team')
+  const teamObj = teamFilter ? teams.find(t => t.id === teamFilter) : null
 
   const [currentDate, setCurrentDate] = useState<Date>(new Date())
   const [searchQuery, setSearchQuery] = useState("")
@@ -87,10 +93,15 @@ export default function AttendancePage() {
   // Filtered employees
   const tenantEmployees = useMemo(() => {
     if (!currentUser) return []
-    const list = (currentUser.role === "SuperAdmin"
+    let list = (currentUser.role === "SuperAdmin"
       ? hrEmployees
       : hrEmployees.filter(u => u.organization_id === currentUser.tenantId)
     ).filter(u => u.status !== "Disabled" && u.role !== "SuperAdmin")
+
+    // Apply team filter if present
+    if (teamFilter) {
+      list = list.filter(u => u.team_id === teamFilter)
+    }
 
     return list
       .filter(emp => {
@@ -339,13 +350,24 @@ export default function AttendancePage() {
         
         <main className="flex-1 overflow-y-auto p-3 lg:p-5 custom-scrollbar print:p-0">
           <div className="max-w-[1800px] mx-auto space-y-3">
+
+            {/* Team Breadcrumb */}
+            {teamObj && (
+              <div className="flex items-center gap-2 text-xs font-medium text-slate-500 print:hidden">
+                <a href="/hr/teams" className="hover:text-[#ff5a36] transition-colors">Teams</a>
+                <span className="text-slate-300">›</span>
+                <a href={`/hr/teams/${teamFilter}`} className="hover:text-[#ff5a36] transition-colors">{teamObj.name}</a>
+                <span className="text-slate-300">›</span>
+                <span className="text-slate-800 dark:text-white font-bold">Attendance</span>
+              </div>
+            )}
             
             {/* Top bar */}
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 print:hidden">
               
               <div className="flex items-center gap-2 flex-wrap">
                 <CalendarDays className="w-4 h-4 text-slate-400" />
-                <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">Attendance</span>
+                <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">{teamObj ? `${teamObj.name} — Attendance` : 'Attendance'}</span>
                 <span className="text-slate-300 dark:text-slate-600">|</span>
                 
                 <div className="flex items-center border border-slate-200 dark:border-slate-700 rounded-lg">

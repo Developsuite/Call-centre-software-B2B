@@ -89,6 +89,7 @@ export function Sidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: { isMobileMen
     { name: "All Processors", href: "/admin/processors", icon: Briefcase, roles: ["Admin"] },
     { name: "HR Dashboard", href: "/hr", icon: LayoutDashboard, roles: ["HR", "Admin"] },
     { name: "Employees", href: "/hr/employees", icon: UsersRound, roles: ["HR", "Admin"] },
+    { name: "Teams", href: "/hr/teams", icon: Network, roles: ["HR", "Admin"] },
     { name: "Attendance", href: "/hr/attendance", icon: Clock, roles: ["HR", "Admin"] },
     { name: "Payroll", href: "/hr/payroll", icon: Banknote, roles: ["HR", "Admin"] },
     { name: "Leave Mgmt", href: "/hr/leaves", icon: CalendarOff, roles: ["HR", "Admin"] },

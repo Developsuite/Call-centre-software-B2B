@@ -119,6 +119,7 @@ export interface HREmployee {
   document_url?: string
   probation_end_date?: string
   zk_user_id?: string
+  team_id?: string | null
 }
 
 export interface HRAttendance {

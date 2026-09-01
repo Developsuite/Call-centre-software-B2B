@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useAppContext, HREmployee } from "@/store/AppContext"
+import { useSearchParams } from "next/navigation"
 import { 
   Search, 
   Banknote, 
@@ -27,7 +28,12 @@ import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
 
 export default function HRPayrollPage() {
-  const { hrEmployees, currentUser, isLoaded, formatCurrency } = useAppContext()
+  const { hrEmployees, currentUser, isLoaded, formatCurrency, teams } = useAppContext()
+
+  const searchParams = useSearchParams()
+  const teamFilter = searchParams.get('team')
+  const teamObj = teamFilter ? teams.find(t => t.id === teamFilter) : null
+
   const [searchQuery, setSearchQuery] = useState("")
   const [roleFilter, setRoleFilter] = useState("All")
   const [sortOption, setSortOption] = useState<string>("salary_desc")
@@ -60,7 +66,12 @@ export default function HRPayrollPage() {
     : hrEmployees.filter(u => u.organization_id === currentUser?.tenantId)
 
   // Filter out disabled or SuperAdmins from payroll (Active staff including Documents Missing)
-  const activeStaff = tenantUsers.filter(u => u.status !== "Disabled" && u.role !== "SuperAdmin")
+  let activeStaff = tenantUsers.filter(u => u.status !== "Disabled" && u.role !== "SuperAdmin")
+
+  // Apply team filter if present
+  if (teamFilter) {
+    activeStaff = activeStaff.filter(u => u.team_id === teamFilter)
+  }
 
   // Extract unique roles
   const uniqueRoles = Array.from(new Set(activeStaff.map(u => u.job_title || u.role || 'Agent'))).filter(Boolean).sort()
@@ -315,6 +326,17 @@ export default function HRPayrollPage() {
   return (
     <DashboardLayout title="Payroll Overview">
       <div className="flex flex-col gap-5 font-sans max-w-[1400px] mx-auto w-full pb-10">
+
+        {/* Team Breadcrumb */}
+        {teamObj && (
+          <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
+            <a href="/hr/teams" className="hover:text-[#ff5a36] transition-colors">Teams</a>
+            <span className="text-slate-300">›</span>
+            <a href={`/hr/teams/${teamFilter}`} className="hover:text-[#ff5a36] transition-colors">{teamObj.name}</a>
+            <span className="text-slate-300">›</span>
+            <span className="text-slate-800 dark:text-white font-bold">Payroll</span>
+          </div>
+        )}
         
         {/* Top Header Card */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 bg-gradient-to-br from-white/90 to-white/50 dark:from-slate-900/60 dark:to-slate-900/20 p-6 rounded-[1.5rem] border border-white/60 dark:border-slate-700/50 shadow-none relative z-30">
@@ -326,7 +348,7 @@ export default function HRPayrollPage() {
               </div>
               <div>
                 <h1 className="text-2xl lg:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-                  Payroll Overview
+                  {teamObj ? `${teamObj.name} — Payroll` : 'Payroll Overview'}
                 </h1>
                 <p className="text-slate-500 dark:text-slate-400 text-xs font-medium mt-0.5">
                   Real-time salary distribution, role tiers, and sales commission estimates

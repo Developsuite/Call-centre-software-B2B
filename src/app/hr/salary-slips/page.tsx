@@ -4,11 +4,16 @@ import React, { useState, useMemo, useRef, useEffect } from "react"
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { Card } from "@/components/ui/card"
 import { useAppContext } from "@/store/AppContext"
+import { useSearchParams } from "next/navigation"
 import { FileText, Printer, Building2, Search, Save } from "lucide-react"
 import { toast } from "sonner"
 
 export default function SalarySlipsPage() {
-  const { hrEmployees, hrLeaves, hrAttendance, currentUser, isLoaded, tenants, formatCurrency, saveSalaryRecords } = useAppContext()
+  const { hrEmployees, hrLeaves, hrAttendance, currentUser, isLoaded, tenants, formatCurrency, saveSalaryRecords, teams } = useAppContext()
+
+  const searchParams = useSearchParams()
+  const teamFilter = searchParams.get('team')
+  const teamObj = teamFilter ? teams.find(t => t.id === teamFilter) : null
 
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date()
@@ -26,7 +31,12 @@ export default function SalarySlipsPage() {
     ? hrEmployees
     : hrEmployees.filter(e => e.organization_id === currentUser?.tenantId)
 
-  const activeEmployees = tenantEmployees.filter(e => e.status !== "Disabled" && e.role !== "SuperAdmin")
+  const activeEmployees = tenantEmployees.filter(e => {
+    const isActive = e.status !== "Disabled" && e.role !== "SuperAdmin"
+    if (!isActive) return false
+    if (teamFilter) return e.team_id === teamFilter
+    return true
+  })
 
   const [searchQuery, setSearchQuery] = useState("")
   const [roleFilter, setRoleFilter] = useState("All")
@@ -495,6 +505,17 @@ export default function SalarySlipsPage() {
         <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-gradient-to-br from-[#ff5a36]/15 to-purple-500/15 rounded-full blur-[100px] pointer-events-none -z-10 print:hidden" />
         <div className="absolute bottom-[10%] right-[-10%] w-[40%] h-[40%] bg-gradient-to-br from-blue-500/15 to-emerald-500/15 rounded-full blur-[120px] pointer-events-none -z-10 print:hidden" />
 
+        {/* Team Breadcrumb */}
+        {teamObj && (
+          <div className="flex items-center gap-2 text-xs font-medium text-slate-500 print:hidden">
+            <a href="/hr/teams" className="hover:text-[#ff5a36] transition-colors">Teams</a>
+            <span className="text-slate-300">›</span>
+            <a href={`/hr/teams/${teamFilter}`} className="hover:text-[#ff5a36] transition-colors">{teamObj.name}</a>
+            <span className="text-slate-300">›</span>
+            <span className="text-slate-800 dark:text-white font-bold">Salary Slips</span>
+          </div>
+        )}
+
         {/* Header - hidden during print */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 bg-gradient-to-br from-white/90 to-white/50 dark:from-slate-900/60 dark:to-slate-900/20 p-6 rounded-[1.5rem] border border-white/60 dark:border-slate-700/50 shadow-2xl shadow-[#ff5a36]/5 backdrop-blur-2xl relative overflow-hidden group transition-all duration-500 hover:shadow-[#ff5a36]/10 print:hidden">
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full duration-1000 transition-transform pointer-events-none" />
@@ -503,7 +524,7 @@ export default function SalarySlipsPage() {
               <div className="bg-indigo-100 dark:bg-indigo-500/10 p-2 rounded-xl text-indigo-600">
                 <FileText className="w-5 h-5" />
               </div>
-              <h1 className="text-3xl font-bold text-slate-800 dark:text-white tracking-tight">Salary Slips</h1>
+              <h1 className="text-3xl font-bold text-slate-800 dark:text-white tracking-tight">{teamObj ? `${teamObj.name} — Salary Slips` : 'Salary Slips'}</h1>
             </div>
             <p className="text-slate-500 text-sm">Select, review, and print individual or batch salary slips.</p>
           </div>
