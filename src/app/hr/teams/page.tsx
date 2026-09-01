@@ -104,6 +104,7 @@ export default function HRTeamsPage() {
   }
 
   const handleSaveTeam = async () => {
+    if (isSaving) return
     if (!teamName.trim()) {
       toast.error("Please enter a team name")
       return

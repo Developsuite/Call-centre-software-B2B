@@ -43,6 +43,7 @@ export function TeamEditModal({ isOpen, onClose, team }: TeamEditModalProps) {
   const orgUsers = users.filter(u => u.tenantId === organizationId && u.role !== 'SuperAdmin')
 
   const handleSubmit = async () => {
+    if (isSubmitting) return
     if (!name || !organizationId) return
     setIsSubmitting(true)
     
