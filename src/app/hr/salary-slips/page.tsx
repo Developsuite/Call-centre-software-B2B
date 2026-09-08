@@ -21,8 +21,8 @@ function SalarySlipsPageContent() {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
   })
 
-  // Manual overrides per employee: { [employeeId]: { connectedSales: number, transferSales: number, teamSales?: number, loanDeduction: number, manualAbsences?: number } }
-  const [overrides, setOverrides] = useState<Record<string, { connectedSales: number, transferSales: number, teamSales?: number, loanDeduction: number, manualAbsences?: number }>>({})
+  // Manual overrides per employee: { [employeeId]: { connectedSales: number, transferSales: number, teamSales?: number, loanDeduction: number, manualAbsences?: number, netSalaryOverride?: number } }
+  const [overrides, setOverrides] = useState<Record<string, { connectedSales: number, transferSales: number, teamSales?: number, loanDeduction: number, manualAbsences?: number, netSalaryOverride?: number }>>({})
 
   // Multi-selection state
   const [selectedIds, setSelectedIds] = useState<string[]>([])
@@ -172,7 +172,8 @@ function SalarySlipsPageContent() {
       
       // Net Salary rounded UP (maximum) to nearest 100 for maximum benefit to employee (no odd 2-digit decimals like 45, 63)
       const rawNetSalary = Math.max(0, grossSalary - totalDeductions)
-      const netSalary = rawNetSalary > 0 ? Math.ceil(rawNetSalary / 100) * 100 : 0
+      const calculatedNetSalary = rawNetSalary > 0 ? Math.ceil(rawNetSalary / 100) * 100 : 0
+      const netSalary = override.netSalaryOverride !== undefined ? override.netSalaryOverride : calculatedNetSalary
 
       return {
         employee: emp,
@@ -241,7 +242,7 @@ function SalarySlipsPageContent() {
 
   const totalNetPayroll = selectedSlips.reduce((sum, s) => sum + Math.max(0, s.netSalary), 0)
 
-  const updateOverride = (employeeId: string, field: 'connectedSales' | 'transferSales' | 'teamSales' | 'loanDeduction' | 'manualAbsences', value: number | undefined) => {
+  const updateOverride = (employeeId: string, field: 'connectedSales' | 'transferSales' | 'teamSales' | 'loanDeduction' | 'manualAbsences' | 'netSalaryOverride', value: number | undefined) => {
     setOverrides(prev => ({
       ...prev,
       [employeeId]: {
@@ -947,7 +948,23 @@ function SalarySlipsPageContent() {
                   {/* Net Salary */}
                   <div className="bg-gradient-to-r from-slate-800 to-slate-900 dark:from-indigo-900/50 dark:to-slate-800/50 print:bg-slate-800 rounded-xl print:rounded-md px-5 py-3 print:px-3 print:py-2 flex items-center justify-between print:color-adjust-exact text-white">
                     <span className="text-white/70 text-sm font-bold print:text-xs print:text-white">NET SALARY</span>
-                    <span className="text-white text-2xl print:text-lg font-extrabold">PKR {formatCurrency(slip.netSalary)}</span>
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-2 print:hidden relative group">
+                        <span className="text-[9px] text-white/50 uppercase font-bold tracking-wider opacity-0 group-hover:opacity-100 transition-opacity absolute right-full mr-2 pointer-events-none whitespace-nowrap">Override</span>
+                        <input
+                          type="number"
+                          min={0}
+                          placeholder="Auto"
+                          value={overrides[slip.employee.id]?.netSalaryOverride ?? ''}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            updateOverride(slip.employee.id, 'netSalaryOverride', val === '' ? undefined : Number(val))
+                          }}
+                          className="w-20 h-7 text-right bg-white/10 hover:bg-white/20 border border-white/20 focus:border-white/40 focus:ring-1 focus:ring-white/40 rounded-md outline-none font-bold text-white placeholder-white/40 transition-all text-xs px-2"
+                        />
+                      </div>
+                      <span className="text-white text-2xl print:text-lg font-extrabold min-w-[120px] text-right print:min-w-0">PKR {formatCurrency(slip.netSalary)}</span>
+                    </div>
                   </div>
 
                   {/* Signature Line - print only */}
