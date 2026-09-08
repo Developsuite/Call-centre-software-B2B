@@ -28,6 +28,10 @@ function SalarySlipsPageContent() {
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [hasInitializedSelection, setHasInitializedSelection] = useState(false)
 
+  const [searchQuery, setSearchQuery] = useState("")
+  const [roleFilter, setRoleFilter] = useState("All")
+  const [statusFilter, setStatusFilter] = useState("Active")
+
   const tenantEmployees = currentUser?.role === "SuperAdmin"
     ? hrEmployees
     : hrEmployees.filter(e => e.organization_id === currentUser?.tenantId)
@@ -46,9 +50,6 @@ function SalarySlipsPageContent() {
     return true
   })
 
-  const [searchQuery, setSearchQuery] = useState("")
-  const [roleFilter, setRoleFilter] = useState("All")
-  const [statusFilter, setStatusFilter] = useState("Active")
 
   const uniqueRoles = useMemo(() => {
     return Array.from(new Set(activeEmployees.map(e => e.job_title || "Unassigned"))).sort()
