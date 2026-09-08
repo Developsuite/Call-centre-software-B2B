@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useMemo, useRef, useEffect } from "react"
+import React, { useState, useMemo, useRef, useEffect, Suspense } from "react"
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { Card } from "@/components/ui/card"
 import { useAppContext } from "@/store/AppContext"
@@ -8,7 +8,7 @@ import { useSearchParams, useRouter } from "next/navigation"
 import { FileText, Printer, Building2, Search, Save } from "lucide-react"
 import { toast } from "sonner"
 
-export default function SalarySlipsPage() {
+function SalarySlipsPageContent() {
   const { hrEmployees, hrLeaves, hrAttendance, currentUser, isLoaded, tenants, formatCurrency, saveSalaryRecords, teams } = useAppContext()
 
   const searchParams = useSearchParams()
@@ -59,7 +59,7 @@ export default function SalarySlipsPage() {
 
   const filteredEmployees = useMemo(() => {
     return activeEmployees.filter(e => {
-      const matchesSearch = !searchQuery.trim() || e.full_name.toLowerCase().includes(searchQuery.toLowerCase())
+      const matchesSearch = !searchQuery.trim() || (e.full_name || "").toLowerCase().includes(searchQuery.toLowerCase())
       const isOfficeBoy = (e.job_title || "").toLowerCase().includes("office boy")
       const matchesRole = 
         roleFilter === "All" ? true :
@@ -205,7 +205,7 @@ export default function SalarySlipsPage() {
         totalDeductions,
         netSalary
       }
-    }).sort((a, b) => a.employee.full_name.localeCompare(b.employee.full_name))
+    }).sort((a, b) => (a.employee.full_name || "").localeCompare(b.employee.full_name || ""))
   }, [filteredEmployees, hrLeaves, hrAttendance, selectedYear, selectedMonthNum, monthWorkingDays, overrides])
 
   // Select all slips initially once loaded
@@ -978,5 +978,19 @@ export default function SalarySlipsPage() {
         </div>
       </div>
     </DashboardLayout>
+  )
+}
+
+export default function SalarySlipsPage() {
+  return (
+    <Suspense fallback={
+      <DashboardLayout title="Salary Slips">
+        <div className="flex items-center justify-center h-[50vh]">
+          <div className="w-6 h-6 border-2 border-[#ff5a36] border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      </DashboardLayout>
+    }>
+      <SalarySlipsPageContent />
+    </Suspense>
   )
 }

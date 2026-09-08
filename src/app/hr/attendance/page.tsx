@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useMemo, useEffect, useRef } from "react"
+import React, { useState, useMemo, useEffect, useRef, Suspense } from "react"
 import { useAppContext, HREmployee, HRAttendance } from "@/store/AppContext"
 import { useSearchParams, useRouter } from "next/navigation"
 import { TopBar } from "@/components/layout/topbar"
@@ -34,7 +34,7 @@ import { EmployeeAttendanceModal } from "@/components/hr/EmployeeAttendanceModal
 
 type AttendanceStatusCode = 0 | 1 | 2 | 3 | 4 | 5
 
-export default function AttendancePage() {
+function AttendancePageContent() {
   const { 
     hrAttendance, 
     hrEmployees, 
@@ -120,11 +120,11 @@ export default function AttendancePage() {
       .filter(emp => {
         if (!searchQuery.trim()) return true
         const q = searchQuery.toLowerCase()
-        return emp.full_name.toLowerCase().includes(q) ||
+        return (emp.full_name || "").toLowerCase().includes(q) ||
           (emp.zk_user_id && emp.zk_user_id.toLowerCase().includes(q)) ||
           (emp.job_title && emp.job_title.toLowerCase().includes(q))
       })
-      .sort((a, b) => a.full_name.localeCompare(b.full_name))
+      .sort((a, b) => (a.full_name || "").localeCompare(b.full_name || ""))
   }, [hrEmployees, currentUser, searchQuery])
 
   // Attendance lookup map
@@ -897,5 +897,17 @@ export default function AttendancePage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function AttendancePage() {
+  return (
+    <Suspense fallback={
+      <div className="flex h-screen items-center justify-center bg-white dark:bg-slate-950">
+        <div className="w-5 h-5 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin" />
+      </div>
+    }>
+      <AttendancePageContent />
+    </Suspense>
   )
 }

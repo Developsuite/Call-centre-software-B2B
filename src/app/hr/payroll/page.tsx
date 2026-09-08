@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useMemo, useRef, useEffect } from "react"
+import React, { useState, useMemo, useRef, useEffect, Suspense } from "react"
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -27,7 +27,7 @@ import { EmployeeDetailsModal } from "@/components/hr/EmployeeDetailsModal"
 import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
 
-export default function HRPayrollPage() {
+function HRPayrollPageContent() {
   const { hrEmployees, currentUser, isLoaded, formatCurrency, teams } = useAppContext()
 
   const searchParams = useSearchParams()
@@ -763,5 +763,19 @@ export default function HRPayrollPage() {
         />
       )}
     </DashboardLayout>
+  )
+}
+
+export default function HRPayrollPage() {
+  return (
+    <Suspense fallback={
+      <DashboardLayout title="Payroll Overview">
+        <div className="flex items-center justify-center h-[50vh]">
+          <div className="w-6 h-6 border-2 border-[#ff5a36] border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      </DashboardLayout>
+    }>
+      <HRPayrollPageContent />
+    </Suspense>
   )
 }
