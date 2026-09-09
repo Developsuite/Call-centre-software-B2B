@@ -142,12 +142,13 @@ export default function AttendanceReportsPage() {
           else if (code === 2) { halfDay++; workingDays++ }
           else if (code === 3) { absent++; workingDays++ }
           else if (code === 4) { leave++; workingDays++ }
-          else if (code === 5) { off++ }
+          else if (code === 5) { off++; workingDays++ }
         } else if (leaveRecord) {
           leave++
           workingDays++
         } else if (isSun) {
           off++
+          workingDays++
         } else {
           // Unmarked working day
           workingDays++

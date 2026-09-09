@@ -73,15 +73,9 @@ function SalarySlipsPageContent() {
 
   const [selectedYear, selectedMonthNum] = selectedMonth.split('-').map(Number)
 
-  // Calculate working days in month (exclude Sundays)
+  // Calculate working days in month (including Sundays as paid days)
   const getWorkingDays = (year: number, month: number) => {
-    const daysInMonth = new Date(year, month, 0).getDate()
-    let workingDays = 0
-    for (let d = 1; d <= daysInMonth; d++) {
-      const day = new Date(year, month - 1, d).getDay()
-      if (day !== 0) workingDays++ // Only exclude Sunday
-    }
-    return workingDays
+    return new Date(year, month, 0).getDate()
   }
 
   const monthWorkingDays = getWorkingDays(selectedYear, selectedMonthNum)
@@ -99,12 +93,7 @@ function SalarySlipsPageContent() {
         if (joinDate.getFullYear() === selectedYear && (joinDate.getMonth() + 1) === selectedMonthNum) {
           const daysInMonth = new Date(selectedYear, selectedMonthNum, 0).getDate()
           const joinDay = joinDate.getDate()
-          let wDays = 0
-          for (let d = joinDay; d <= daysInMonth; d++) {
-            const day = new Date(selectedYear, selectedMonthNum - 1, d).getDay()
-            if (day !== 0) wDays++
-          }
-          employeeWorkingDays = wDays
+          employeeWorkingDays = daysInMonth - joinDay + 1
         } else if (joinDate.getFullYear() > selectedYear || (joinDate.getFullYear() === selectedYear && (joinDate.getMonth() + 1) > selectedMonthNum)) {
           employeeWorkingDays = 0
           isFutureJoin = true
