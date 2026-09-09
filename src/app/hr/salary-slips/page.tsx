@@ -168,6 +168,7 @@ function SalarySlipsPageContent() {
         employee: emp,
         isOfficeBoy,
         isSupervisor,
+        fullBaseSalary,
         baseSalary,
         commissionRate,
         transferRate,
@@ -416,7 +417,12 @@ function SalarySlipsPageContent() {
               <div class="two-col">
                 <div>
                   <div class="section-title earn-title">Earnings</div>
-                  <div class="row"><span>Base Salary ${slip.workingDays < slip.monthWorkingDays ? '(Pro-rated)' : ''}</span><span class="val">PKR ${formatCurrency(slip.baseSalary)}</span></div>
+                  ${slip.workingDays < slip.monthWorkingDays ? `
+                    <div class="row"><span>Fixed Base Salary</span><span class="val">PKR ${formatCurrency(slip.fullBaseSalary)}</span></div>
+                    <div class="row"><span>Earned Salary (${slip.workingDays} days)</span><span class="val">PKR ${formatCurrency(slip.baseSalary)}</span></div>
+                  ` : `
+                    <div class="row"><span>Base Salary</span><span class="val">PKR ${formatCurrency(slip.baseSalary)}</span></div>
+                  `}
                   <div class="row"><span>Connected Sales ${slip.commissionRate > 0 ? `(${slip.connectedSales} × PKR ${formatCurrency(slip.commissionRate)})` : ''}</span><span class="val">${slip.commissionRate > 0 ? `PKR ${formatCurrency(Math.round(slip.connectedCommissionEarned))}` : 'NULL'}</span></div>
                   <div class="row"><span>Transfer Sales ${slip.transferRate > 0 ? `(${slip.transferSales} × PKR ${formatCurrency(slip.transferRate)})` : ''}</span><span class="val">${slip.transferRate > 0 ? `PKR ${formatCurrency(Math.round(slip.transferCommissionEarned))}` : 'NULL'}</span></div>
                   ${slip.isSupervisor ? `<div class="row"><span>Team Sales (${slip.teamSales} × PKR ${formatCurrency(slip.teamCommissionRate)})</span><span class="val">PKR ${formatCurrency(Math.round(slip.teamCommissionEarned))}</span></div>` : ''}
@@ -751,12 +757,29 @@ function SalarySlipsPageContent() {
                       <h4 className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider mb-2 print:mb-1">Earnings</h4>
                       <div className="space-y-1.5 print:space-y-0.5">
                         {/* Base Salary */}
-                        <div className="flex justify-between text-sm print:text-[11px]">
-                          <span className="text-slate-500 dark:text-slate-400 print:text-black">
-                            Base Salary {slip.workingDays < slip.monthWorkingDays && <span className="text-[10px] text-slate-400"> (Pro-rated)</span>}
-                          </span>
-                          <span className="font-bold text-slate-800 dark:text-white print:text-black">PKR {formatCurrency(slip.baseSalary)}</span>
-                        </div>
+                        {slip.workingDays < slip.monthWorkingDays ? (
+                          <>
+                            <div className="flex justify-between text-sm print:text-[11px]">
+                              <span className="text-slate-500 dark:text-slate-400 print:text-black">
+                                Fixed Base Salary
+                              </span>
+                              <span className="font-bold text-slate-800 dark:text-white print:text-black">PKR {formatCurrency(slip.fullBaseSalary)}</span>
+                            </div>
+                            <div className="flex justify-between text-sm print:text-[11px]">
+                              <span className="text-slate-500 dark:text-slate-400 print:text-black flex items-center gap-1.5">
+                                Earned Salary <span className="text-[10px] text-slate-400">({slip.workingDays} days)</span>
+                              </span>
+                              <span className="font-bold text-slate-800 dark:text-white print:text-black">PKR {formatCurrency(slip.baseSalary)}</span>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="flex justify-between text-sm print:text-[11px]">
+                            <span className="text-slate-500 dark:text-slate-400 print:text-black">
+                              Base Salary
+                            </span>
+                            <span className="font-bold text-slate-800 dark:text-white print:text-black">PKR {formatCurrency(slip.baseSalary)}</span>
+                          </div>
+                        )}
                         
                         {/* Connected Sales Commission */}
                         <div className="flex justify-between items-center text-sm print:text-[11px]">
