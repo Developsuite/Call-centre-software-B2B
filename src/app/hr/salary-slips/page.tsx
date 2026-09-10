@@ -471,8 +471,10 @@ function SalarySlipsPageContent() {
     printWindow.focus()
     setTimeout(() => {
       printWindow.print()
-      printWindow.close()
-    }, 300)
+      printWindow.onafterprint = () => {
+        printWindow.close()
+      }
+    }, 500)
   }
 
   // Month options
