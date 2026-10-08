@@ -143,6 +143,11 @@ function AttendancePageContent() {
   const getStatus = (emp: HREmployee, dateStr: string): AttendanceStatusCode | null => {
     if (attendanceMap.has(`${emp.id}_${dateStr}`)) return attendanceMap.get(`${emp.id}_${dateStr}`)!
     if (emp.zk_user_id && attendanceMap.has(`${emp.zk_user_id}_${dateStr}`)) return attendanceMap.get(`${emp.zk_user_id}_${dateStr}`)!
+    
+    // Auto-mark Sundays as OFF (5) if unrecorded
+    const d = new Date(dateStr + 'T12:00:00')
+    if (isSunday(d)) return 5
+
     return null
   }
 
@@ -212,14 +217,18 @@ function AttendancePageContent() {
   // Right-click cycle
   const handleCycleStatus = async (emp: HREmployee, dateStr: string) => {
     const current = getStatus(emp, dateStr)
+    const isSun = isSunday(new Date(dateStr + 'T12:00:00'))
     let next: AttendanceStatusCode | null = null
-    if (current === null) next = 0
+    
+    if (current === 5 && isSun) next = 0
+    else if (current === null) next = 0
     else if (current === 0) next = 3
     else if (current === 3) next = 1
     else if (current === 1) next = 2
     else if (current === 2) next = 4
     else if (current === 4) next = 5
     else if (current === 5) next = null
+
     await markHRAttendance(emp.id, emp.zk_user_id || null, dateStr, next)
   }
 

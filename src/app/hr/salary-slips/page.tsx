@@ -9,7 +9,7 @@ import { FileText, Printer, Building2, Search, Save } from "lucide-react"
 import { toast } from "sonner"
 
 function SalarySlipsPageContent() {
-  const { hrEmployees, hrLeaves, hrAttendance, currentUser, isLoaded, tenants, formatCurrency, saveSalaryRecords, teams } = useAppContext()
+  const { hrEmployees, hrLeaves, hrAttendance, currentUser, isLoaded, tenants, formatCurrency, saveSalaryRecords, teams, hrSalaryRecords } = useAppContext()
 
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -21,8 +21,26 @@ function SalarySlipsPageContent() {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
   })
 
-  // Manual overrides per employee: { [employeeId]: { connectedSales: number, transferSales: number, teamSales?: number, loanDeduction: number, manualAbsences?: number, netSalaryOverride?: number } }
-  const [overrides, setOverrides] = useState<Record<string, { connectedSales: number, transferSales: number, teamSales?: number, loanDeduction: number, manualAbsences?: number, netSalaryOverride?: number }>>({})
+  const [viewMode, setViewMode] = useState<"Draft" | "Saved">("Draft")
+
+  // Manual overrides per employee
+  const [overridesData, setOverridesData] = useState<{ month: string, data: Record<string, { connectedSales: number, transferSales: number, teamSales?: number, loanDeduction: number, manualAbsences?: number, netSalaryOverride?: number }> }>({ month: selectedMonth, data: {} })
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(`salaryOverrides_${selectedMonth}`)
+      if (stored) {
+        setOverridesData({ month: selectedMonth, data: JSON.parse(stored) })
+      } else {
+        setOverridesData({ month: selectedMonth, data: {} })
+      }
+    } catch (e) {
+      console.error("Failed to load overrides", e)
+      setOverridesData({ month: selectedMonth, data: {} })
+    }
+  }, [selectedMonth])
+
+  const overrides = overridesData.month === selectedMonth ? overridesData.data : {}
 
   // Multi-selection state
   const [selectedIds, setSelectedIds] = useState<string[]>([])
@@ -192,13 +210,44 @@ function SalarySlipsPageContent() {
         teamCommissionRate,
         teamCommissionEarned,
         totalCommissionEarned,
-        loanDeduction,
         grossSalary,
         totalDeductions,
         netSalary
       }
+    }).filter(slip => {
+      if (viewMode === "Saved") {
+        return hrSalaryRecords.some(r => r.employee_id === slip.employee.id && r.month === selectedMonth)
+      }
+      return true
+    }).map(slip => {
+      if (viewMode === "Saved") {
+        const saved = hrSalaryRecords.find(r => r.employee_id === slip.employee.id && r.month === selectedMonth)
+        if (saved) {
+          return {
+            ...slip,
+            baseSalary: saved.base_salary,
+            fullBaseSalary: saved.base_salary,
+            totalCommissionEarned: saved.commission_earned,
+            absenceDeduction: saved.absence_deduction,
+            loanDeduction: saved.loan_deduction,
+            grossSalary: saved.gross_salary,
+            netSalary: saved.net_salary,
+            totalDeductions: saved.absence_deduction + saved.loan_deduction,
+            connectedCommissionEarned: saved.commission_earned,
+            transferCommissionEarned: 0,
+            teamCommissionEarned: 0,
+            connectedSales: 0,
+            transferSales: 0,
+            teamSales: 0,
+            commissionRate: 0,
+            transferRate: 0,
+            teamCommissionRate: 0,
+          }
+        }
+      }
+      return slip
     }).sort((a, b) => (a.employee.full_name || "").localeCompare(b.employee.full_name || ""))
-  }, [filteredEmployees, hrLeaves, hrAttendance, selectedYear, selectedMonthNum, monthWorkingDays, overrides])
+  }, [filteredEmployees, hrLeaves, hrAttendance, selectedYear, selectedMonthNum, monthWorkingDays, overrides, viewMode, hrSalaryRecords, selectedMonth])
 
   // Select all slips initially once loaded
   useEffect(() => {
@@ -233,13 +282,21 @@ function SalarySlipsPageContent() {
   const totalNetPayroll = selectedSlips.reduce((sum, s) => sum + Math.max(0, s.netSalary), 0)
 
   const updateOverride = (employeeId: string, field: 'connectedSales' | 'transferSales' | 'teamSales' | 'loanDeduction' | 'manualAbsences' | 'netSalaryOverride', value: number | undefined) => {
-    setOverrides(prev => ({
-      ...prev,
-      [employeeId]: {
-        ...prev[employeeId] || { connectedSales: 0, transferSales: 0, teamSales: 0, loanDeduction: 0 },
-        [field]: value
+    setOverridesData(prev => {
+      const newData = {
+        ...prev.data,
+        [employeeId]: {
+          ...prev.data[employeeId] || { connectedSales: 0, transferSales: 0, teamSales: 0, loanDeduction: 0 },
+          [field]: value
+        }
+      };
+      try {
+        localStorage.setItem(`salaryOverrides_${prev.month}`, JSON.stringify(newData));
+      } catch (e) {
+        console.error("Failed to save overrides", e);
       }
-    }))
+      return { ...prev, data: newData };
+    });
   }
 
   const slipRefs = useRef<HTMLDivElement>(null)
@@ -279,202 +336,18 @@ function SalarySlipsPageContent() {
       return
     }
 
-    const printWindow = window.open('', '_blank', 'width=800,height=1100')
-    if (!printWindow) {
-      // Fallback if popup blocked
+    const originalSelectedIds = [...selectedIds]
+    
+    // If printing a specific subset (e.g. single slip)
+    if (slipsToPrint !== selectedSlips) {
+      setSelectedIds(slipsToPrint.map(s => s.employee.id))
+      setTimeout(() => {
+        window.print()
+        setTimeout(() => setSelectedIds(originalSelectedIds), 100)
+      }, 100)
+    } else {
       window.print()
-      return
     }
-
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Salary Slips - ${monthLabel}</title>
-        <style>
-          @page {
-            size: A4 portrait;
-            margin: 6mm 8mm;
-          }
-          * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-          }
-          body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            font-size: 9px;
-            color: black;
-            background: white;
-          }
-          .slip {
-            border: 1px solid #cbd5e1;
-            border-radius: 6px;
-            overflow: hidden;
-            margin-bottom: 6mm;
-            page-break-inside: avoid;
-            break-inside: avoid;
-            min-height: 86mm;
-          }
-          .slip:nth-child(3n) {
-            page-break-after: always;
-            break-after: page;
-            margin-bottom: 0;
-          }
-          .slip:last-child {
-            page-break-after: auto;
-            break-after: auto;
-          }
-          .slip-header {
-            background: #1e293b;
-            color: white;
-            padding: 8px 16px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-          }
-          .slip-header h3 { font-size: 14px; font-weight: 700; margin: 0; }
-          .slip-header small { font-size: 10px; opacity: 0.8; }
-          .slip-body { padding: 10px 16px; }
-          .info-row {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 8px;
-            border-bottom: 1px solid #e2e8f0;
-            padding-bottom: 8px;
-            margin-bottom: 8px;
-          }
-          .info-row label { font-size: 8px; text-transform: uppercase; font-weight: 700; color: #94a3b8; letter-spacing: 0.5px; }
-          .info-row p { font-size: 11px; font-weight: 600; margin-top: 2px; margin-bottom: 0; }
-          .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 8px; }
-          .section-title { font-size: 9px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; margin-bottom: 6px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; }
-          .earn-title { color: #059669; }
-          .ded-title { color: #dc2626; }
-          .row { display: flex; justify-content: space-between; font-size: 10px; padding: 3px 0; }
-          .row.border-top { border-top: 1px dashed #e2e8f0; padding-top: 4px; margin-top: 2px; }
-          .row .val { font-weight: 700; }
-          .row .ded { font-weight: 700; color: #dc2626; }
-          .summary-row {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 8px;
-            margin-bottom: 10px;
-          }
-          .summary-box {
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 4px;
-            text-align: center;
-            padding: 4px;
-          }
-          .summary-box label { font-size: 8px; text-transform: uppercase; font-weight: 700; color: #64748b; }
-          .summary-box .num { font-size: 13px; font-weight: 800; color: #0f172a; margin-top: 2px; }
-          .net-bar {
-            background: #1e293b;
-            color: white;
-            padding: 8px 16px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border-radius: 4px;
-            margin-bottom: 8px;
-          }
-          .net-bar .label { font-size: 11px; font-weight: 700; opacity: 0.9; }
-          .net-bar .amount { font-size: 16px; font-weight: 800; }
-          .sig-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-            margin-top: 8px;
-            padding-top: 6px;
-            border-top: 1px dashed #cbd5e1;
-            font-size: 8px;
-            color: #64748b;
-          }
-          .sig-box { text-align: center; }
-          .sig-box .line { width: 120px; border-bottom: 1px solid #94a3b8; margin-bottom: 3px; }
-        </style>
-      </head>
-      <body>
-        ${slipsToPrint.map((slip, idx) => `
-          <div class="slip">
-            <div class="slip-header">
-              <div>
-                <h3>${orgName}</h3>
-                <small>Salary Slip — ${monthLabel}</small>
-              </div>
-              <small>Slip #${idx + 1}</small>
-            </div>
-            <div class="slip-body">
-              <div class="info-row">
-                <div><label>Employee</label><p>${slip.employee.full_name}</p></div>
-                <div><label>Job Title</label><p>${slip.employee.job_title || 'N/A'}</p></div>
-                <div><label>CNIC</label><p>${slip.employee.cnic_number || 'N/A'}</p></div>
-                <div><label>Joining Date</label><p>${slip.employee.joining_date ? new Date(slip.employee.joining_date).toLocaleDateString('en-GB') : 'N/A'}</p></div>
-              </div>
-              <div class="two-col">
-                <div>
-                  <div class="section-title earn-title">Earnings</div>
-                  ${slip.workingDays < slip.monthWorkingDays ? `
-                    <div class="row"><span>Fixed Base Salary</span><span class="val">PKR ${formatCurrency(slip.fullBaseSalary)}</span></div>
-                    <div class="row"><span>Earned Salary (${slip.workingDays} days)</span><span class="val">PKR ${formatCurrency(slip.baseSalary)}</span></div>
-                  ` : `
-                    <div class="row"><span>Base Salary</span><span class="val">PKR ${formatCurrency(slip.baseSalary)}</span></div>
-                  `}
-                  <div class="row"><span>Connected Sales ${slip.commissionRate > 0 ? `(${slip.connectedSales} × PKR ${formatCurrency(slip.commissionRate)})` : ''}</span><span class="val">${slip.commissionRate > 0 ? `PKR ${formatCurrency(Math.round(slip.connectedCommissionEarned))}` : 'NULL'}</span></div>
-                  <div class="row"><span>Transfer Sales ${slip.transferRate > 0 ? `(${slip.transferSales} × PKR ${formatCurrency(slip.transferRate)})` : ''}</span><span class="val">${slip.transferRate > 0 ? `PKR ${formatCurrency(Math.round(slip.transferCommissionEarned))}` : 'NULL'}</span></div>
-                  ${slip.isSupervisor ? `<div class="row"><span>Team Sales (${slip.teamSales} × PKR ${formatCurrency(slip.teamCommissionRate)})</span><span class="val">PKR ${formatCurrency(Math.round(slip.teamCommissionEarned))}</span></div>` : ''}
-                  <div class="row border-top"><span><b>Gross Salary</b></span><span class="val">PKR ${formatCurrency(Math.round(slip.grossSalary))}</span></div>
-                </div>
-                <div>
-                  <div class="section-title ded-title">Deductions</div>
-                  <div class="row" style="flex-direction: column; align-items: stretch; gap: 2px;">
-                    <div style="display: flex; justify-content: space-between;">
-                      <span>Absences (${slip.unpaidAbsences} unpaid of ${slip.totalAbsences})</span>
-                      <span class="ded">-PKR ${formatCurrency(Math.round(slip.absenceDeduction))}</span>
-                    </div>
-                    ${overrides[slip.employee.id]?.manualAbsences === undefined ? `
-                      <div style="font-size: 7px; color: #64748b; line-height: 1.2;">
-                        [Actual: ${slip.actualAbsences}, Lates: ${slip.totalLates} (+${slip.derivedAbsences}), Forgiven: -${Math.min(1, slip.rawTotalAbsences)}]
-                      </div>
-                    ` : ''}
-                  </div>
-                  <div class="row"><span>Loan / Advance / Penalty</span><span class="ded">-PKR ${formatCurrency(Math.round(slip.loanDeduction))}</span></div>
-                  <div class="row border-top"><span><b>Total Deductions</b></span><span class="ded">-PKR ${formatCurrency(Math.round(slip.totalDeductions))}</span></div>
-                </div>
-              </div>
-              <div class="summary-row">
-                <div class="summary-box"><label>Working Days</label><div class="num">${slip.workingDays}</div></div>
-                <div class="summary-box"><label>Total Absences</label><div class="num">${slip.totalAbsences}</div></div>
-                <div class="summary-box"><label>Paid Leave</label><div class="num">${slip.paidLeaves}</div></div>
-                <div class="summary-box"><label>Per Day</label><div class="num">PKR ${formatCurrency(Math.round(slip.perDaySalary))}</div></div>
-              </div>
-              <div class="net-bar">
-                <span class="label">NET SALARY</span>
-                <span class="amount">PKR ${formatCurrency(slip.netSalary)}</span>
-              </div>
-              <div class="sig-row">
-                <div class="date">Generated: ${new Date().toLocaleDateString('en-GB')}</div>
-                <div class="sig-box"><div class="line"></div><label>Employee Signature</label></div>
-                <div class="sig-box"><div class="line"></div><label>HR Signature</label></div>
-              </div>
-            </div>
-          </div>
-        `).join('')}
-      </body>
-      </html>
-    `)
-
-    printWindow.document.close()
-    printWindow.focus()
-    setTimeout(() => {
-      printWindow.print()
-      printWindow.onafterprint = () => {
-        printWindow.close()
-      }
-    }, 500)
   }
 
   // Month options
@@ -606,6 +479,21 @@ function SalarySlipsPageContent() {
               </optgroup>
             </select>
 
+            <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-full border border-slate-200 dark:border-slate-700 h-9">
+              <button
+                onClick={() => setViewMode("Draft")}
+                className={`px-3 h-full text-xs font-bold rounded-full transition-all ${viewMode === "Draft" ? "bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-sm" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"}`}
+              >
+                Auto-Calculate
+              </button>
+              <button
+                onClick={() => setViewMode("Saved")}
+                className={`px-3 h-full text-xs font-bold rounded-full transition-all ${viewMode === "Saved" ? "bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-sm" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"}`}
+              >
+                Saved Records
+              </button>
+            </div>
+
             <select
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(e.target.value)}
@@ -657,14 +545,16 @@ function SalarySlipsPageContent() {
             </button>
 
             {/* Save Selected */}
-            <button
-              onClick={handleSaveRecords}
-              disabled={isSaving || selectedSlips.length === 0}
-              className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl h-9 px-4 transition-all text-xs font-bold cursor-pointer"
-            >
-              <Save className="w-3.5 h-3.5" />
-              <span>{isSaving ? "Saving..." : `Save (${selectedSlips.length}) Records`}</span>
-            </button>
+            {viewMode === "Draft" && (
+              <button
+                onClick={handleSaveRecords}
+                disabled={isSaving || selectedSlips.length === 0}
+                className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl h-9 px-4 transition-all text-xs font-bold cursor-pointer"
+              >
+                <Save className="w-3.5 h-3.5" />
+                <span>{isSaving ? "Saving..." : `Save (${selectedSlips.length}) Records`}</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -678,8 +568,8 @@ function SalarySlipsPageContent() {
                 key={slip.employee.id}
                 className={`salary-slip bg-white dark:bg-slate-900 rounded-[1.5rem] print:rounded-none border shadow-md print:shadow-none overflow-hidden print:border print:border-slate-300 print:break-inside-avoid print:mb-8 transition-all duration-200 ${
                   isSelected 
-                    ? "border-slate-300 dark:border-slate-700" 
-                    : "border-slate-200 dark:border-slate-800 opacity-60 hover:opacity-90"
+                    ? "border-slate-300 dark:border-slate-700 print:block" 
+                    : "border-slate-200 dark:border-slate-800 opacity-60 hover:opacity-90 print:hidden"
                 }`}
               >
                 {/* Slip Header */}
@@ -792,17 +682,18 @@ function SalarySlipsPageContent() {
                           <div className="flex items-center gap-2">
                             {slip.commissionRate > 0 ? (
                               <>
-                                <input
-                                  type="number"
-                                  min={0}
-                                  placeholder="0"
-                                  value={slip.connectedSales === 0 ? '' : slip.connectedSales}
-                                  onChange={(e) => {
-                                    const val = e.target.value;
-                                    updateOverride(slip.employee.id, 'connectedSales', val === '' ? 0 : Number(val))
-                                  }}
-                                  className="w-14 h-7 text-center text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:ring-1 focus:ring-indigo-500 font-bold print:hidden"
-                                />
+                                  <input
+                                    type="number"
+                                    min={0}
+                                    placeholder="0"
+                                    value={slip.connectedSales === 0 ? '' : slip.connectedSales}
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      updateOverride(slip.employee.id, 'connectedSales', val === '' ? 0 : Number(val))
+                                    }}
+                                    disabled={viewMode === "Saved"}
+                                    className="w-14 h-7 text-center text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:ring-1 focus:ring-indigo-500 font-bold print:hidden disabled:opacity-50 disabled:cursor-not-allowed"
+                                  />
                                 <span className="hidden print:inline font-bold text-black">{slip.connectedSales}</span>
                                 <span className="font-bold text-emerald-600 print:text-black min-w-[80px] text-right">PKR {formatCurrency(Math.round(slip.connectedCommissionEarned))}</span>
                               </>
@@ -821,17 +712,18 @@ function SalarySlipsPageContent() {
                           <div className="flex items-center gap-2">
                             {slip.transferRate > 0 ? (
                               <>
-                                <input
-                                  type="number"
-                                  min={0}
-                                  placeholder="0"
-                                  value={slip.transferSales === 0 ? '' : slip.transferSales}
-                                  onChange={(e) => {
-                                    const val = e.target.value;
-                                    updateOverride(slip.employee.id, 'transferSales', val === '' ? 0 : Number(val))
-                                  }}
-                                  className="w-14 h-7 text-center text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:ring-1 focus:ring-indigo-500 font-bold print:hidden"
-                                />
+                                  <input
+                                    type="number"
+                                    min={0}
+                                    placeholder="0"
+                                    value={slip.transferSales === 0 ? '' : slip.transferSales}
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      updateOverride(slip.employee.id, 'transferSales', val === '' ? 0 : Number(val))
+                                    }}
+                                    disabled={viewMode === "Saved"}
+                                    className="w-14 h-7 text-center text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:ring-1 focus:ring-indigo-500 font-bold print:hidden disabled:opacity-50 disabled:cursor-not-allowed"
+                                  />
                                 <span className="hidden print:inline font-bold text-black">{slip.transferSales}</span>
                                 <span className="font-bold text-emerald-600 print:text-black min-w-[80px] text-right">PKR {formatCurrency(Math.round(slip.transferCommissionEarned))}</span>
                               </>
@@ -858,7 +750,8 @@ function SalarySlipsPageContent() {
                                   const val = e.target.value;
                                   updateOverride(slip.employee.id, 'teamSales', val === '' ? 0 : Number(val))
                                 }}
-                                className="w-14 h-7 text-center text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:ring-1 focus:ring-indigo-500 font-bold print:hidden"
+                                disabled={viewMode === "Saved"}
+                                className="w-14 h-7 text-center text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:ring-1 focus:ring-indigo-500 font-bold print:hidden disabled:opacity-50 disabled:cursor-not-allowed"
                               />
                               <span className="hidden print:inline font-bold text-black">{slip.teamSales}</span>
                               <span className="font-bold text-emerald-600 print:text-black min-w-[80px] text-right">PKR {formatCurrency(Math.round(slip.teamCommissionEarned))}</span>
@@ -900,7 +793,8 @@ function SalarySlipsPageContent() {
                                 const val = e.target.value;
                                 updateOverride(slip.employee.id, 'manualAbsences', val === '' ? undefined : Number(val))
                               }}
-                              className="w-14 h-7 text-center text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:ring-1 focus:ring-rose-500 font-bold print:hidden"
+                              disabled={viewMode === "Saved"}
+                              className="w-14 h-7 text-center text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:ring-1 focus:ring-rose-500 font-bold print:hidden disabled:opacity-50 disabled:cursor-not-allowed"
                             />
                             <span className="hidden print:inline font-bold text-black">-PKR {formatCurrency(Math.round(slip.absenceDeduction))}</span>
                             <span className="font-bold text-rose-600 print:hidden min-w-[80px] text-right">-PKR {formatCurrency(Math.round(slip.absenceDeduction))}</span>
@@ -918,7 +812,8 @@ function SalarySlipsPageContent() {
                                 const val = e.target.value;
                                 updateOverride(slip.employee.id, 'loanDeduction', val === '' ? 0 : Number(val))
                               }}
-                              className="w-20 h-7 text-center text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:ring-1 focus:ring-rose-500 font-bold print:hidden"
+                              disabled={viewMode === "Saved"}
+                              className="w-20 h-7 text-center text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:ring-1 focus:ring-rose-500 font-bold print:hidden disabled:opacity-50 disabled:cursor-not-allowed"
                             />
                             <span className="hidden print:inline font-bold text-black">-PKR {formatCurrency(Math.round(slip.loanDeduction))}</span>
                           </div>
@@ -974,7 +869,8 @@ function SalarySlipsPageContent() {
                             const val = e.target.value;
                             updateOverride(slip.employee.id, 'netSalaryOverride', val === '' ? undefined : Number(val))
                           }}
-                          className="w-20 h-7 text-right bg-white/10 hover:bg-white/20 border border-white/20 focus:border-white/40 focus:ring-1 focus:ring-white/40 rounded-md outline-none font-bold text-white placeholder-white/40 transition-all text-xs px-2"
+                          disabled={viewMode === "Saved"}
+                          className="w-20 h-7 text-right bg-white/10 hover:bg-white/20 border border-white/20 focus:border-white/40 focus:ring-1 focus:ring-white/40 rounded-md outline-none font-bold text-white placeholder-white/40 transition-all text-xs px-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         />
                       </div>
                       <span className="text-white text-2xl print:text-lg font-extrabold min-w-[120px] text-right print:min-w-0">PKR {formatCurrency(slip.netSalary)}</span>
