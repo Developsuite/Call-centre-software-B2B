@@ -210,6 +210,7 @@ function SalarySlipsPageContent() {
         teamCommissionRate,
         teamCommissionEarned,
         totalCommissionEarned,
+        loanDeduction,
         grossSalary,
         totalDeductions,
         netSalary
